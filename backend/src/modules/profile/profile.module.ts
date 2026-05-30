@@ -6,10 +6,12 @@ import {
   PublicProfileController,
 } from './profile.controller';
 import { Profile, ProfileSchema } from './schemas/profile.schema';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Profile.name, schema: ProfileSchema }]),
+    MediaModule,
   ],
   controllers: [PublicProfileController, AdminProfileController],
   providers: [ProfileService],

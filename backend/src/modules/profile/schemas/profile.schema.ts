@@ -1,16 +1,55 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 
-export interface ISocialLink {
+@Schema({ _id: false })
+export class SocialLink {
+  @Prop({ required: true })
   platform: string;
+
+  @Prop({ required: true })
   url: string;
+
+  @Prop()
+  icon?: string;
+
+  @Prop({ type: Number, default: 0 })
+  order?: number;
 }
 
-export interface ICertificate {
+@Schema({ _id: false })
+export class Language {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop()
+  level?: string;
+}
+
+@Schema({ _id: false })
+export class Certificate {
+  @Prop({ required: true })
   title: string;
-  issuer: string;
-  date: Date;
+
+  @Prop()
+  issuer?: string;
+
+  @Prop({ type: Date })
+  date?: Date;
+
+  @Prop()
   url?: string;
+}
+
+@Schema({ _id: false })
+export class ProfileSeo {
+  @Prop()
+  metaTitle?: string;
+
+  @Prop()
+  metaDescription?: string;
+
+  @Prop()
+  ogImage?: string;
 }
 
 @Schema({ timestamps: true })
@@ -31,19 +70,19 @@ export class Profile extends Document {
   about?: string;
 
   @Prop()
-  profileImage: string;
+  profileImage?: string;
 
   @Prop()
   profileImageAlt?: string;
 
   @Prop()
-  cvFile: string;
+  cvFile?: string;
 
   @Prop({ required: true })
   email: string;
 
   @Prop()
-  phone: string;
+  phone?: string;
 
   @Prop()
   location?: string;
@@ -51,24 +90,20 @@ export class Profile extends Document {
   @Prop({ default: true })
   availableForWork: boolean;
 
-  @Prop({ type: [Object], default: [] })
-  socialLinks: ISocialLink[];
+  @Prop({ type: [SchemaFactory.createForClass(SocialLink)], default: [] })
+  socialLinks: SocialLink[];
+
+  @Prop({ type: [SchemaFactory.createForClass(Language)], default: [] })
+  languages: Language[];
 
   @Prop({ type: Number, default: 0 })
-  yearsOfExperience: number;
+  yearsOfExperience?: number;
 
-  @Prop({ type: [Object], default: [] })
-  certificates: ICertificate[];
+  @Prop({ type: [SchemaFactory.createForClass(Certificate)], default: [] })
+  certificates: Certificate[];
 
-  @Prop({ type: [String], default: [] })
-  languages: string[];
-
-  @Prop({ type: Object })
-  seo?: {
-    metaTitle?: string;
-    metaDescription?: string;
-    ogImage?: string;
-  };
+  @Prop({ type: SchemaFactory.createForClass(ProfileSeo), default: {} })
+  seo: ProfileSeo;
 
   createdAt: Date;
   updatedAt: Date;

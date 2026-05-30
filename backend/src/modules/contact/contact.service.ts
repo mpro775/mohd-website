@@ -8,6 +8,7 @@ import {
 import { CreateMessageDto } from './dto/create-message.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { MailService } from '../mail/mail.service';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
 export class ContactService {
@@ -15,11 +16,13 @@ export class ContactService {
     @InjectModel(ContactMessage.name)
     private contactMessageModel: Model<ContactMessage>,
     private mailService: MailService,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
 
   async create(
     createMessageDto: CreateMessageDto,
     ipAddress: string,
+    req?: any,
   ): Promise<ContactMessage> {
     const message = new this.contactMessageModel({
       ...createMessageDto,
@@ -33,6 +36,16 @@ export class ContactService {
       subject: saved.subject,
       message: saved.message,
     });
+
+    // Audit Log (Public request, no authenticated user expected)
+    await this.auditLogsService.log({
+      action: 'contact.message.created',
+      resource: 'ContactMessage',
+      resourceId: saved._id.toString(),
+      after: saved.toObject(),
+      request: req,
+    });
+
     return saved;
   }
 
@@ -72,7 +85,14 @@ export class ContactService {
     id: string,
     status: MessageStatus,
     notes?: string,
+    req?: any,
   ): Promise<ContactMessage> {
+    const oldMessage = await this.contactMessageModel.findById(id);
+    if (!oldMessage) {
+      throw new NotFoundException('الرسالة غير موجودة');
+    }
+    const before = oldMessage.toObject();
+
     const message = await this.contactMessageModel.findByIdAndUpdate(
       id,
       { status, ...(notes !== undefined ? { notes } : {}) },
@@ -83,14 +103,54 @@ export class ContactService {
       throw new NotFoundException('الرسالة غير موجودة');
     }
 
+    const after = message.toObject();
+
+    // Log status changes
+    if (before.status !== status) {
+      await this.auditLogsService.log({
+        action: 'contact.message.status_changed',
+        resource: 'ContactMessage',
+        resourceId: id,
+        before,
+        after,
+        request: req,
+      });
+    }
+
+    // Log notes changes
+    if (notes !== undefined && before.notes !== notes) {
+      await this.auditLogsService.log({
+        action: 'contact.message.notes_updated',
+        resource: 'ContactMessage',
+        resourceId: id,
+        before,
+        after,
+        request: req,
+      });
+    }
+
     return message;
   }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.contactMessageModel.findByIdAndDelete(id);
+  async remove(id: string, req?: any): Promise<void> {
+    const oldMessage = await this.contactMessageModel.findById(id);
+    if (!oldMessage) {
+      throw new NotFoundException('الرسالة غير موجودة');
+    }
+    const before = oldMessage.toObject();
 
+    const result = await this.contactMessageModel.findByIdAndDelete(id);
     if (!result) {
       throw new NotFoundException('الرسالة غير موجودة');
     }
+
+    // Audit Log
+    await this.auditLogsService.log({
+      action: 'contact.message.deleted',
+      resource: 'ContactMessage',
+      resourceId: id,
+      before,
+      request: req,
+    });
   }
 }

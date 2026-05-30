@@ -8,16 +8,20 @@ import {
   Post,
   Put,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 
 @Public()
-@Controller(['public/services', 'services'])
+@Controller('public/services')
 export class PublicServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
@@ -38,7 +42,8 @@ export class PublicServicesController {
   }
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 @Controller('admin/services')
 export class AdminServicesController {
   constructor(private readonly servicesService: ServicesService) {}
@@ -60,43 +65,53 @@ export class AdminServicesController {
   }
 
   @Post()
-  async create(@Body() createServiceDto: CreateServiceDto) {
+  async create(@Request() req, @Body() createServiceDto: CreateServiceDto) {
     return {
       message: 'Service created successfully',
-      data: await this.servicesService.create(createServiceDto),
+      data: await this.servicesService.create(createServiceDto, req),
     };
   }
 
   @Put(':id')
   async update(
+    @Request() req,
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updateServiceDto: UpdateServiceDto,
   ) {
     return {
       message: 'Service updated successfully',
-      data: await this.servicesService.update(id, updateServiceDto),
+      data: await this.servicesService.update(id, updateServiceDto, req),
     };
   }
 
   @Patch(':id/publish')
-  async publish(@Param('id', ParseObjectIdPipe) id: string) {
+  async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
     return {
       message: 'Service published successfully',
-      data: await this.servicesService.publish(id, true),
+      data: await this.servicesService.publish(id, true, req),
     };
   }
 
   @Patch(':id/unpublish')
-  async unpublish(@Param('id', ParseObjectIdPipe) id: string) {
+  async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
     return {
       message: 'Service unpublished successfully',
-      data: await this.servicesService.publish(id, false),
+      data: await this.servicesService.publish(id, false, req),
     };
   }
 
+  @Patch('reorder')
+  async reorder(
+    @Request() req,
+    @Body() body: { items: { id: string; order: number }[] },
+  ) {
+    await this.servicesService.reorder(body.items || [], req);
+    return { message: 'Services reordered successfully', data: null };
+  }
+
   @Delete(':id')
-  async remove(@Param('id', ParseObjectIdPipe) id: string) {
-    await this.servicesService.remove(id);
+  async remove(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    await this.servicesService.remove(id, req);
     return { message: 'Service deleted successfully', data: null };
   }
 }

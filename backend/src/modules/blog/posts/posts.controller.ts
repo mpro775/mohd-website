@@ -18,10 +18,13 @@ import { FilterPostDto } from './dto/filter-post.dto';
 import { PostStatus } from './schemas/post.schema';
 import { Public } from '../../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
 
 @Public()
-@Controller(['public/blog/posts', 'blog/posts'])
+@Controller('public/blog/posts')
 export class PublicPostsController {
   constructor(private readonly postsService: PostsService) {}
 
@@ -44,7 +47,8 @@ export class PublicPostsController {
   }
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 @Controller('admin/blog/posts')
 export class AdminPostsController {
   constructor(private readonly postsService: PostsService) {}
@@ -71,40 +75,65 @@ export class AdminPostsController {
   async create(@Request() req, @Body() createPostDto: CreatePostDto) {
     return {
       message: 'Post created successfully',
-      data: await this.postsService.create(createPostDto, req.user.userId),
+      data: await this.postsService.create(createPostDto, req.user.userId, req),
     };
   }
 
   @Put(':id')
   async update(
+    @Request() req,
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updatePostDto: UpdatePostDto,
   ) {
     return {
       message: 'Post updated successfully',
-      data: await this.postsService.update(id, updatePostDto),
+      data: await this.postsService.update(id, updatePostDto, req),
     };
   }
 
   @Patch(':id/publish')
-  async publish(@Param('id', ParseObjectIdPipe) id: string) {
+  async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
     return {
       message: 'Post published successfully',
-      data: await this.postsService.setStatus(id, PostStatus.PUBLISHED),
+      data: await this.postsService.setStatus(id, PostStatus.PUBLISHED, req),
     };
   }
 
   @Patch(':id/unpublish')
-  async unpublish(@Param('id', ParseObjectIdPipe) id: string) {
+  async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
     return {
       message: 'Post unpublished successfully',
-      data: await this.postsService.setStatus(id, PostStatus.DRAFT),
+      data: await this.postsService.setStatus(id, PostStatus.DRAFT, req),
+    };
+  }
+
+  @Patch(':id/archive')
+  async archive(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    return {
+      message: 'Post archived successfully',
+      data: await this.postsService.archive(id, req),
+    };
+  }
+
+  @Patch(':id/schedule')
+  async schedule(
+    @Request() req,
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() body: { publishDate: string },
+  ) {
+    return {
+      message: 'Post scheduled successfully',
+      data: await this.postsService.schedule(
+        id,
+        new Date(body.publishDate),
+        req,
+      ),
     };
   }
 
   @Delete(':id')
-  async remove(@Param('id', ParseObjectIdPipe) id: string) {
-    await this.postsService.remove(id);
+  async remove(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    await this.postsService.remove(id, req);
     return { message: 'Post deleted successfully', data: null };
   }
 }

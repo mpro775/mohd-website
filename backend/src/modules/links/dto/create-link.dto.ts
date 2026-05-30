@@ -12,6 +12,10 @@ export class CreateLinkDto {
   @MinLength(2)
   title: string;
 
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
   @IsUrl({}, { message: 'الرابط غير صالح' })
   url: string;
 
@@ -23,9 +27,21 @@ export class CreateLinkDto {
   @IsString()
   icon?: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(2)
-  category: string;
+  platform?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  openInNewTab?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
 
   @IsOptional()
   @IsNumber()

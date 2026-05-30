@@ -5,20 +5,42 @@ import {
   IsNumber,
   MinLength,
   Min,
+  IsArray,
+  IsUrl,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+class ServiceSEODto {
+  @IsOptional()
+  @IsString()
+  metaTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  metaDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  ogImage?: string;
+}
 
 export class CreateServiceDto {
   @IsString()
   @MinLength(3, { message: 'الاسم يجب أن يكون 3 أحرف على الأقل' })
   name: string;
 
+  @IsOptional()
+  @IsString()
+  slug?: string;
+
   @IsString()
   @MinLength(10, { message: 'الوصف القصير يجب أن يكون 10 أحرف على الأقل' })
   shortDescription: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(20, { message: 'الوصف التفصيلي يجب أن يكون 20 حرف على الأقل' })
-  detailedDescription: string;
+  detailedDescription?: string;
 
   @IsOptional()
   @IsString()
@@ -26,7 +48,42 @@ export class CreateServiceDto {
 
   @IsOptional()
   @IsNumber()
-  order?: number;
+  @Min(0)
+  startingPrice?: number;
+
+  @IsOptional()
+  @IsString()
+  currency?: string;
+
+  @IsOptional()
+  @IsString()
+  price?: string;
+
+  @IsOptional()
+  @IsString()
+  duration?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  deliverables?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  requirements?: string[];
+
+  @IsOptional()
+  @IsString()
+  ctaText?: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'رابط الزر ctaUrl يجب أن يكون رابطاً صالحاً' })
+  ctaUrl?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
 
   @IsOptional()
   @IsBoolean()
@@ -34,10 +91,10 @@ export class CreateServiceDto {
 
   @IsOptional()
   @IsNumber()
-  @Min(0)
-  price?: number;
+  order?: number;
 
   @IsOptional()
-  @IsString()
-  duration?: string;
+  @ValidateNested()
+  @Type(() => ServiceSEODto)
+  seo?: ServiceSEODto;
 }

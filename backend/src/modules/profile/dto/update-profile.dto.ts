@@ -6,6 +6,7 @@ import {
   IsArray,
   ValidateNested,
   Min,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,21 +16,54 @@ class SocialLinkDto {
 
   @IsString()
   url: string;
+
+  @IsOptional()
+  @IsString()
+  icon?: string;
+
+  @IsOptional()
+  @IsNumber()
+  order?: number;
+}
+
+class LanguageDto {
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  level?: string;
 }
 
 class CertificateDto {
   @IsString()
   title: string;
 
+  @IsOptional()
   @IsString()
-  issuer: string;
+  issuer?: string;
 
+  @IsOptional()
   @IsString()
-  date: string;
+  date?: string;
 
   @IsOptional()
   @IsString()
   url?: string;
+}
+
+class ProfileSeoDto {
+  @IsOptional()
+  @IsString()
+  metaTitle?: string;
+
+  @IsOptional()
+  @IsString()
+  metaDescription?: string;
+
+  @IsOptional()
+  @IsString()
+  ogImage?: string;
 }
 
 export class UpdateProfileDto {
@@ -78,6 +112,7 @@ export class UpdateProfileDto {
   location?: string;
 
   @IsOptional()
+  @IsBoolean()
   availableForWork?: boolean;
 
   @IsOptional()
@@ -99,13 +134,12 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  languages?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => LanguageDto)
+  languages?: LanguageDto[];
 
   @IsOptional()
-  seo?: {
-    metaTitle?: string;
-    metaDescription?: string;
-    ogImage?: string;
-  };
+  @ValidateNested()
+  @Type(() => ProfileSeoDto)
+  seo?: ProfileSeoDto;
 }

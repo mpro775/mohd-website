@@ -26,6 +26,7 @@ import { MailModule } from './modules/mail/mail.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { DeprecatedController } from './common/controllers/deprecated.controller';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
         R2_SECRET_ACCESS_KEY: Joi.string().required(),
         R2_BUCKET: Joi.string().required(),
         R2_PUBLIC_URL: Joi.string().uri().required(),
+        R2_REGION: Joi.string().required(),
       }),
     }),
     ThrottlerModule.forRoot([
@@ -88,7 +90,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
     HealthModule,
     AuditLogsModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, DeprecatedController],
   providers: [
     AppService,
     {

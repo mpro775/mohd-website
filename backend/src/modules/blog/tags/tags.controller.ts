@@ -1,67 +1,116 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
+  Patch,
   Post,
   Put,
-  Delete,
-  Body,
-  Param,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../../common/guards/roles.guard';
+import { Roles } from '../../../common/decorators/roles.decorator';
+import { UserRole } from '../../users/schemas/user.schema';
+import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
 
-@Controller('blog/tags')
-export class TagsController {
+@Public()
+@Controller('public/blog/tags')
+export class PublicTagsController {
   constructor(private readonly tagsService: TagsService) {}
 
-  @Public()
   @Get()
   async findAll() {
-    const tags = await this.tagsService.findAll();
+    const tags = await this.tagsService.findAllPublic();
     return {
       message: 'تم جلب الوسوم بنجاح',
       data: tags,
     };
   }
 
-  @Public()
+  @Get(':slug')
+  async findOne(@Param('slug') slug: string) {
+    const tag = await this.tagsService.findOnePublic(slug);
+    return {
+      message: 'تم جلب الوسم بنجاح',
+      data: tag,
+    };
+  }
+}
+
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
+@Controller('admin/blog/tags')
+export class AdminTagsController {
+  constructor(private readonly tagsService: TagsService) {}
+
+  @Get()
+  async findAll() {
+    const tags = await this.tagsService.findAllAdmin();
+    return {
+      message: 'تم جلب الوسوم بنجاح',
+      data: tags,
+    };
+  }
+
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const tag = await this.tagsService.findOne(id);
+  async findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    const tag = await this.tagsService.findOneAdmin(id);
     return {
       message: 'تم جلب الوسم بنجاح',
       data: tag,
     };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(@Body() createTagDto: CreateTagDto) {
-    const tag = await this.tagsService.create(createTagDto);
+  async create(@Request() req, @Body() createTagDto: CreateTagDto) {
+    const tag = await this.tagsService.create(createTagDto, req);
     return {
       message: 'تم إنشاء الوسم بنجاح',
       data: tag,
     };
   }
 
-  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateTagDto: UpdateTagDto) {
-    const tag = await this.tagsService.update(id, updateTagDto);
+  async update(
+    @Request() req,
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() updateTagDto: UpdateTagDto,
+  ) {
+    const tag = await this.tagsService.update(id, updateTagDto, req);
     return {
       message: 'تم تحديث الوسم بنجاح',
       data: tag,
     };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @Patch(':id/activate')
+  async activate(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const tag = await this.tagsService.setStatus(id, true, req);
+    return {
+      message: 'تم تفعيل الوسم بنجاح',
+      data: tag,
+    };
+  }
+
+  @Patch(':id/deactivate')
+  async deactivate(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const tag = await this.tagsService.setStatus(id, false, req);
+    return {
+      message: 'تم إلغاء تفعيل الوسم بنجاح',
+      data: tag,
+    };
+  }
+
   @Delete(':id')
-  async remove(@Param('id') id: string) {
-    await this.tagsService.remove(id);
+  async remove(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    await this.tagsService.remove(id, req);
     return {
       message: 'تم حذف الوسم بنجاح',
       data: null,

@@ -6,12 +6,14 @@ import {
   PublicTechnologiesController,
 } from './technologies.controller';
 import { Technology, TechnologySchema } from './schemas/technology.schema';
+import { MediaModule } from '../media/media.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Technology.name, schema: TechnologySchema },
     ]),
+    MediaModule,
   ],
   controllers: [PublicTechnologiesController, AdminTechnologiesController],
   providers: [TechnologiesService],

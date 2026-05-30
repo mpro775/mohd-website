@@ -95,6 +95,9 @@ export class Project extends Document {
     ogImage?: string;
   };
 
+  @Prop({ type: Number, default: 0 })
+  views: number;
+
   createdAt: Date;
   updatedAt: Date;
 }

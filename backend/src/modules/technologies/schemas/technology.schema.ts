@@ -13,7 +13,10 @@ export class Technology extends Document {
   @Prop({ required: true, trim: true })
   name: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true, lowercase: true, trim: true })
+  slug: string;
+
+  @Prop()
   description: string;
 
   @Prop()
@@ -26,14 +29,29 @@ export class Technology extends Document {
   })
   proficiencyLevel: ProficiencyLevel;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ trim: true })
   category: string;
 
-  @Prop({ type: Number, default: 0 })
-  order: number;
+  @Prop({ trim: true })
+  group: string;
+
+  @Prop()
+  officialUrl: string;
+
+  @Prop({ type: Number })
+  yearsOfExperience: number;
+
+  @Prop({ default: false })
+  highlighted: boolean;
 
   @Prop({ default: true })
   isPublished: boolean;
+
+  @Prop()
+  color: string;
+
+  @Prop({ type: Number, default: 0 })
+  order: number;
 
   createdAt: Date;
   updatedAt: Date;
@@ -42,3 +60,4 @@ export class Technology extends Document {
 export const TechnologySchema = SchemaFactory.createForClass(Technology);
 
 TechnologySchema.index({ category: 1, order: 1 });
+TechnologySchema.index({ slug: 1 }, { unique: true });

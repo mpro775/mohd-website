@@ -12,6 +12,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Session } from './schemas/session.schema';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
 @Injectable()
 export class AuthService {
@@ -21,9 +22,10 @@ export class AuthService {
     private configService: ConfigService,
     private mailService: MailService,
     @InjectModel(Session.name) private sessionModel: Model<any>,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  async login(loginDto: LoginDto, ip?: string, userAgent?: string) {
+  async login(loginDto: LoginDto, req: any) {
     const user = await this.usersService.findByEmailWithPassword(
       loginDto.email,
     );
@@ -35,10 +37,22 @@ export class AuthService {
         user.password,
       ))
     ) {
+      await this.auditLogsService.log({
+        action: 'auth.login.failed',
+        resource: 'Auth',
+        metadata: { email: loginDto.email },
+        request: req,
+      });
       throw new UnauthorizedException('Invalid email or password');
     }
 
     if (!user.isActive) {
+      await this.auditLogsService.log({
+        action: 'auth.login.failed',
+        resource: 'Auth',
+        metadata: { email: loginDto.email, reason: 'User disabled' },
+        request: req,
+      });
       throw new UnauthorizedException('User is disabled');
     }
 
@@ -49,9 +63,20 @@ export class AuthService {
       _id: sessionId,
       userId: user._id,
       refreshTokenHash: await bcrypt.hash(tokens.refreshToken, 10),
-      ipAddress: ip,
-      userAgent,
+      ipAddress:
+        req.ip ||
+        req.headers?.['x-forwarded-for'] ||
+        req.connection?.remoteAddress,
+      userAgent: req.headers?.['user-agent'],
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    req.user = { userId: user._id.toString(), email: user.email };
+    await this.auditLogsService.log({
+      action: 'auth.login.success',
+      resource: 'Auth',
+      resourceId: user._id.toString(),
+      request: req,
     });
 
     return {
@@ -63,7 +88,8 @@ export class AuthService {
     };
   }
 
-  async logout(userId: string, refreshToken: string) {
+  async logout(req: any, refreshToken: string) {
+    const userId = req.user?.userId;
     const payload = this.jwtService.decode(refreshToken);
     if (payload?.sid) {
       await this.sessionModel.updateOne(
@@ -71,6 +97,13 @@ export class AuthService {
         { revokedAt: new Date(), refreshTokenHash: undefined },
       );
     }
+
+    await this.auditLogsService.log({
+      action: 'auth.logout',
+      resource: 'Auth',
+      resourceId: userId,
+      request: req,
+    });
 
     return { message: 'Logout successful', data: null };
   }
@@ -117,7 +150,8 @@ export class AuthService {
     return { message: 'Token refreshed successfully', data: tokens };
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
+  async changePassword(req: any, changePasswordDto: ChangePasswordDto) {
+    const userId = req.user?.userId;
     const currentUser = await this.usersService.findById(userId);
     if (!currentUser) {
       throw new UnauthorizedException('User not found');
@@ -145,10 +179,17 @@ export class AuthService {
       { revokedAt: new Date(), refreshTokenHash: undefined },
     );
 
+    await this.auditLogsService.log({
+      action: 'auth.password.changed',
+      resource: 'Auth',
+      resourceId: userId,
+      request: req,
+    });
+
     return { message: 'Password changed successfully', data: null };
   }
 
-  async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
+  async forgotPassword(req: any, forgotPasswordDto: ForgotPasswordDto) {
     const user = await this.usersService.findByEmail(forgotPasswordDto.email);
     if (user) {
       const token = randomBytes(32).toString('hex');
@@ -160,13 +201,20 @@ export class AuthService {
       await this.mailService.sendPasswordReset(user.email, token);
     }
 
+    await this.auditLogsService.log({
+      action: 'auth.password.reset.requested',
+      resource: 'Auth',
+      metadata: { email: forgotPasswordDto.email },
+      request: req,
+    });
+
     return {
       message: 'If the email exists, a password reset token has been sent',
       data: null,
     };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto) {
+  async resetPassword(req: any, resetPasswordDto: ResetPasswordDto) {
     const user = await this.usersService.findByEmailWithResetToken(
       resetPasswordDto.email,
     );
@@ -192,6 +240,13 @@ export class AuthService {
       { userId: user._id, revokedAt: { $exists: false } },
       { revokedAt: new Date(), refreshTokenHash: undefined },
     );
+
+    await this.auditLogsService.log({
+      action: 'auth.password.reset.completed',
+      resource: 'Auth',
+      metadata: { email: resetPasswordDto.email },
+      request: req,
+    });
 
     return { message: 'Password reset successfully', data: null };
   }

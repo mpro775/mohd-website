@@ -5,11 +5,13 @@ export enum PostStatus {
   PUBLISHED = 'published',
   DRAFT = 'draft',
   SCHEDULED = 'scheduled',
+  ARCHIVED = 'archived',
 }
 
 export interface ISEO {
-  metaTitle: string;
-  metaDescription: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  ogImage?: string;
 }
 
 @Schema({ timestamps: true })
@@ -23,11 +25,17 @@ export class Post extends Document {
   @Prop({ required: true })
   summary: string;
 
+  @Prop()
+  excerpt: string;
+
   @Prop({ required: true })
   content: string;
 
   @Prop()
   featuredImage: string;
+
+  @Prop()
+  coverImage: string;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Category' })
   category: MongooseSchema.Types.ObjectId;
@@ -45,6 +53,12 @@ export class Post extends Document {
   publishDate: Date;
 
   @Prop({ type: Date })
+  scheduledAt: Date;
+
+  @Prop({ type: Date })
+  lastPublishedAt: Date;
+
+  @Prop({ type: Date })
   updatedDate: Date;
 
   @Prop({
@@ -59,6 +73,15 @@ export class Post extends Document {
 
   @Prop({ type: Number, default: 5 })
   readTime: number;
+
+  @Prop({ type: Boolean, default: false })
+  isFeatured: boolean;
+
+  @Prop({ type: Boolean, default: true })
+  allowIndexing: boolean;
+
+  @Prop()
+  canonicalUrl: string;
 
   @Prop({ type: Object })
   seo: ISEO;

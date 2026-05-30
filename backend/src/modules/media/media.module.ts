@@ -3,10 +3,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MediaController } from './media.controller';
 import { MediaService } from './media.service';
 import { Media, MediaSchema } from './schemas/media.schema';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Media.name, schema: MediaSchema }]),
+    AuditLogsModule,
   ],
   controllers: [MediaController],
   providers: [MediaService],

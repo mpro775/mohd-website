@@ -25,18 +25,14 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 attempts per 15 minutes
   @Post('login')
-  async login(
-    @Body() loginDto: LoginDto,
-    @Ip() ip: string,
-    @Headers('user-agent') userAgent: string,
-  ) {
-    return this.authService.login(loginDto, ip, userAgent);
+  async login(@Request() req, @Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto, req);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
   async logout(@Request() req, @Body() body: { refreshToken: string }) {
-    return this.authService.logout(req.user.userId, body.refreshToken);
+    return this.authService.logout(req, body.refreshToken);
   }
 
   @Public()
@@ -60,7 +56,7 @@ export class AuthController {
     @Request() req,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return this.authService.changePassword(req.user.userId, changePasswordDto);
+    return this.authService.changePassword(req, changePasswordDto);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -72,14 +68,20 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 3, ttl: 900000 } })
   @Post('forgot-password')
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
-    return this.authService.forgotPassword(forgotPasswordDto);
+  async forgotPassword(
+    @Request() req,
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+  ) {
+    return this.authService.forgotPassword(req, forgotPasswordDto);
   }
 
   @Public()
   @Throttle({ default: { limit: 5, ttl: 900000 } })
   @Post('reset-password')
-  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+  async resetPassword(
+    @Request() req,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.authService.resetPassword(req, resetPasswordDto);
   }
 }
