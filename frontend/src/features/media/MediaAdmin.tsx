@@ -31,7 +31,7 @@ export function MediaAdmin() {
           <Button onClick={upload} disabled={!file}>رفع</Button>
         </div>
       </div>
-      <AdminResourceManager config={{ title: "مكتبة الوسائط", endpoint: "admin/media", allowCreate: false }} />
+      <AdminResourceManager config={{ title: "مكتبة الوسائط", endpoint: "admin/media", allowCreate: false, fields: [{ name: "alt", label: "النص البديل" }, { name: "folder", label: "المجلد" }, { name: "usage", label: "الاستخدام" }] }} />
     </div>
   );
 }
