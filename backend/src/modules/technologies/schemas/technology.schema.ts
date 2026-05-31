@@ -60,4 +60,3 @@ export class Technology extends Document {
 export const TechnologySchema = SchemaFactory.createForClass(Technology);
 
 TechnologySchema.index({ category: 1, order: 1 });
-TechnologySchema.index({ slug: 1 }, { unique: true });

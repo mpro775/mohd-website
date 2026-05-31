@@ -20,9 +20,11 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from './media.service';
+import type { RequestWithOptionalUser } from './media.service';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { MediaQueryDto } from './dto/media-query.dto';
 import { UpdateMediaMetadataDto } from './dto/update-media-metadata.dto';
+import { CleanupUnusedMediaDto } from './dto/cleanup-unused-media.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN, UserRole.EDITOR)
@@ -35,7 +37,7 @@ export class MediaController {
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadMediaDto,
-    @Req() req: any,
+    @Req() req: RequestWithOptionalUser,
   ) {
     return {
       message: 'Media uploaded successfully',
@@ -53,18 +55,37 @@ export class MediaController {
     };
   }
 
-  @Get('cleanup/unused')
-  @Roles(UserRole.ADMIN)
-  async cleanupUnused(
-    @Query('dryRun') dryRun = 'true',
+  @Get('unused')
+  async previewUnused(
     @Query('olderThanDays') olderThanDays = '30',
     @Req() req: any,
   ) {
     return {
-      message: 'Unused media cleanup inspected successfully',
-      data: await this.mediaService.cleanupUnused(
-        dryRun !== 'false',
+      message: 'Unused media inspected successfully',
+      data: await this.mediaService.previewUnused(
         Number(olderThanDays) || 30,
+        req,
+      ),
+    };
+  }
+
+  @Get('cleanup/unused')
+  async deprecatedCleanupPreview(@Query('olderThanDays') olderThanDays = '30') {
+    return {
+      message:
+        'This endpoint is preview-only. Use POST /api/admin/media/cleanup-unused with confirm=true to delete unused media.',
+      data: await this.mediaService.previewUnused(Number(olderThanDays) || 30),
+    };
+  }
+
+  @Post('cleanup-unused')
+  @Roles(UserRole.ADMIN)
+  async cleanupUnused(@Body() dto: CleanupUnusedMediaDto, @Req() req: any) {
+    return {
+      message: 'Unused media cleaned successfully',
+      data: await this.mediaService.cleanupUnused(
+        dto.olderThanDays,
+        dto.confirm,
         req,
       ),
     };

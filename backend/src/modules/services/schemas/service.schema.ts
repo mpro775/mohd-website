@@ -67,4 +67,3 @@ export class Service extends Document {
 export const ServiceSchema = SchemaFactory.createForClass(Service);
 
 ServiceSchema.index({ order: 1 });
-ServiceSchema.index({ slug: 1 }, { unique: true });

@@ -14,6 +14,47 @@ export class ProfileService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
+  private async syncMedia(profile: Profile): Promise<void> {
+    const imageUrls = profile.profileImage ? [profile.profileImage] : [];
+    const cvUrls = profile.cvFile ? [profile.cvFile] : [];
+    const socialIcons =
+      profile.socialLinks
+        ?.map((item) => item.icon)
+        .filter((icon): icon is string => Boolean(icon)) ?? [];
+    const ogImages = profile.seo?.ogImage ? [profile.seo.ogImage] : [];
+
+    await this.mediaService.syncUsage(
+      imageUrls,
+      'Profile',
+      profile._id.toString(),
+      'profileImage',
+    );
+    await this.mediaService.syncUsage(
+      imageUrls,
+      'Profile',
+      profile._id.toString(),
+      'avatar',
+    );
+    await this.mediaService.syncUsage(
+      cvUrls,
+      'Profile',
+      profile._id.toString(),
+      'cvFile',
+    );
+    await this.mediaService.syncUsage(
+      socialIcons,
+      'Profile',
+      profile._id.toString(),
+      'socialLinks.icon',
+    );
+    await this.mediaService.syncUsage(
+      ogImages,
+      'Profile',
+      profile._id.toString(),
+      'seo.ogImage',
+    );
+  }
+
   async getProfile(): Promise<Profile> {
     const profile = await this.profileModel.findOne();
 
@@ -39,21 +80,7 @@ export class ProfileService {
       await profile.save();
     }
 
-    // Sync media usage
-    const imageUrls = profile.profileImage ? [profile.profileImage] : [];
-    const cvUrls = profile.cvFile ? [profile.cvFile] : [];
-    await this.mediaService.syncUsage(
-      imageUrls,
-      'Profile',
-      profile._id.toString(),
-      'profileImage',
-    );
-    await this.mediaService.syncUsage(
-      cvUrls,
-      'Profile',
-      profile._id.toString(),
-      'cvFile',
-    );
+    await this.syncMedia(profile);
 
     // Audit Log
     await this.auditLogsService.log({
@@ -78,21 +105,7 @@ export class ProfileService {
     const profile = new this.profileModel(data);
     await profile.save();
 
-    // Sync media usage
-    const imageUrls = profile.profileImage ? [profile.profileImage] : [];
-    const cvUrls = profile.cvFile ? [profile.cvFile] : [];
-    await this.mediaService.syncUsage(
-      imageUrls,
-      'Profile',
-      profile._id.toString(),
-      'profileImage',
-    );
-    await this.mediaService.syncUsage(
-      cvUrls,
-      'Profile',
-      profile._id.toString(),
-      'cvFile',
-    );
+    await this.syncMedia(profile);
 
     return profile;
   }

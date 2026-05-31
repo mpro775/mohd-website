@@ -45,6 +45,12 @@ export class ProjectsService {
       project._id.toString(),
       'gallery',
     );
+    await this.mediaService.syncUsage(
+      project.images || [],
+      'Project',
+      project._id.toString(),
+      'images',
+    );
     const ogImages = project.seo?.ogImage ? [project.seo.ogImage] : [];
     await this.mediaService.syncUsage(
       ogImages,
@@ -223,6 +229,10 @@ export class ProjectsService {
     if (!result) {
       throw new NotFoundException('Project not found');
     }
+    await this.mediaService.removeUsageForEntity(
+      'Project',
+      result._id.toString(),
+    );
 
     // Audit Log
     await this.auditLogsService.log({

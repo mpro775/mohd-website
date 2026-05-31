@@ -177,7 +177,7 @@ export class LinksService {
 
     const link = await this.linkModel.findByIdAndDelete(id);
     if (!link) throw new NotFoundException('Link not found');
-    await this.mediaService.syncUsage([], 'Link', link._id.toString(), 'icon');
+    await this.mediaService.removeUsageForEntity('Link', link._id.toString());
 
     // Audit Log
     await this.auditLogsService.log({

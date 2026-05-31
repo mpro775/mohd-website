@@ -106,6 +106,5 @@ export const ProjectSchema = SchemaFactory.createForClass(Project);
 
 // Indexes for better performance
 ProjectSchema.index({ title: 'text', shortDescription: 'text' });
-ProjectSchema.index({ slug: 1 }, { unique: true });
 ProjectSchema.index({ category: 1, status: 1, isPublished: 1 });
 ProjectSchema.index({ order: 1 });

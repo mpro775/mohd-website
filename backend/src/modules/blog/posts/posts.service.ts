@@ -16,6 +16,10 @@ import { AuditLogsService } from '../../audit-logs/audit-logs.service';
 import { Category } from '../categories/schemas/category.schema';
 import { Tag } from '../tags/schemas/tag.schema';
 import { generateSlug } from '../../../common/utils/slug.util';
+import {
+  sanitizePlainText,
+  sanitizePostContent,
+} from '../../../common/utils/sanitize-content.util';
 
 const ALLOWED_SORT_FIELDS = [
   'createdAt',
@@ -58,6 +62,12 @@ export class PostsService {
       post._id.toString(),
       'seo.ogImage',
     );
+    await this.mediaService.syncUsage(
+      this.mediaService.extractMediaUrlsFromContent(post.content || ''),
+      'Post',
+      post._id.toString(),
+      'content',
+    );
   }
 
   async create(
@@ -68,12 +78,13 @@ export class PostsService {
     const slug = this.normalizeSlug(createPostDto.title);
     await this.assertSlugIsAvailable(slug);
     await this.validateRelations(createPostDto.category, createPostDto.tags);
+    const sanitizedContent = sanitizePostContent(createPostDto.content);
     const post = new this.postModel({
       ...createPostDto,
       slug,
-      content: this.sanitizeContent(createPostDto.content),
-      readTime:
-        createPostDto.readTime || this.calculateReadTime(createPostDto.content),
+      content: sanitizedContent,
+      excerpt: sanitizePlainText(createPostDto.excerpt),
+      readTime: this.calculateReadTime(sanitizedContent),
       author: authorId,
     });
     if (post.status === PostStatus.PUBLISHED && !post.publishDate) {
@@ -144,7 +155,14 @@ export class PostsService {
     }
     const before = oldPost.toObject();
 
-    const updateData: any = { ...updatePostDto };
+    const updateData: Partial<UpdatePostDto> & {
+      slug?: string;
+      updatedDate?: Date;
+      readTime?: number;
+      content?: string;
+      excerpt?: string;
+    } = { ...updatePostDto };
+    delete updateData.content;
     if (updatePostDto.title) {
       const slug = this.normalizeSlug(updatePostDto.title);
       if (slug !== oldPost.slug) {
@@ -152,9 +170,12 @@ export class PostsService {
         updateData.slug = slug;
       }
     }
-    if (updatePostDto.content && !updatePostDto.readTime) {
-      updateData.content = this.sanitizeContent(updatePostDto.content);
-      updateData.readTime = this.calculateReadTime(updatePostDto.content);
+    if (updatePostDto.content !== undefined) {
+      updateData.content = sanitizePostContent(updatePostDto.content);
+      updateData.readTime = this.calculateReadTime(updateData.content);
+    }
+    if (updatePostDto.excerpt !== undefined) {
+      updateData.excerpt = sanitizePlainText(updatePostDto.excerpt);
     }
     await this.validateRelations(updatePostDto.category, updatePostDto.tags);
     updateData.updatedDate = new Date();
@@ -188,7 +209,11 @@ export class PostsService {
     }
     const before = oldPost.toObject();
 
-    const updateData: any = { status };
+    const updateData: {
+      status: PostStatus;
+      publishDate?: Date;
+      lastPublishedAt?: Date;
+    } = { status };
     if (status === PostStatus.PUBLISHED) {
       updateData.publishDate = new Date();
       updateData.lastPublishedAt = new Date();
@@ -330,24 +355,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    await this.mediaService.syncUsage(
-      [],
-      'Post',
-      post._id.toString(),
-      'featuredImage',
-    );
-    await this.mediaService.syncUsage(
-      [],
-      'Post',
-      post._id.toString(),
-      'coverImage',
-    );
-    await this.mediaService.syncUsage(
-      [],
-      'Post',
-      post._id.toString(),
-      'seo.ogImage',
-    );
+    await this.mediaService.removeUsageForEntity('Post', post._id.toString());
 
     // Audit Log
     await this.auditLogsService.log({
@@ -430,9 +438,15 @@ export class PostsService {
     >;
 
     const [data, total] = await Promise.all([
-      this.withPopulates(
-        this.postModel.find(query).sort(sort).skip(skip).limit(limit),
-      ),
+      this.postModel
+        .find(query)
+        .sort(sort)
+        .skip(skip)
+        .limit(limit)
+        .populate('category', 'name slug')
+        .populate('tags', 'name slug')
+        .populate('author', 'name email')
+        .exec(),
       this.postModel.countDocuments(query),
     ]);
 
@@ -486,14 +500,6 @@ export class PostsService {
         throw new BadRequestException('One or more tags do not exist');
       }
     }
-  }
-
-  private sanitizeContent(content: string): string {
-    return content
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/\son\w+="[^"]*"/gi, '')
-      .replace(/\son\w+='[^']*'/gi, '')
-      .replace(/javascript:/gi, '');
   }
 
   private calculateReadTime(content: string): number {

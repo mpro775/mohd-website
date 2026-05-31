@@ -45,6 +45,7 @@ Use `Authorization: Bearer <accessToken>` for admin/editor routes.
 
 ## Public Endpoints
 
+- `GET /api/health`
 - `GET /api/public/profile`
 - `GET /api/public/projects?page=1&limit=10`
 - `GET /api/public/projects/:slug`
@@ -88,13 +89,95 @@ Admin-only:
 - `/api/admin/dashboard`
 - `/api/admin/audit-logs`
 - `DELETE /api/admin/media/:id`
-- `GET /api/admin/media/cleanup/unused`
+- `POST /api/admin/media/cleanup-unused`
 
 Admin post relations accept Mongo ObjectIds only for `category` and `tags`.
+
+## Health
+
+`GET /api/health` is public and returns real dependency checks:
+
+```ts
+{
+  status: 'ok' | 'degraded' | 'error';
+  timestamp: string;
+  uptime: number;
+  version: string;
+  environment: string;
+  checks: {
+    database: { status: 'ok' | 'error'; message?: string; latencyMs?: number };
+    storage: { status: 'ok' | 'error' | 'disabled'; message?: string; latencyMs?: number };
+    mail: { status: 'ok' | 'error' | 'disabled'; message?: string; latencyMs?: number };
+  };
+}
+```
+
+Database errors make the overall status `error`. Storage or mail errors make it `degraded`. Disabled optional services do not fail the health check.
 
 ## Media Upload
 
 `POST /api/admin/media/upload` accepts multipart `file` plus `folder`, optional `alt`, and optional `usage`. Images are validated and converted to WebP; PDFs are signature-checked. Lists return pagination meta.
+
+## Media Usage And Cleanup
+
+Media usage is synchronized for post cover/content/SEO images, project cover/images/gallery/SEO images, profile image/CV/social icons/SEO images, and service/technology/link icons where present. External URLs outside the configured R2 public URL are ignored by usage tracking.
+
+Preview unused media:
+
+- `GET /api/admin/media/unused?olderThanDays=30`
+
+Response data:
+
+```ts
+{
+  total: number;
+  items: MediaItem[];
+  olderThanDays: number;
+  estimatedFreedBytes: number;
+}
+```
+
+Real cleanup is admin-only and only happens through:
+
+- `POST /api/admin/media/cleanup-unused`
+
+Body:
+
+```ts
+{
+  olderThanDays: number; // minimum 7
+  confirm: true;
+}
+```
+
+`GET /api/admin/media/cleanup/unused` is retained as a preview-only compatibility route and never deletes files, regardless of query parameters.
+
+## FAQ
+
+Public FAQ routes return published FAQs only:
+
+- `GET /api/public/faqs`
+- `GET /api/public/faqs/:id`
+
+Admin/editor FAQ routes return and manage both published and unpublished FAQs:
+
+- `GET /api/admin/faqs`
+- `POST /api/admin/faqs`
+- `GET /api/admin/faqs/:id`
+- `PATCH /api/admin/faqs/:id`
+- `PUT /api/admin/faqs/:id`
+- `DELETE /api/admin/faqs/:id`
+- `PATCH /api/admin/faqs/:id/publish`
+- `PATCH /api/admin/faqs/:id/unpublish`
+- `PATCH /api/admin/faqs/reorder`
+
+Reorder body:
+
+```ts
+{
+  items: { id: string; order: number }[];
+}
+```
 
 ## SEO
 

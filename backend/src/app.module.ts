@@ -77,7 +77,7 @@ import { SeoModule } from './modules/seo/seo.module';
         R2_SECRET_ACCESS_KEY: Joi.string().required(),
         R2_BUCKET: Joi.string().required(),
         R2_PUBLIC_URL: Joi.string().uri().required(),
-        R2_REGION: Joi.string().required(),
+        R2_REGION: Joi.string().default('auto'),
       }),
     }),
     ScheduleModule.forRoot(),

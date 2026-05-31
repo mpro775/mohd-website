@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -14,6 +15,7 @@ import { FaqsService } from './faqs.service';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { FilterFaqDto } from './dto/filter-faq.dto';
+import { ReorderFaqsDto } from './dto/reorder-faqs.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -74,6 +76,40 @@ export class AdminFaqsController {
     return {
       message: 'FAQ created successfully',
       data: await this.faqsService.create(dto, req),
+    };
+  }
+
+  @Patch('reorder')
+  async reorder(@Request() req, @Body() dto: ReorderFaqsDto) {
+    await this.faqsService.reorder(dto, req);
+    return { message: 'FAQs reordered successfully', data: null };
+  }
+
+  @Patch(':id/publish')
+  async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    return {
+      message: 'FAQ published successfully',
+      data: await this.faqsService.publish(id, req),
+    };
+  }
+
+  @Patch(':id/unpublish')
+  async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    return {
+      message: 'FAQ unpublished successfully',
+      data: await this.faqsService.unpublish(id, req),
+    };
+  }
+
+  @Patch(':id')
+  async patchUpdate(
+    @Request() req,
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateFaqDto,
+  ) {
+    return {
+      message: 'FAQ updated successfully',
+      data: await this.faqsService.update(id, dto, req),
     };
   }
 

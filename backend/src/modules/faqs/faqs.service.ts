@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Faq } from './schemas/faq.schema';
 import { CreateFaqDto } from './dto/create-faq.dto';
 import { UpdateFaqDto } from './dto/update-faq.dto';
 import { FilterFaqDto } from './dto/filter-faq.dto';
+import { ReorderFaqsDto } from './dto/reorder-faqs.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 
@@ -71,6 +76,45 @@ export class FaqsService {
     return faq;
   }
 
+  async publish(id: string, req?: any): Promise<Faq> {
+    return this.setPublished(id, true, req);
+  }
+
+  async unpublish(id: string, req?: any): Promise<Faq> {
+    return this.setPublished(id, false, req);
+  }
+
+  async reorder(dto: ReorderFaqsDto, req?: any): Promise<void> {
+    const ids = dto.items.map((item) => item.id);
+    const uniqueIds = new Set(ids);
+    if (uniqueIds.size !== ids.length) {
+      throw new BadRequestException('Duplicate FAQ ids are not allowed');
+    }
+
+    const existingCount = await this.faqModel.countDocuments({
+      _id: { $in: ids },
+    });
+    if (existingCount !== ids.length) {
+      throw new NotFoundException('One or more FAQs were not found');
+    }
+
+    await this.faqModel.bulkWrite(
+      dto.items.map((item) => ({
+        updateOne: {
+          filter: { _id: new Types.ObjectId(item.id) },
+          update: { $set: { order: item.order } },
+        },
+      })),
+    );
+
+    await this.auditLogsService.log({
+      action: 'faq.reordered',
+      resource: 'Faq',
+      metadata: { items: dto.items },
+      request: req,
+    });
+  }
+
   async remove(id: string, req?: any): Promise<void> {
     const faq = await this.findOneAdmin(id);
     const before = faq.toObject();
@@ -82,6 +126,35 @@ export class FaqsService {
       before,
       request: req,
     });
+  }
+
+  private async setPublished(
+    id: string,
+    isPublished: boolean,
+    req?: any,
+  ): Promise<Faq> {
+    const oldFaq = await this.findOneAdmin(id);
+    const before = oldFaq.toObject();
+
+    const faq = await this.faqModel.findByIdAndUpdate(
+      id,
+      { isPublished },
+      { new: true },
+    );
+    if (!faq) {
+      throw new NotFoundException('FAQ not found');
+    }
+
+    await this.auditLogsService.log({
+      action: isPublished ? 'faq.published' : 'faq.unpublished',
+      resource: 'Faq',
+      resourceId: faq._id.toString(),
+      before,
+      after: faq.toObject(),
+      request: req,
+    });
+
+    return faq;
   }
 
   private async findAll(filterDto: FilterFaqDto) {

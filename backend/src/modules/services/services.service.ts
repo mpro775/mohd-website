@@ -180,17 +180,9 @@ export class ServicesService {
 
     const service = await this.serviceModel.findByIdAndDelete(id);
     if (!service) throw new NotFoundException('Service not found');
-    await this.mediaService.syncUsage(
-      [],
+    await this.mediaService.removeUsageForEntity(
       'Service',
       service._id.toString(),
-      'icon',
-    );
-    await this.mediaService.syncUsage(
-      [],
-      'Service',
-      service._id.toString(),
-      'seo.ogImage',
     );
 
     // Audit Log

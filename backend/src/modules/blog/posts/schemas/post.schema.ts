@@ -94,7 +94,6 @@ export const PostSchema = SchemaFactory.createForClass(Post);
 
 // Indexes for better performance
 PostSchema.index({ title: 'text', summary: 'text', content: 'text' });
-PostSchema.index({ slug: 1 }, { unique: true });
 PostSchema.index({ category: 1, status: 1, publishDate: -1 });
 PostSchema.index({ tags: 1 });
 PostSchema.index({ author: 1 });

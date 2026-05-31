@@ -90,7 +90,6 @@ export class Media extends Document {
 }
 
 export const MediaSchema = SchemaFactory.createForClass(Media);
-MediaSchema.index({ key: 1 }, { unique: true });
 MediaSchema.index({ folder: 1 });
 MediaSchema.index({ isUsed: 1 });
 MediaSchema.index({ type: 1 });

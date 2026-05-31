@@ -49,4 +49,3 @@ export class Link extends Document {
 export const LinkSchema = SchemaFactory.createForClass(Link);
 
 LinkSchema.index({ category: 1, order: 1 });
-LinkSchema.index({ slug: 1 }, { unique: true });

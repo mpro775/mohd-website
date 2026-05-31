@@ -49,6 +49,29 @@ export class MailService {
     });
   }
 
+  async checkMailHealth(): Promise<{
+    status: 'ok' | 'error' | 'disabled';
+    message?: string;
+    latencyMs?: number;
+  }> {
+    const from = this.configService.get<string>('mail.from');
+    if (!this.transporter || !from) {
+      return { status: 'disabled', message: 'Mail is not configured' };
+    }
+
+    const startedAt = Date.now();
+    try {
+      await this.transporter.verify();
+      return { status: 'ok', latencyMs: Date.now() - startedAt };
+    } catch {
+      return {
+        status: 'error',
+        message: 'Mail health check failed',
+        latencyMs: Date.now() - startedAt,
+      };
+    }
+  }
+
   private async safeSend(options: {
     to?: string;
     subject: string;

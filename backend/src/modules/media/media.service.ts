@@ -1,12 +1,14 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   DeleteObjectCommand,
+  HeadBucketCommand,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
@@ -25,9 +27,18 @@ const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_MIMES = ['application/pdf'];
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit enforced
 
+export interface RequestWithOptionalUser {
+  user?: {
+    userId?: string;
+    id?: string;
+    _id?: string;
+  };
+}
+
 @Injectable()
 export class MediaService {
-  private readonly s3: S3Client;
+  private readonly logger = new Logger(MediaService.name);
+  private readonly s3?: S3Client;
   private readonly bucket: string;
   private readonly publicUrl: string;
 
@@ -50,26 +61,22 @@ export class MediaService {
     const region =
       this.configService.get<string>('cloudflare.r2.region') || 'auto';
 
-    if (!this.bucket || !accessKeyId || !secretAccessKey || !endpoint) {
-      throw new Error(
-        'Cloudflare R2 environment settings are missing or incomplete. Cannot boot MediaService.',
-      );
+    if (this.isStorageConfigured(accessKeyId, secretAccessKey, endpoint)) {
+      this.s3 = new S3Client({
+        region,
+        endpoint,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      });
     }
-
-    this.s3 = new S3Client({
-      region,
-      endpoint,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
-    });
   }
 
   async upload(
     file: Express.Multer.File,
     dto: UploadMediaDto,
-    req?: any,
+    req?: RequestWithOptionalUser,
   ): Promise<Media> {
     if (!file) {
       throw new BadRequestException('يجب توفير الملف المراد رفعه');
@@ -156,7 +163,8 @@ export class MediaService {
     const key = `${dto.folder}/${yyyy}/${mm}/${uuid}${extension}`;
 
     // 4. Upload to Cloudflare R2
-    await this.s3.send(
+    const s3 = this.getStorageClient();
+    await s3.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
@@ -165,7 +173,7 @@ export class MediaService {
       }),
     );
 
-    const userId = req?.user?.userId || req?.user?.id || req?.user?._id;
+    const userId = this.getRequestUserId(req);
 
     // 5. Save to MongoDB
     const createdMedia = await this.mediaModel.create({
@@ -318,7 +326,8 @@ export class MediaService {
     let r2Error: any = null;
     // Delete from Cloudflare R2
     try {
-      await this.s3.send(
+      const s3 = this.getStorageClient();
+      await s3.send(
         new DeleteObjectCommand({
           Bucket: this.bucket,
           Key: media.key,
@@ -326,9 +335,9 @@ export class MediaService {
       );
     } catch (e) {
       r2Deleted = false;
-      r2Error = e.message || e;
+      r2Error = e instanceof Error ? e.message : 'R2 delete failed';
       // Log warning but proceed with MongoDB removal if R2 deletes fail to avoid dangling DB states
-      console.warn(`Failed to delete object from R2: ${media.key}`, e);
+      this.logger.warn(`Failed to delete object from R2: ${media.key}`);
     }
 
     const before = media.toObject();
@@ -352,8 +361,11 @@ export class MediaService {
     });
   }
 
-  async cleanupUnused(dryRun = true, olderThanDays = 30, req?: any) {
-    const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+  async previewUnused(olderThanDays = 30, req?: any) {
+    const safeOlderThanDays = this.normalizeCleanupDays(olderThanDays);
+    const cutoff = new Date(
+      Date.now() - safeOlderThanDays * 24 * 60 * 60 * 1000,
+    );
     const unused = await this.mediaModel
       .find({
         isUsed: false,
@@ -362,21 +374,61 @@ export class MediaService {
       .select('_id filename key url size createdAt')
       .exec();
 
-    if (dryRun) {
-      return {
-        dryRun: true,
-        matched: unused.length,
-        deleted: 0,
-        items: unused,
-      };
+    const estimatedFreedBytes = unused.reduce(
+      (total, item) => total + (item.size ?? 0),
+      0,
+    );
+
+    await this.auditLogsService.log({
+      action: 'media.cleanup.previewed',
+      resource: 'Media',
+      metadata: {
+        total: unused.length,
+        olderThanDays: safeOlderThanDays,
+        estimatedFreedBytes,
+      },
+      request: req,
+    });
+
+    return {
+      total: unused.length,
+      items: unused,
+      olderThanDays: safeOlderThanDays,
+      estimatedFreedBytes,
+    };
+  }
+
+  async cleanupUnused(olderThanDays = 30, confirm = false, req?: any) {
+    if (!confirm) {
+      throw new BadRequestException('confirm must be true to cleanup media');
     }
 
+    const preview = await this.previewUnused(olderThanDays);
     let deleted = 0;
-    for (const media of unused) {
+
+    for (const media of preview.items) {
       await this.remove(media._id.toString(), req);
       deleted += 1;
     }
-    return { dryRun: false, matched: unused.length, deleted, items: [] };
+
+    await this.auditLogsService.log({
+      action: 'media.cleanup.executed',
+      resource: 'Media',
+      metadata: {
+        matched: preview.total,
+        deleted,
+        olderThanDays: preview.olderThanDays,
+        estimatedFreedBytes: preview.estimatedFreedBytes,
+      },
+      request: req,
+    });
+
+    return {
+      matched: preview.total,
+      deleted,
+      olderThanDays: preview.olderThanDays,
+      estimatedFreedBytes: preview.estimatedFreedBytes,
+    };
   }
 
   /**
@@ -394,7 +446,14 @@ export class MediaService {
     resourceId: string,
     field: string,
   ): Promise<void> {
-    const cleanUrlsOrKeys = (newUrlsOrKeys ?? []).filter((val) => !!val);
+    const cleanUrlsOrKeys = [
+      ...new Set(
+        (newUrlsOrKeys ?? [])
+          .map((val) => val?.trim())
+          .filter((val): val is string => Boolean(val))
+          .filter((val) => this.isInternalMediaReference(val)),
+      ),
+    ];
 
     // 1. Fetch current associations
     const currentMedia = await this.mediaModel.find({
@@ -412,6 +471,17 @@ export class MediaService {
     });
 
     const newMediaIds = newMedia.map((m) => m._id.toString());
+    const foundReferences = new Set(
+      newMedia.flatMap((media) => [media.url, media.key]),
+    );
+
+    for (const reference of cleanUrlsOrKeys) {
+      if (!foundReferences.has(reference)) {
+        this.logger.warn(
+          `Media usage reference was not found: ${resourceType}/${resourceId}/${field}`,
+        );
+      }
+    }
 
     // Remove association from media that are no longer referenced
     for (const media of currentMedia) {
@@ -448,5 +518,111 @@ export class MediaService {
         await media.save();
       }
     }
+  }
+
+  async removeUsageForEntity(
+    resourceType: string,
+    resourceId: string,
+  ): Promise<void> {
+    const currentMedia = await this.mediaModel.find({
+      'usedIn.resourceType': resourceType,
+      'usedIn.resourceId': resourceId,
+    });
+
+    for (const media of currentMedia) {
+      media.usedIn = media.usedIn.filter(
+        (assoc) =>
+          !(
+            assoc.resourceType === resourceType &&
+            assoc.resourceId === resourceId
+          ),
+      );
+      media.isUsed = media.usedIn.length > 0;
+      await media.save();
+    }
+  }
+
+  extractMediaUrlsFromContent(content: string): string[] {
+    const urls = new Set<string>();
+    const markdownImageRegex = /!\[[^\]]*]\((?<url>[^)\s]+)(?:\s+"[^"]*")?\)/g;
+    const htmlImageRegex = /<img\b[^>]*\bsrc=["'](?<url>[^"']+)["'][^>]*>/gi;
+
+    for (const match of content.matchAll(markdownImageRegex)) {
+      if (match.groups?.url) {
+        urls.add(match.groups.url);
+      }
+    }
+
+    for (const match of content.matchAll(htmlImageRegex)) {
+      if (match.groups?.url) {
+        urls.add(match.groups.url);
+      }
+    }
+
+    return [...urls];
+  }
+
+  async checkStorageHealth(): Promise<{
+    status: 'ok' | 'error' | 'disabled';
+    message?: string;
+    latencyMs?: number;
+  }> {
+    if (!this.s3 || !this.bucket) {
+      return { status: 'disabled', message: 'Storage is not configured' };
+    }
+
+    const startedAt = Date.now();
+    try {
+      await this.s3.send(new HeadBucketCommand({ Bucket: this.bucket }));
+      return { status: 'ok', latencyMs: Date.now() - startedAt };
+    } catch {
+      return {
+        status: 'error',
+        message: 'Storage health check failed',
+        latencyMs: Date.now() - startedAt,
+      };
+    }
+  }
+
+  private getStorageClient(): S3Client {
+    if (!this.s3 || !this.bucket) {
+      throw new BadRequestException('Cloudflare R2 storage is not configured');
+    }
+
+    return this.s3;
+  }
+
+  private isStorageConfigured(
+    accessKeyId: string,
+    secretAccessKey: string,
+    endpoint: string,
+  ): boolean {
+    return Boolean(this.bucket && accessKeyId && secretAccessKey && endpoint);
+  }
+
+  private isInternalMediaReference(reference: string): boolean {
+    if (!reference) {
+      return false;
+    }
+
+    if (/^https?:\/\//i.test(reference)) {
+      return Boolean(
+        this.publicUrl && reference.startsWith(`${this.publicUrl}/`),
+      );
+    }
+
+    return !reference.startsWith('//');
+  }
+
+  private normalizeCleanupDays(olderThanDays: number): number {
+    if (!Number.isInteger(olderThanDays) || olderThanDays < 7) {
+      throw new BadRequestException('olderThanDays must be at least 7');
+    }
+
+    return olderThanDays;
+  }
+
+  private getRequestUserId(req?: RequestWithOptionalUser): string | undefined {
+    return req?.user?.userId || req?.user?.id || req?.user?._id;
   }
 }

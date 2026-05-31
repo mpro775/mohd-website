@@ -181,11 +181,9 @@ export class TechnologiesService {
 
     const technology = await this.technologyModel.findByIdAndDelete(id);
     if (!technology) throw new NotFoundException('Technology not found');
-    await this.mediaService.syncUsage(
-      [],
+    await this.mediaService.removeUsageForEntity(
       'Technology',
       technology._id.toString(),
-      'icon',
     );
 
     // Audit Log
