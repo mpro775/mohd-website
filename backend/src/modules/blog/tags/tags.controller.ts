@@ -45,7 +45,7 @@ export class PublicTagsController {
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/blog/tags')
 export class AdminTagsController {
   constructor(private readonly tagsService: TagsService) {}

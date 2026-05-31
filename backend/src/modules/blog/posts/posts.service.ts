@@ -1,10 +1,11 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { isValidObjectId, Model } from 'mongoose';
 import { Post, PostStatus } from './schemas/post.schema';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -12,6 +13,9 @@ import { FilterPostDto } from './dto/filter-post.dto';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { MediaService } from '../../media/media.service';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
+import { Category } from '../categories/schemas/category.schema';
+import { Tag } from '../tags/schemas/tag.schema';
+import { generateSlug } from '../../../common/utils/slug.util';
 
 const ALLOWED_SORT_FIELDS = [
   'createdAt',
@@ -26,6 +30,8 @@ const ALLOWED_SORT_FIELDS = [
 export class PostsService {
   constructor(
     @InjectModel(Post.name) private postModel: Model<Post>,
+    @InjectModel(Category.name) private categoryModel: Model<Category>,
+    @InjectModel(Tag.name) private tagModel: Model<Tag>,
     private readonly mediaService: MediaService,
     private readonly auditLogsService: AuditLogsService,
   ) {}
@@ -59,9 +65,13 @@ export class PostsService {
     authorId: string,
     req?: any,
   ): Promise<Post> {
+    const slug = this.normalizeSlug(createPostDto.title);
+    await this.assertSlugIsAvailable(slug);
+    await this.validateRelations(createPostDto.category, createPostDto.tags);
     const post = new this.postModel({
       ...createPostDto,
-      slug: this.generateSlug(createPostDto.title),
+      slug,
+      content: this.sanitizeContent(createPostDto.content),
       readTime:
         createPostDto.readTime || this.calculateReadTime(createPostDto.content),
       author: authorId,
@@ -136,11 +146,17 @@ export class PostsService {
 
     const updateData: any = { ...updatePostDto };
     if (updatePostDto.title) {
-      updateData.slug = this.generateSlug(updatePostDto.title);
+      const slug = this.normalizeSlug(updatePostDto.title);
+      if (slug !== oldPost.slug) {
+        await this.assertSlugIsAvailable(slug, id);
+        updateData.slug = slug;
+      }
     }
     if (updatePostDto.content && !updatePostDto.readTime) {
+      updateData.content = this.sanitizeContent(updatePostDto.content);
       updateData.readTime = this.calculateReadTime(updatePostDto.content);
     }
+    await this.validateRelations(updatePostDto.category, updatePostDto.tags);
     updateData.updatedDate = new Date();
 
     const post = await this.postModel.findByIdAndUpdate(id, updateData, {
@@ -199,6 +215,9 @@ export class PostsService {
   }
 
   async schedule(id: string, publishDate: Date, req?: any): Promise<Post> {
+    if (Number.isNaN(publishDate.getTime())) {
+      throw new BadRequestException('Invalid publishDate');
+    }
     const oldPost = await this.postModel.findById(id);
     if (!oldPost) {
       throw new NotFoundException('Post not found');
@@ -229,6 +248,45 @@ export class PostsService {
     });
 
     return this.findOneAdmin(post._id.toString());
+  }
+
+  async publishDueScheduledPosts(now = new Date()): Promise<{
+    matched: number;
+    modified: number;
+  }> {
+    const duePosts = await this.postModel
+      .find({
+        status: PostStatus.SCHEDULED,
+        $or: [{ publishDate: { $lte: now } }, { scheduledAt: { $lte: now } }],
+      })
+      .select('_id publishDate scheduledAt')
+      .exec();
+
+    if (!duePosts.length) {
+      return { matched: 0, modified: 0 };
+    }
+
+    let modified = 0;
+    for (const post of duePosts) {
+      const publishDate = post.publishDate || post.scheduledAt || now;
+      const result = await this.postModel.updateOne(
+        { _id: post._id, status: PostStatus.SCHEDULED },
+        {
+          status: PostStatus.PUBLISHED,
+          publishDate,
+          lastPublishedAt: now,
+        },
+      );
+      modified += result.modifiedCount;
+    }
+
+    await this.auditLogsService.log({
+      action: 'post.auto_published',
+      resource: 'Post',
+      metadata: { matched: duePosts.length, modified },
+    });
+
+    return { matched: duePosts.length, modified };
   }
 
   async archive(id: string, req?: any): Promise<Post> {
@@ -309,7 +367,9 @@ export class PostsService {
       sortBy = 'publishDate',
       sortOrder = 'desc',
       category,
+      categorySlug,
       tag,
+      tagSlug,
       status,
     } = filterDto;
 
@@ -324,8 +384,43 @@ export class PostsService {
     } else if (status) {
       query.status = status;
     }
-    if (category) query.category = category;
-    if (tag) query.tags = tag;
+    if (publicOnly) {
+      const categoryFilter = categorySlug || category;
+      const tagFilter = tagSlug || tag;
+      if (categoryFilter) {
+        const categoryDoc = await this.categoryModel.findOne({
+          slug: generateSlug(categoryFilter),
+          isActive: true,
+        });
+        if (!categoryDoc) {
+          return createPaginatedResponse([], 0, page, limit);
+        }
+        query.category = categoryDoc._id;
+      }
+      if (tagFilter) {
+        const tagDoc = await this.tagModel.findOne({
+          slug: generateSlug(tagFilter),
+          isActive: true,
+        });
+        if (!tagDoc) {
+          return createPaginatedResponse([], 0, page, limit);
+        }
+        query.tags = tagDoc._id;
+      }
+    } else {
+      if (category) {
+        if (!isValidObjectId(category)) {
+          throw new BadRequestException('category must be a valid MongoId');
+        }
+        query.category = category;
+      }
+      if (tag) {
+        if (!isValidObjectId(tag)) {
+          throw new BadRequestException('tag must be a valid MongoId');
+        }
+        query.tags = tag;
+      }
+    }
     if (search) query.$text = { $search: search };
 
     const skip = (page - 1) * limit;
@@ -353,13 +448,52 @@ export class PostsService {
       .exec();
   }
 
-  private generateSlug(title: string): string {
-    return title
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+  private normalizeSlug(value: string): string {
+    const slug = generateSlug(value);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(
+    slug: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const existing = await this.postModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Post slug already exists');
+    }
+  }
+
+  private async validateRelations(category?: string, tags?: string[]) {
+    if (category) {
+      const exists = await this.categoryModel.exists({ _id: category });
+      if (!exists) {
+        throw new BadRequestException('Category does not exist');
+      }
+    }
+
+    if (tags?.length) {
+      const uniqueTags = [...new Set(tags)];
+      const count = await this.tagModel.countDocuments({
+        _id: { $in: uniqueTags },
+      });
+      if (count !== uniqueTags.length) {
+        throw new BadRequestException('One or more tags do not exist');
+      }
+    }
+  }
+
+  private sanitizeContent(content: string): string {
+    return content
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+      .replace(/\son\w+="[^"]*"/gi, '')
+      .replace(/\son\w+='[^']*'/gi, '')
+      .replace(/javascript:/gi, '');
   }
 
   private calculateReadTime(content: string): number {

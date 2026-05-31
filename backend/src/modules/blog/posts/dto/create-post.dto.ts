@@ -9,6 +9,7 @@ import {
   ValidateNested,
   IsBoolean,
   IsUrl,
+  IsMongoId,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { PostStatus } from '../schemas/post.schema';
@@ -53,12 +54,12 @@ export class CreatePostDto {
   coverImage?: string;
 
   @IsOptional()
-  @IsString()
+  @IsMongoId()
   category?: string;
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
+  @IsMongoId({ each: true })
   tags?: string[];
 
   @IsOptional()

@@ -9,7 +9,15 @@ export class FilterPostDto extends PaginationDto {
 
   @IsOptional()
   @IsString()
+  categorySlug?: string;
+
+  @IsOptional()
+  @IsString()
   tag?: string;
+
+  @IsOptional()
+  @IsString()
+  tagSlug?: string;
 
   @IsOptional()
   @IsEnum(PostStatus)

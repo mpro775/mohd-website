@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { FilterProjectDto } from './dto/filter-project.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { generateSlug } from '../../common/utils/slug.util';
 
 const ALLOWED_SORT_FIELDS = [
   'createdAt',
@@ -56,9 +58,13 @@ export class ProjectsService {
     createProjectDto: CreateProjectDto,
     req?: any,
   ): Promise<Project> {
+    const slug = this.normalizeSlug(
+      createProjectDto.slug || createProjectDto.title,
+    );
+    await this.assertSlugIsAvailable(slug);
     const project = new this.projectModel({
       ...createProjectDto,
-      slug: createProjectDto.slug || this.generateSlug(createProjectDto.title),
+      slug,
     });
     const saved = await project.save();
     await this.syncMedia(saved);
@@ -118,12 +124,18 @@ export class ProjectsService {
     }
     const before = oldProject.toObject();
 
-    const updateData = {
+    const updateData: any = {
       ...updateProjectDto,
-      ...(updateProjectDto.title && !updateProjectDto.slug
-        ? { slug: this.generateSlug(updateProjectDto.title) }
-        : {}),
     };
+    if (updateProjectDto.slug || updateProjectDto.title) {
+      const nextSlug = this.normalizeSlug(
+        updateProjectDto.slug || updateProjectDto.title || oldProject.slug,
+      );
+      if (nextSlug !== oldProject.slug) {
+        await this.assertSlugIsAvailable(nextSlug, id);
+        updateData.slug = nextSlug;
+      }
+    }
     const project = await this.projectModel.findByIdAndUpdate(id, updateData, {
       new: true,
     });
@@ -269,12 +281,24 @@ export class ProjectsService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  private generateSlug(value: string): string {
-    return value
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
+  private normalizeSlug(value: string): string {
+    const slug = generateSlug(value);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(
+    slug: string,
+    excludeId?: string,
+  ): Promise<void> {
+    const existing = await this.projectModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Project slug already exists');
+    }
   }
 }

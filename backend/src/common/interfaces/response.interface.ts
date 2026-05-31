@@ -3,6 +3,8 @@ export interface IResponse<T = any> {
   statusCode: number;
   message: string;
   data?: T;
+  meta?: Record<string, any>;
+  links?: Record<string, any>;
   errors?: IValidationError[];
   timestamp: string;
   path: string;

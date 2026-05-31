@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Technology } from './schemas/technology.schema';
@@ -6,6 +11,7 @@ import { CreateTechnologyDto } from './dto/create-technology.dto';
 import { UpdateTechnologyDto } from './dto/update-technology.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { generateSlug } from '../../common/utils/slug.util';
 
 @Injectable()
 export class TechnologiesService {
@@ -16,12 +22,21 @@ export class TechnologiesService {
   ) {}
 
   private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+    const slug = generateSlug(name);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(slug: string, excludeId?: string) {
+    const existing = await this.technologyModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Technology slug already exists');
+    }
   }
 
   private async syncMedia(technology: Technology) {
@@ -38,10 +53,13 @@ export class TechnologiesService {
     createTechnologyDto: CreateTechnologyDto,
     req?: any,
   ): Promise<Technology> {
+    const slug = this.generateSlug(
+      createTechnologyDto.slug || createTechnologyDto.name,
+    );
+    await this.assertSlugIsAvailable(slug);
     const technology = new this.technologyModel({
       ...createTechnologyDto,
-      slug:
-        createTechnologyDto.slug || this.generateSlug(createTechnologyDto.name),
+      slug,
     });
     const saved = await technology.save();
     await this.syncMedia(saved);
@@ -70,9 +88,9 @@ export class TechnologiesService {
     return this.technologyModel.find(query).sort({ order: 1, name: 1 });
   }
 
-  async findOne(id: string): Promise<Technology> {
+  async findOne(slug: string): Promise<Technology> {
     const technology = await this.technologyModel.findOne({
-      _id: id,
+      slug,
       isPublished: true,
     });
     if (!technology) throw new NotFoundException('Technology not found');
@@ -97,8 +115,14 @@ export class TechnologiesService {
     const updateData = {
       ...updateTechnologyDto,
     };
-    if (updateTechnologyDto.name && !updateTechnologyDto.slug) {
-      updateData.slug = this.generateSlug(updateTechnologyDto.name);
+    if (updateTechnologyDto.name || updateTechnologyDto.slug) {
+      const slug = this.generateSlug(
+        updateTechnologyDto.slug || updateTechnologyDto.name || oldTech.slug,
+      );
+      if (slug !== oldTech.slug) {
+        await this.assertSlugIsAvailable(slug, id);
+        updateData.slug = slug;
+      }
     }
     const technology = await this.technologyModel.findByIdAndUpdate(
       id,

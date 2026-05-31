@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { APP_GUARD } from '@nestjs/core';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
@@ -27,6 +28,8 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { DeprecatedController } from './common/controllers/deprecated.controller';
+import { FaqsModule } from './modules/faqs/faqs.module';
+import { SeoModule } from './modules/seo/seo.module';
 
 @Module({
   imports: [
@@ -44,6 +47,7 @@ import { DeprecatedController } from './common/controllers/deprecated.controller
           .valid('development', 'production', 'test', 'provision')
           .default('development'),
         PORT: Joi.number().default(3000),
+        SITE_URL: Joi.string().uri().default('http://localhost:3000'),
         MONGODB_URI: Joi.string().required(),
         JWT_ACCESS_SECRET: Joi.string().required(),
         JWT_ACCESS_EXPIRATION: Joi.string().default('15m'),
@@ -60,6 +64,14 @@ import { DeprecatedController } from './common/controllers/deprecated.controller
         SMTP_PASS: Joi.string().allow('').default(''),
         MAIL_FROM: Joi.string().allow('').default(''),
         CONTACT_MAIL_TO: Joi.string().allow('').default(''),
+        CONTACT_TURNSTILE_ENABLED: Joi.boolean().default(false),
+        TURNSTILE_SECRET_KEY: Joi.string().allow('').default(''),
+        CONTACT_SPAM_WORDS: Joi.string()
+          .allow('')
+          .default('casino,crypto,viagra,loan,forex'),
+        SEED_ADMIN_EMAIL: Joi.string().email().default('admin@example.com'),
+        SEED_ADMIN_NAME: Joi.string().default('Admin'),
+        SEED_ADMIN_PASSWORD: Joi.string().allow('').default(''),
         R2_ACCOUNT_ID: Joi.string().required(),
         R2_ACCESS_KEY_ID: Joi.string().required(),
         R2_SECRET_ACCESS_KEY: Joi.string().required(),
@@ -68,10 +80,11 @@ import { DeprecatedController } from './common/controllers/deprecated.controller
         R2_REGION: Joi.string().required(),
       }),
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 60 seconds
-        limit: 10, // 10 requests per TTL
+        ttl: Number(process.env.THROTTLE_TTL ?? 60) * 1000,
+        limit: Number(process.env.THROTTLE_LIMIT ?? 10),
       },
     ]),
     DatabaseModule,
@@ -89,6 +102,8 @@ import { DeprecatedController } from './common/controllers/deprecated.controller
     DashboardModule,
     HealthModule,
     AuditLogsModule,
+    FaqsModule,
+    SeoModule,
   ],
   controllers: [AppController, DeprecatedController],
   providers: [

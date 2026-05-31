@@ -1,27 +1,43 @@
-import { Model } from 'mongoose';
+import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
+import { Model } from 'mongoose';
 import { User, UserRole } from '../../modules/users/schemas/user.schema';
 
-export async function seedUsers(userModel: Model<User>) {
-  const existingAdmin = await userModel.findOne({ email: 'admin@mohd.com' });
+export async function seedAdminUser(userModel: Model<User>) {
+  const email = process.env.SEED_ADMIN_EMAIL || 'admin@example.com';
+  const name = process.env.SEED_ADMIN_NAME || 'Admin';
+  let password = process.env.SEED_ADMIN_PASSWORD;
 
+  if (!password) {
+    if (
+      process.env.NODE_ENV === 'production' ||
+      process.env.NODE_ENV === 'provision'
+    ) {
+      throw new Error('SEED_ADMIN_PASSWORD is required outside development');
+    }
+    password = randomBytes(18).toString('base64url');
+  }
+
+  const existingAdmin = await userModel.findOne({ email });
   if (existingAdmin) {
-    console.log('✅ Admin user already exists');
+    console.log(`Admin user already exists: ${email}`);
     return;
   }
 
-  const hashedPassword = await bcrypt.hash('Admin@123', 10);
-
-  const adminUser = new userModel({
-    email: 'admin@mohd.com',
+  const hashedPassword = await bcrypt.hash(password, 10);
+  await userModel.create({
+    email,
     password: hashedPassword,
-    name: 'محمد',
+    name,
     role: UserRole.ADMIN,
     isActive: true,
   });
 
-  await adminUser.save();
-  console.log('✅ Admin user created successfully');
-  console.log('   Email: admin@mohd.com');
-  console.log('   Password: Admin@123');
+  console.log(`Admin user created: ${email}`);
+  if (
+    !process.env.SEED_ADMIN_PASSWORD &&
+    process.env.NODE_ENV !== 'production'
+  ) {
+    console.log(`Generated development password: ${password}`);
+  }
 }

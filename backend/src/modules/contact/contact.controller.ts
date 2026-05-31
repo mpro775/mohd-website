@@ -35,9 +35,10 @@ export class PublicContactController {
     @Body() createMessageDto: CreateMessageDto,
     @Ip() ip: string,
   ) {
+    await this.contactService.create(createMessageDto, ip, req);
     return {
-      message: 'Message sent successfully',
-      data: await this.contactService.create(createMessageDto, ip, req),
+      message: 'Message received successfully',
+      data: null,
     };
   }
 }

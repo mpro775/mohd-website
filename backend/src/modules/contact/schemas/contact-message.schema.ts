@@ -6,6 +6,7 @@ export enum MessageStatus {
   READ = 'read',
   REPLIED = 'replied',
   ARCHIVED = 'archived',
+  SPAM = 'spam',
 }
 
 @Schema({ timestamps: true })
@@ -34,6 +35,18 @@ export class ContactMessage extends Document {
 
   @Prop()
   ipAddress: string;
+
+  @Prop()
+  userAgent?: string;
+
+  @Prop({ type: Number, default: 0 })
+  spamScore?: number;
+
+  @Prop()
+  spamReason?: string;
+
+  @Prop({ type: Boolean, default: false })
+  isSpam?: boolean;
 
   @Prop()
   notes?: string;

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Service } from './schemas/service.schema';
@@ -6,6 +11,7 @@ import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { generateSlug } from '../../common/utils/slug.util';
 
 @Injectable()
 export class ServicesService {
@@ -16,12 +22,21 @@ export class ServicesService {
   ) {}
 
   private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+    const slug = generateSlug(name);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(slug: string, excludeId?: string) {
+    const existing = await this.serviceModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Service slug already exists');
+    }
   }
 
   private async syncMedia(service: Service) {
@@ -45,9 +60,13 @@ export class ServicesService {
     createServiceDto: CreateServiceDto,
     req?: any,
   ): Promise<Service> {
+    const slug = this.generateSlug(
+      createServiceDto.slug || createServiceDto.name,
+    );
+    await this.assertSlugIsAvailable(slug);
     const service = new this.serviceModel({
       ...createServiceDto,
-      slug: createServiceDto.slug || this.generateSlug(createServiceDto.name),
+      slug,
     });
     const saved = await service.save();
     await this.syncMedia(saved);
@@ -74,9 +93,9 @@ export class ServicesService {
     return this.serviceModel.find().sort({ order: 1, name: 1 });
   }
 
-  async findOne(id: string): Promise<Service> {
+  async findOne(slug: string): Promise<Service> {
     const service = await this.serviceModel.findOne({
-      _id: id,
+      slug,
       isPublished: true,
     });
     if (!service) throw new NotFoundException('Service not found');
@@ -101,8 +120,14 @@ export class ServicesService {
     const updateData = {
       ...updateServiceDto,
     };
-    if (updateServiceDto.name && !updateServiceDto.slug) {
-      updateData.slug = this.generateSlug(updateServiceDto.name);
+    if (updateServiceDto.name || updateServiceDto.slug) {
+      const slug = this.generateSlug(
+        updateServiceDto.slug || updateServiceDto.name || oldService.slug,
+      );
+      if (slug !== oldService.slug) {
+        await this.assertSlugIsAvailable(slug, id);
+        updateData.slug = slug;
+      }
     }
     const service = await this.serviceModel.findByIdAndUpdate(id, updateData, {
       new: true,

@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Link } from './schemas/link.schema';
@@ -6,6 +11,7 @@ import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { generateSlug } from '../../common/utils/slug.util';
 
 @Injectable()
 export class LinksService {
@@ -16,12 +22,21 @@ export class LinksService {
   ) {}
 
   private generateSlug(title: string): string {
-    return title
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+    const slug = generateSlug(title);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(slug: string, excludeId?: string) {
+    const existing = await this.linkModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Link slug already exists');
+    }
   }
 
   private async syncMedia(link: Link) {
@@ -35,9 +50,11 @@ export class LinksService {
   }
 
   async create(createLinkDto: CreateLinkDto, req?: any): Promise<Link> {
+    const slug = this.generateSlug(createLinkDto.slug || createLinkDto.title);
+    await this.assertSlugIsAvailable(slug);
     const link = new this.linkModel({
       ...createLinkDto,
-      slug: createLinkDto.slug || this.generateSlug(createLinkDto.title),
+      slug,
     });
     const saved = await link.save();
     await this.syncMedia(saved);
@@ -66,8 +83,8 @@ export class LinksService {
     return this.linkModel.find(query).sort({ order: 1, title: 1 });
   }
 
-  async findOne(id: string): Promise<Link> {
-    const link = await this.linkModel.findOne({ _id: id, isPublished: true });
+  async findOne(slug: string): Promise<Link> {
+    const link = await this.linkModel.findOne({ slug, isPublished: true });
     if (!link) throw new NotFoundException('Link not found');
     return link;
   }
@@ -100,8 +117,14 @@ export class LinksService {
     const updateData = {
       ...updateLinkDto,
     };
-    if (updateLinkDto.title && !updateLinkDto.slug) {
-      updateData.slug = this.generateSlug(updateLinkDto.title);
+    if (updateLinkDto.title || updateLinkDto.slug) {
+      const slug = this.generateSlug(
+        updateLinkDto.slug || updateLinkDto.title || oldLink.slug,
+      );
+      if (slug !== oldLink.slug) {
+        await this.assertSlugIsAvailable(slug, id);
+        updateData.slug = slug;
+      }
     }
     const link = await this.linkModel.findByIdAndUpdate(id, updateData, {
       new: true,

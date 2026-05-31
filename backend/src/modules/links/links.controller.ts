@@ -34,11 +34,11 @@ export class PublicLinksController {
     };
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseObjectIdPipe) id: string) {
+  @Get(':slug')
+  async findOne(@Param('slug') slug: string) {
     return {
       message: 'Link loaded successfully',
-      data: await this.linksService.findOne(id),
+      data: await this.linksService.findOne(slug),
     };
   }
 
@@ -52,7 +52,7 @@ export class PublicLinksController {
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/links')
 export class AdminLinksController {
   constructor(private readonly linksService: LinksService) {}

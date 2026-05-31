@@ -48,7 +48,7 @@ export class MediaService {
     const secretAccessKey =
       this.configService.get<string>('cloudflare.r2.secretAccessKey') ?? '';
     const region =
-      this.configService.get<string>('cloudflare.r2.region') ?? 'auto';
+      this.configService.get<string>('cloudflare.r2.region') || 'auto';
 
     if (!this.bucket || !accessKeyId || !secretAccessKey || !endpoint) {
       throw new Error(
@@ -350,6 +350,33 @@ export class MediaService {
       },
       request: req,
     });
+  }
+
+  async cleanupUnused(dryRun = true, olderThanDays = 30, req?: any) {
+    const cutoff = new Date(Date.now() - olderThanDays * 24 * 60 * 60 * 1000);
+    const unused = await this.mediaModel
+      .find({
+        isUsed: false,
+        createdAt: { $lte: cutoff },
+      })
+      .select('_id filename key url size createdAt')
+      .exec();
+
+    if (dryRun) {
+      return {
+        dryRun: true,
+        matched: unused.length,
+        deleted: 0,
+        items: unused,
+      };
+    }
+
+    let deleted = 0;
+    for (const media of unused) {
+      await this.remove(media._id.toString(), req);
+      deleted += 1;
+    }
+    return { dryRun: false, matched: unused.length, deleted, items: [] };
   }
 
   /**

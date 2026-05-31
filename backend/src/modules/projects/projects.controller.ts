@@ -47,7 +47,7 @@ export class PublicProjectsController {
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/projects')
 export class AdminProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}

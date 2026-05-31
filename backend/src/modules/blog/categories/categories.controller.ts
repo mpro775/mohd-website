@@ -45,7 +45,7 @@ export class PublicCategoriesController {
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/blog/categories')
 export class AdminCategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}

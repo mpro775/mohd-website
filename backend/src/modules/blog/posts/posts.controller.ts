@@ -48,7 +48,7 @@ export class PublicPostsController {
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/blog/posts')
 export class AdminPostsController {
   constructor(private readonly postsService: PostsService) {}
@@ -76,6 +76,14 @@ export class AdminPostsController {
     return {
       message: 'Post created successfully',
       data: await this.postsService.create(createPostDto, req.user.userId, req),
+    };
+  }
+
+  @Post('publish-due')
+  async publishDue() {
+    return {
+      message: 'Due scheduled posts published successfully',
+      data: await this.postsService.publishDueScheduledPosts(),
     };
   }
 

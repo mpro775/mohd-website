@@ -1,7 +1,8 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -9,6 +10,7 @@ import { Tag } from './schemas/tag.schema';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
+import { generateSlug } from '../../../common/utils/slug.util';
 
 @Injectable()
 export class TagsService {
@@ -17,31 +19,34 @@ export class TagsService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+  private normalizeSlug(name: string): string {
+    const slug = generateSlug(name);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(slug: string, excludeId?: string) {
+    const existing = await this.tagModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Tag slug already exists');
+    }
   }
 
   async create(createTagDto: CreateTagDto, req?: any): Promise<Tag> {
-    const slug = this.generateSlug(createTagDto.name);
-
-    const existingTag = await this.tagModel.findOne({ slug });
-    if (existingTag) {
-      throw new ConflictException('الوسم موجود بالفعل');
-    }
+    const slug = this.normalizeSlug(createTagDto.name);
+    await this.assertSlugIsAvailable(slug);
 
     const tag = new this.tagModel({
       ...createTagDto,
       slug,
     });
-
     const saved = await tag.save();
 
-    // Audit Log
     await this.auditLogsService.log({
       action: 'tag.created',
       resource: 'Tag',
@@ -72,7 +77,7 @@ export class TagsService {
   async findOnePublic(slug: string): Promise<Tag> {
     const tag = await this.tagModel.findOne({ slug, isActive: true });
     if (!tag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
     return tag;
   }
@@ -80,7 +85,7 @@ export class TagsService {
   async findOneAdmin(id: string): Promise<Tag> {
     const tag = await this.tagModel.findById(id);
     if (!tag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
     return tag;
   }
@@ -88,7 +93,7 @@ export class TagsService {
   async setStatus(id: string, isActive: boolean, req?: any): Promise<Tag> {
     const oldTag = await this.tagModel.findById(id);
     if (!oldTag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
     const before = oldTag.toObject();
 
@@ -98,10 +103,9 @@ export class TagsService {
       { new: true },
     );
     if (!tag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
 
-    // Audit Log
     await this.auditLogsService.log({
       action: isActive ? 'tag.activated' : 'tag.deactivated',
       resource: 'Tag',
@@ -121,24 +125,26 @@ export class TagsService {
   ): Promise<Tag> {
     const oldTag = await this.tagModel.findById(id);
     if (!oldTag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
     const before = oldTag.toObject();
-
     const updateData: any = { ...updateTagDto };
 
     if (updateTagDto.name) {
-      updateData.slug = this.generateSlug(updateTagDto.name);
+      const slug = this.normalizeSlug(updateTagDto.name);
+      if (slug !== oldTag.slug) {
+        await this.assertSlugIsAvailable(slug, id);
+        updateData.slug = slug;
+      }
     }
 
     const tag = await this.tagModel.findByIdAndUpdate(id, updateData, {
       new: true,
     });
     if (!tag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
 
-    // Audit Log
     await this.auditLogsService.log({
       action: 'tag.updated',
       resource: 'Tag',
@@ -154,13 +160,12 @@ export class TagsService {
   async remove(id: string, req?: any): Promise<void> {
     const oldTag = await this.tagModel.findById(id);
     if (!oldTag) {
-      throw new NotFoundException('الوسم غير موجود');
+      throw new NotFoundException('Tag not found');
     }
     const before = oldTag.toObject();
 
     await this.tagModel.findByIdAndDelete(id);
 
-    // Audit Log
     await this.auditLogsService.log({
       action: 'tag.deleted',
       resource: 'Tag',

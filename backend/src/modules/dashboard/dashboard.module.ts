@@ -13,6 +13,7 @@ import {
   ContactMessageSchema,
 } from '../contact/schemas/contact-message.schema';
 import { Media, MediaSchema } from '../media/schemas/media.schema';
+import { Faq, FaqSchema } from '../faqs/schemas/faq.schema';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 
@@ -26,6 +27,7 @@ import { DashboardService } from './dashboard.service';
       { name: Link.name, schema: LinkSchema },
       { name: ContactMessage.name, schema: ContactMessageSchema },
       { name: Media.name, schema: MediaSchema },
+      { name: Faq.name, schema: FaqSchema },
     ]),
   ],
   controllers: [DashboardController],

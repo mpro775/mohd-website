@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -23,19 +27,34 @@ export class ContactService {
     createMessageDto: CreateMessageDto,
     ipAddress: string,
     req?: any,
-  ): Promise<ContactMessage> {
+  ): Promise<ContactMessage | null> {
+    if (createMessageDto.website) {
+      return null;
+    }
+
+    await this.verifyTurnstile(createMessageDto.turnstileToken, ipAddress);
+    const spam = await this.scoreSpam(createMessageDto, ipAddress);
     const message = new this.contactMessageModel({
       ...createMessageDto,
+      website: undefined,
+      turnstileToken: undefined,
       ipAddress,
+      userAgent: req?.headers?.['user-agent'],
+      spamScore: spam.score,
+      spamReason: spam.reasons.join(', '),
+      isSpam: spam.score >= 5,
+      status: spam.score >= 5 ? MessageStatus.SPAM : MessageStatus.NEW,
     });
 
     const saved = await message.save();
-    await this.mailService.sendContactNotification({
-      name: saved.fullName,
-      email: saved.email,
-      subject: saved.subject,
-      message: saved.message,
-    });
+    if (!saved.isSpam) {
+      await this.mailService.sendContactNotification({
+        name: saved.fullName,
+        email: saved.email,
+        subject: saved.subject,
+        message: saved.message,
+      });
+    }
 
     // Audit Log (Public request, no authenticated user expected)
     await this.auditLogsService.log({
@@ -49,11 +68,75 @@ export class ContactService {
     return saved;
   }
 
+  private async verifyTurnstile(token: string | undefined, ipAddress: string) {
+    if (process.env.CONTACT_TURNSTILE_ENABLED !== 'true') {
+      return;
+    }
+    if (!token) {
+      throw new BadRequestException('Turnstile token is required');
+    }
+    const secret = process.env.TURNSTILE_SECRET_KEY;
+    if (!secret) {
+      throw new BadRequestException('Turnstile is not configured');
+    }
+
+    const body = new URLSearchParams({
+      secret,
+      response: token,
+      remoteip: ipAddress,
+    });
+    const result = await fetch(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      { method: 'POST', body },
+    );
+    const data = (await result.json()) as { success?: boolean };
+    if (!data.success) {
+      throw new BadRequestException('Turnstile verification failed');
+    }
+  }
+
+  private async scoreSpam(dto: CreateMessageDto, ipAddress: string) {
+    const reasons: string[] = [];
+    let score = 0;
+    const text = `${dto.subject} ${dto.message}`.toLowerCase();
+    const links = text.match(/https?:\/\//g)?.length ?? 0;
+    if (links >= 2) {
+      score += 3;
+      reasons.push('too_many_links');
+    }
+
+    const spamWords = (
+      process.env.CONTACT_SPAM_WORDS || 'casino,crypto,viagra,loan,forex'
+    )
+      .split(',')
+      .map((word) => word.trim().toLowerCase())
+      .filter(Boolean);
+    const matchedSpamWord = spamWords.find((word) => text.includes(word));
+    if (matchedSpamWord) {
+      score += 3;
+      reasons.push(`spam_word:${matchedSpamWord}`);
+    }
+
+    const since = new Date(Date.now() - 10 * 60 * 1000);
+    const repeated = await this.contactMessageModel.countDocuments({
+      $or: [{ email: dto.email }, { ipAddress }],
+      createdAt: { $gte: since },
+    });
+    if (repeated >= 3) {
+      score += 2;
+      reasons.push('repeated_sender');
+    }
+
+    return { score, reasons };
+  }
+
   async findAll(page: number = 1, limit: number = 10, status?: MessageStatus) {
     const query: any = {};
 
     if (status) {
       query.status = status;
+    } else {
+      query.isSpam = { $ne: true };
     }
 
     const skip = (page - 1) * limit;

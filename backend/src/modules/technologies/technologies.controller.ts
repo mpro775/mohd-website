@@ -34,17 +34,17 @@ export class PublicTechnologiesController {
     };
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseObjectIdPipe) id: string) {
+  @Get(':slug')
+  async findOne(@Param('slug') slug: string) {
     return {
       message: 'Technology loaded successfully',
-      data: await this.technologiesService.findOne(id),
+      data: await this.technologiesService.findOne(slug),
     };
   }
 }
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/technologies')
 export class AdminTechnologiesController {
   constructor(private readonly technologiesService: TechnologiesService) {}

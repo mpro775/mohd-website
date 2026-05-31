@@ -1,7 +1,8 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -10,6 +11,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Post } from '../posts/schemas/post.schema';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
+import { generateSlug } from '../../../common/utils/slug.util';
 
 @Injectable()
 export class CategoriesService {
@@ -19,34 +21,37 @@ export class CategoriesService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  private generateSlug(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^\u0600-\u06FFa-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+  private normalizeSlug(name: string): string {
+    const slug = generateSlug(name);
+    if (!slug) {
+      throw new BadRequestException('Slug cannot be empty');
+    }
+    return slug;
+  }
+
+  private async assertSlugIsAvailable(slug: string, excludeId?: string) {
+    const existing = await this.categoryModel.findOne({
+      slug,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (existing) {
+      throw new ConflictException('Category slug already exists');
+    }
   }
 
   async create(
     createCategoryDto: CreateCategoryDto,
     req?: any,
   ): Promise<Category> {
-    const slug = this.generateSlug(createCategoryDto.name);
-
-    const existingCategory = await this.categoryModel.findOne({ slug });
-    if (existingCategory) {
-      throw new ConflictException('التصنيف موجود بالفعل');
-    }
+    const slug = this.normalizeSlug(createCategoryDto.name);
+    await this.assertSlugIsAvailable(slug);
 
     const category = new this.categoryModel({
       ...createCategoryDto,
       slug,
     });
-
     const saved = await category.save();
 
-    // Audit Log
     await this.auditLogsService.log({
       action: 'category.created',
       resource: 'Category',
@@ -77,7 +82,7 @@ export class CategoriesService {
   async findOnePublic(slug: string): Promise<Category> {
     const category = await this.categoryModel.findOne({ slug, isActive: true });
     if (!category) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
     return category;
   }
@@ -85,7 +90,7 @@ export class CategoriesService {
   async findOneAdmin(id: string): Promise<Category> {
     const category = await this.categoryModel.findById(id);
     if (!category) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
     return category;
   }
@@ -93,7 +98,7 @@ export class CategoriesService {
   async setStatus(id: string, isActive: boolean, req?: any): Promise<Category> {
     const oldCategory = await this.categoryModel.findById(id);
     if (!oldCategory) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
     const before = oldCategory.toObject();
 
@@ -103,10 +108,9 @@ export class CategoriesService {
       { new: true },
     );
     if (!category) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
 
-    // Audit Log
     await this.auditLogsService.log({
       action: isActive ? 'category.activated' : 'category.deactivated',
       resource: 'Category',
@@ -126,14 +130,17 @@ export class CategoriesService {
   ): Promise<Category> {
     const oldCategory = await this.categoryModel.findById(id);
     if (!oldCategory) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
     const before = oldCategory.toObject();
-
     const updateData: any = { ...updateCategoryDto };
 
     if (updateCategoryDto.name) {
-      updateData.slug = this.generateSlug(updateCategoryDto.name);
+      const slug = this.normalizeSlug(updateCategoryDto.name);
+      if (slug !== oldCategory.slug) {
+        await this.assertSlugIsAvailable(slug, id);
+        updateData.slug = slug;
+      }
     }
 
     const category = await this.categoryModel.findByIdAndUpdate(
@@ -142,10 +149,9 @@ export class CategoriesService {
       { new: true },
     );
     if (!category) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
 
-    // Audit Log
     await this.auditLogsService.log({
       action: 'category.updated',
       resource: 'Category',
@@ -163,20 +169,17 @@ export class CategoriesService {
       category: id as any,
     });
     if (postReferencing) {
-      throw new ConflictException(
-        'لا يمكن حذف التصنيف لأنه مرتبط ببعض المقالات',
-      );
+      throw new ConflictException('Category is used by existing posts');
     }
 
     const oldCategory = await this.categoryModel.findById(id);
     if (!oldCategory) {
-      throw new NotFoundException('التصنيف غير موجود');
+      throw new NotFoundException('Category not found');
     }
     const before = oldCategory.toObject();
 
     await this.categoryModel.findByIdAndDelete(id);
 
-    // Audit Log
     await this.auditLogsService.log({
       action: 'category.deleted',
       resource: 'Category',

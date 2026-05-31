@@ -25,7 +25,7 @@ import { MediaQueryDto } from './dto/media-query.dto';
 import { UpdateMediaMetadataDto } from './dto/update-media-metadata.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
@@ -37,10 +37,9 @@ export class MediaController {
     @Body() dto: UploadMediaDto,
     @Req() req: any,
   ) {
-    const media = await this.mediaService.upload(file, dto, req);
     return {
-      message: 'تم رفع الملف بنجاح وتحويله للصيغة المطلوبة',
-      data: media,
+      message: 'Media uploaded successfully',
+      data: await this.mediaService.upload(file, dto, req),
     };
   }
 
@@ -48,18 +47,34 @@ export class MediaController {
   async findAll(@Query() query: MediaQueryDto) {
     const paginated = await this.mediaService.findAll(query);
     return {
-      message: 'تم تحميل ملفات الوسائط بنجاح',
+      message: 'Media loaded successfully',
       data: paginated.data,
       meta: paginated.meta,
     };
   }
 
+  @Get('cleanup/unused')
+  @Roles(UserRole.ADMIN)
+  async cleanupUnused(
+    @Query('dryRun') dryRun = 'true',
+    @Query('olderThanDays') olderThanDays = '30',
+    @Req() req: any,
+  ) {
+    return {
+      message: 'Unused media cleanup inspected successfully',
+      data: await this.mediaService.cleanupUnused(
+        dryRun !== 'false',
+        Number(olderThanDays) || 30,
+        req,
+      ),
+    };
+  }
+
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
-    const media = await this.mediaService.findOne(id);
     return {
-      message: 'تم تحميل بيانات الملف بنجاح',
-      data: media,
+      message: 'Media loaded successfully',
+      data: await this.mediaService.findOne(id),
     };
   }
 
@@ -69,18 +84,18 @@ export class MediaController {
     @Body() dto: UpdateMediaMetadataDto,
     @Req() req: any,
   ) {
-    const media = await this.mediaService.updateMetadata(id, dto, req);
     return {
-      message: 'تم تحديث البيانات الوصفية للملف بنجاح',
-      data: media,
+      message: 'Media metadata updated successfully',
+      data: await this.mediaService.updateMetadata(id, dto, req),
     };
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   async remove(@Param('id', ParseObjectIdPipe) id: string, @Req() req: any) {
     await this.mediaService.remove(id, req);
     return {
-      message: 'تم حذف الملف بنجاح',
+      message: 'Media deleted successfully',
       data: null,
     };
   }
