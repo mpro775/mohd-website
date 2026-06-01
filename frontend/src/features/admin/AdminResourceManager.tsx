@@ -149,6 +149,11 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
         router.refresh();
         return;
       }
+      if (response.status === 404 && config.noId) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
       if (!response.ok) {
         throw new Error(`خطأ في خادم الباك إند: ${response.status}`);
       }
@@ -213,9 +218,11 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
     // For single item configuration (like profile) we don't append ID
     const endpoint = (isUpdate && !config.noId) ? `${config.endpoint}/${currentId}` : config.endpoint;
     
+    const useMethod = config.noId ? "PUT" : (isUpdate ? "PUT" : "POST");
+    
     try {
       const response = await fetch(`/api/admin-proxy/${endpoint}`, {
-        method: isUpdate ? "PUT" : "POST",
+        method: useMethod,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -298,20 +305,38 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
     const targetOrder = Number(targetItem.order ?? targetItem.sortOrder ?? targetIndex);
 
     // Send single PUT updates for both or utilize Custom FAQ reorder endpoint if it is faqs endpoint
-    if (config.endpoint === "admin/faqs") {
-      const reorderItems = items.map((x, idx) => ({
-        id: getId(x),
-        order: idx === currentIndex ? targetIndex : idx === targetIndex ? currentIndex : idx,
-      }));
-      const response = await fetch(`/api/admin-proxy/admin/faqs/reorder`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: reorderItems }),
+    const reorderEndpoints = [
+      "admin/faqs",
+      "admin/projects",
+      "admin/services",
+      "admin/technologies",
+      "admin/links"
+    ];
+
+    if (reorderEndpoints.includes(config.endpoint)) {
+      const reorderItems = items.map((x, idx) => {
+        let newOrder = idx;
+        if (idx === currentIndex) newOrder = targetIndex;
+        else if (idx === targetIndex) newOrder = currentIndex;
+        return {
+          id: getId(x),
+          order: newOrder,
+        };
       });
-      if (response.ok) {
-        toast.success("تم تحديث الترتيب");
-        await load();
-      } else {
+
+      try {
+        const response = await fetch(`/api/admin-proxy/${config.endpoint}/reorder`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: reorderItems }),
+        });
+        if (response.ok) {
+          toast.success("تم تحديث الترتيب");
+          await load();
+        } else {
+          toast.error("فشل حفظ الترتيب الجديد");
+        }
+      } catch {
         toast.error("فشل حفظ الترتيب الجديد");
       }
     } else {
@@ -375,7 +400,16 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
         </ErrorState>
       ) : null}
 
-      {!loading && !error && !items.length ? <EmptyState /> : null}
+      {!loading && !error && !items.length ? (
+        config.noId ? (
+          <div className="rounded-lg border border-border bg-card p-8 text-center space-y-4">
+            <p className="text-muted-foreground font-semibold">لم يتم العثور على {config.title} في النظام.</p>
+            <Button onClick={() => edit()} className="px-6">إنشاء {config.title} الآن</Button>
+          </div>
+        ) : (
+          <EmptyState />
+        )
+      ) : null}
       
       {!loading && !error && items.length ? (
         <div className="overflow-x-auto rounded-lg border border-border bg-card">
@@ -494,6 +528,16 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
         onClose={() => setPickerOpen(false)}
         onSelect={handleMediaSelect}
         allowedType={pickerType}
+        defaultFolder={(() => {
+          const endpoint = config.endpoint.toLowerCase();
+          if (endpoint.includes("profile")) return "profile";
+          if (endpoint.includes("projects")) return "projects";
+          if (endpoint.includes("blog/posts") || endpoint.includes("blog")) return "blog";
+          if (endpoint.includes("services")) return "services";
+          if (endpoint.includes("technologies")) return "technologies";
+          if (endpoint.includes("links")) return "links";
+          return "misc";
+        })()}
       />
     </section>
   );

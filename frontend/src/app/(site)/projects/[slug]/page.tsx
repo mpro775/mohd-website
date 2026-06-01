@@ -5,14 +5,14 @@ import { MarkdownRenderer } from "@/components/common/MarkdownRenderer";
 import { TechStackBadge } from "@/components/common/TechStackBadge";
 import { LinkButton } from "@/components/common/Button";
 import { publicApi } from "@/lib/api/public";
-import { projectJsonLd } from "@/lib/seo/structured-data";
+import { projectJsonLd, breadcrumbJsonLd } from "@/lib/seo/structured-data";
 import { buildMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const project = await publicApi.project(slug).catch(() => null);
   if (!project) return {};
-  return buildMetadata(project.title, project.shortDescription, project.seo, project.isPublished === false);
+  return buildMetadata(project.title, project.shortDescription, project.seo, project.isPublished === false, `/projects/${slug}`);
 }
 
 export default async function ProjectDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -22,6 +22,18 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(projectJsonLd(project)) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "الرئيسية", item: "/" },
+              { name: "المشاريع", item: "/projects" },
+              { name: project.title, item: `/projects/${slug}` }
+            ])
+          )
+        }}
+      />
       <PageHeader title={project.title} description={project.shortDescription} />
       <Container className="grid gap-8 py-12 lg:grid-cols-[1fr_320px]">
         <article className="space-y-8">

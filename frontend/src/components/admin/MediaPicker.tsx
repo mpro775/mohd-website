@@ -24,16 +24,24 @@ type MediaPickerProps = {
   onClose: () => void;
   onSelect: (url: string) => void;
   allowedType?: "image" | "document" | "all";
+  defaultFolder?: string;
 };
 
-export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all" }: MediaPickerProps) {
+export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", defaultFolder = "misc" }: MediaPickerProps) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [alt, setAlt] = useState("");
-  const [folder, setFolder] = useState("uploads");
+  const [folder, setFolder] = useState(defaultFolder);
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setFolder(defaultFolder);
+    }
+  }, [isOpen, defaultFolder]);
 
   async function load() {
     setLoading(true);
@@ -121,7 +129,13 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all" }: 
                   if (selected) {
                     // Auto detect folder
                     if (selected.type.includes("pdf")) setFolder("cv");
-                    else if (selected.type.startsWith("image/")) setFolder("images");
+                    else if (selected.type.startsWith("image/")) {
+                      if (defaultFolder && defaultFolder !== "misc" && defaultFolder !== "cv") {
+                        setFolder(defaultFolder);
+                      } else {
+                        setFolder("misc");
+                      }
+                    }
                   }
                 }}
               />
@@ -143,11 +157,14 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all" }: 
                     onChange={(e) => setFolder(e.target.value)}
                     className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none"
                   >
-                    <option value="images">images (الصور)</option>
-                    <option value="cv">cv (السيرة الذاتية)</option>
-                    <option value="posts">posts (المقالات)</option>
+                    <option value="profile">profile (الملف الشخصي)</option>
                     <option value="projects">projects (المشاريع)</option>
-                    <option value="uploads">uploads (عام)</option>
+                    <option value="blog">blog (المدونة)</option>
+                    <option value="services">services (الخدمات)</option>
+                    <option value="technologies">technologies (التقنيات)</option>
+                    <option value="links">links (الروابط)</option>
+                    <option value="cv">cv (السيرة الذاتية)</option>
+                    <option value="misc">misc (عام / أخرى)</option>
                   </select>
                 </label>
 

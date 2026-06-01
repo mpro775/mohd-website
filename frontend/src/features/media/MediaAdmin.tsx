@@ -24,7 +24,7 @@ export function MediaAdmin() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [alt, setAlt] = useState("");
-  const [folder, setFolder] = useState("uploads");
+  const [folder, setFolder] = useState("misc");
 
   // Cleanup states
   const [olderThanDays, setOlderThanDays] = useState(7);
@@ -116,11 +116,14 @@ export function MediaAdmin() {
             <label className="block space-y-1">
               <span className="text-xs text-muted-foreground">المجلد</span>
               <select value={folder} onChange={(e) => setFolder(e.target.value)} className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none">
-                <option value="images">images (الصور)</option>
-                <option value="cv">cv (السيرة الذاتية)</option>
-                <option value="posts">posts (المقالات)</option>
+                <option value="profile">profile (الملف الشخصي)</option>
                 <option value="projects">projects (المشاريع)</option>
-                <option value="uploads">uploads (عام)</option>
+                <option value="blog">blog (المدونة)</option>
+                <option value="services">services (الخدمات)</option>
+                <option value="technologies">technologies (التقنيات)</option>
+                <option value="links">links (الروابط)</option>
+                <option value="cv">cv (السيرة الذاتية)</option>
+                <option value="misc">misc (عام / أخرى)</option>
               </select>
             </label>
 

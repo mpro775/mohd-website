@@ -37,3 +37,16 @@ export function projectJsonLd(project: Project) {
     programmingLanguage: project.technologies,
   };
 }
+
+export function breadcrumbJsonLd(items: Array<{ name: string; item: string }>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": items.map((x, idx) => ({
+      "@type": "ListItem",
+      "position": idx + 1,
+      "name": x.name,
+      "item": absoluteUrl(x.item),
+    })),
+  };
+}

@@ -3,6 +3,15 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { Container } from "@/components/common/Container";
 import { LinkButton } from "@/components/common/Button";
 import { publicApi } from "@/lib/api/public";
+import { buildMetadata } from "@/lib/seo/metadata";
+import { breadcrumbJsonLd } from "@/lib/seo/structured-data";
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const service = await publicApi.service(slug).catch(() => null);
+  if (!service) return {};
+  return buildMetadata(service.name, service.shortDescription, service.seo, false, `/services/${slug}`);
+}
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -10,6 +19,18 @@ export default async function ServicePage({ params }: { params: Promise<{ slug: 
   if (!service) notFound();
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { name: "الرئيسية", item: "/" },
+              { name: "الخدمات", item: "/services" },
+              { name: service.name, item: `/services/${slug}` }
+            ])
+          )
+        }}
+      />
       <PageHeader title={service.name} description={service.shortDescription} />
       <Container className="grid gap-8 py-12 lg:grid-cols-[1fr_320px]">
         <div className="rounded-lg border border-border bg-card p-6 leading-8 text-muted-foreground">{service.detailedDescription}</div>
