@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/common/Button";
-import { EmptyState, LoadingSkeleton } from "@/components/common/State";
+import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/common/State";
+import { MediaPicker } from "@/components/admin/MediaPicker";
+import { ArrowDown, ArrowUp, Image as ImageIcon, RefreshCw } from "lucide-react";
 
-type FieldType = "text" | "url" | "textarea" | "number" | "date" | "checkbox" | "select" | "multiselect" | "array";
+type FieldType = "text" | "url" | "image" | "file" | "textarea" | "number" | "date" | "checkbox" | "select" | "multiselect" | "array";
 type FormValue = string | number | boolean | string[] | undefined;
 type FormState = Record<string, FormValue>;
 type SelectOption = { label: string; value: string };
@@ -28,6 +31,7 @@ type ResourceConfig = {
   allowCreate?: boolean;
   allowDelete?: boolean;
   allowEdit?: boolean;
+  noId?: boolean; // Don't append /:id on update mutations (e.g. single profile resource)
   actions?: Array<{ label: string; path: string; method: "PATCH" | "POST"; body?: Record<string, unknown> }>;
   starter?: Record<string, unknown>;
   fields?: ResourceField[];
@@ -37,8 +41,31 @@ function getId(item: Record<string, unknown>, idField?: "id" | "_id") {
   return String(item[idField ?? "id"] ?? item._id ?? "");
 }
 
+// Support dot-notation nested extraction
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((acc, part) => {
+    if (acc && typeof acc === 'object') {
+      return (acc as Record<string, unknown>)[part];
+    }
+    return undefined;
+  }, obj);
+}
+
+// Support dot-notation nested injection
+function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown) {
+  const parts = path.split('.');
+  const last = parts.pop()!;
+  const target = parts.reduce<Record<string, unknown>>((acc, part) => {
+    if (!acc[part] || typeof acc[part] !== 'object') {
+      acc[part] = {};
+    }
+    return acc[part] as Record<string, unknown>;
+  }, obj);
+  target[last] = value;
+}
+
 function pickValue(item: Record<string, unknown>, field: ResourceField): FormValue {
-  const value = item[field.name];
+  const value = getNestedValue(item, field.name);
   if (field.type === "checkbox") return Boolean(value);
   if (field.type === "array") return Array.isArray(value) ? value.map(String) : value ? [String(value)] : [];
   if (field.type === "multiselect") {
@@ -60,36 +87,39 @@ function pickValue(item: Record<string, unknown>, field: ResourceField): FormVal
   return typeof value === "string" ? value : "";
 }
 
-function toPayload(fields: ResourceField[], form: FormState) {
-  return fields.reduce<Record<string, unknown>>((payload, field) => {
+function toPayload(fields: ResourceField[], form: FormState, isCreate = false) {
+  const payload: Record<string, unknown> = {};
+  fields.forEach((field) => {
+    // Strip slug on create requests if left empty
+    if (field.name === "slug" && isCreate && !form[field.name]) {
+      return;
+    }
+    
     const value = form[field.name];
+    let resolvedValue: unknown = value === "" ? undefined : value;
+    
     if (field.type === "array") {
-      payload[field.name] = Array.isArray(value)
+      resolvedValue = Array.isArray(value)
         ? value
         : String(value ?? "")
             .split(",")
             .map((entry) => entry.trim())
             .filter(Boolean);
-      return payload;
+    } else if (field.type === "number") {
+      resolvedValue = value === "" || value === undefined || isNaN(Number(value)) ? undefined : Number(value);
+    } else if (field.type === "checkbox") {
+      resolvedValue = Boolean(value);
+    } else if (field.type === "multiselect") {
+      resolvedValue = Array.isArray(value) ? value.filter(Boolean) : [];
     }
-    if (field.type === "number") {
-      payload[field.name] = value === "" || value === undefined ? undefined : Number(value);
-      return payload;
-    }
-    if (field.type === "checkbox") {
-      payload[field.name] = Boolean(value);
-      return payload;
-    }
-    if (field.type === "multiselect") {
-      payload[field.name] = Array.isArray(value) ? value.filter(Boolean) : [];
-      return payload;
-    }
-    payload[field.name] = value === "" ? undefined : value;
-    return payload;
-  }, {});
+    
+    setNestedValue(payload, field.name, resolvedValue);
+  });
+  return payload;
 }
 
 export function AdminResourceManager({ config }: { config: ResourceConfig }) {
+  const router = useRouter();
   const [items, setItems] = useState<Record<string, unknown>[]>([]);
   const [selected, setSelected] = useState<Record<string, unknown> | null>(null);
   const [form, setForm] = useState<FormState>({});
@@ -97,6 +127,12 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
   const [optionSets, setOptionSets] = useState<Record<string, SelectOption[]>>({});
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // MediaPicker States
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [activePickerField, setActivePickerField] = useState<string | null>(null);
+  const [pickerType, setPickerType] = useState<"image" | "document">("image");
 
   const fields = useMemo(() => config.fields ?? [], [config.fields]);
   const currentId = useMemo(() => (selected ? getId(selected, config.idField) : ""), [selected, config.idField]);
@@ -104,19 +140,31 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
 
   async function load() {
     setLoading(true);
-    const response = await fetch(`/api/admin-proxy/${config.endpoint}`);
-    const payload = await response.json();
-    const data = payload.data?.items ?? payload.data ?? [];
-    setItems(Array.isArray(data) ? data : data ? [data] : []);
-    setLoading(false);
+    setError(null);
+    try {
+      const response = await fetch(`/api/admin-proxy/${config.endpoint}`);
+      if (response.status === 401) {
+        toast.error("انتهت الجلسة، الرجاء تسجيل الدخول مجدداً");
+        router.push("/admin/login");
+        router.refresh();
+        return;
+      }
+      if (!response.ok) {
+        throw new Error(`خطأ في خادم الباك إند: ${response.status}`);
+      }
+      const payload = await response.json();
+      const data = payload.data?.items ?? payload.data ?? [];
+      setItems(Array.isArray(data) ? data : data ? [data] : []);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "تعذر جلب البيانات");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    load().catch(() => {
-      toast.error("تعذر تحميل البيانات");
-      setLoading(false);
-    });
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.endpoint]);
 
@@ -125,8 +173,15 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
     if (!optionFields.length) return;
     optionFields.forEach((field) => {
       fetch(`/api/admin-proxy/${field.optionsEndpoint}`)
-        .then((response) => response.json())
+        .then((response) => {
+          if (response.status === 401) {
+            router.push("/admin/login");
+            return null;
+          }
+          return response.json();
+        })
         .then((payload) => {
+          if (!payload) return;
           const data = payload.data?.items ?? payload.data ?? [];
           const options = Array.isArray(data)
             ? data.map((entry: Record<string, unknown>) => ({
@@ -138,6 +193,7 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
         })
         .catch(() => toast.error(`تعذر تحميل خيارات ${field.label}`));
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fields]);
 
   function edit(item?: Record<string, unknown>) {
@@ -150,56 +206,153 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
 
   async function save() {
     setFieldErrors({});
-    const body = toPayload(fields, form);
+    const isCreate = !currentId;
+    const body = toPayload(fields, form, isCreate);
     const isUpdate = Boolean(currentId);
-    const endpoint = isUpdate ? `${config.endpoint}/${currentId}` : config.endpoint;
-    const response = await fetch(`/api/admin-proxy/${endpoint}`, {
-      method: isUpdate ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok || payload.success === false) {
-      const errors = Array.isArray(payload.errors) ? payload.errors : [];
-      setFieldErrors(Object.fromEntries(errors.map((error: { field?: string; message?: string }) => [error.field ?? "_form", error.message ?? payload.message])));
-      toast.error(response.status === 409 ? "هذا الرابط أو الاسم مستخدم مسبقا." : payload.message ?? "تعذر الحفظ");
-      return;
+    
+    // For single item configuration (like profile) we don't append ID
+    const endpoint = (isUpdate && !config.noId) ? `${config.endpoint}/${currentId}` : config.endpoint;
+    
+    try {
+      const response = await fetch(`/api/admin-proxy/${endpoint}`, {
+        method: isUpdate ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      
+      if (response.status === 401) {
+        toast.error("انتهت الجلسة، الرجاء تسجيل الدخول مجدداً");
+        router.push("/admin/login");
+        return;
+      }
+      
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload.success === false) {
+        const errors = Array.isArray(payload.errors) ? payload.errors : [];
+        setFieldErrors(Object.fromEntries(errors.map((error: { field?: string; message?: string }) => [error.field ?? "_form", error.message ?? payload.message])));
+        toast.error(response.status === 409 ? "هذا الرابط أو الاسم مستخدم مسبقا." : payload.message ?? "تعذر الحفظ");
+        return;
+      }
+      
+      toast.success("تم الحفظ بنجاح");
+      setSelected(null);
+      setIsFormOpen(false);
+      await load();
+    } catch {
+      toast.error("فشل الاتصال بالخادم لحفظ البيانات");
     }
-    toast.success("تم الحفظ");
-    setSelected(null);
-    setIsFormOpen(false);
-    await load();
   }
 
   async function remove(item: Record<string, unknown>) {
     const id = getId(item, config.idField);
-    if (!id || !confirm("تأكيد الحذف؟")) return;
-    const response = await fetch(`/api/admin-proxy/${config.endpoint}/${id}`, { method: "DELETE" });
-    if (!response.ok) {
-      toast.error("تعذر الحذف");
-      return;
+    if (!id || !confirm("هل أنت متأكد من تأكيد الحذف نهائياً؟")) return;
+    try {
+      const response = await fetch(`/api/admin-proxy/${config.endpoint}/${id}`, { method: "DELETE" });
+      if (response.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error();
+      }
+      toast.success("تم الحذف بنجاح");
+      await load();
+    } catch {
+      toast.error("تعذر إتمام عملية الحذف.");
     }
-    toast.success("تم الحذف");
-    await load();
   }
 
   async function action(item: Record<string, unknown>, path: string, method: "PATCH" | "POST", body?: Record<string, unknown>) {
     const id = getId(item, config.idField);
-    const response = await fetch(`/api/admin-proxy/${config.endpoint}/${id}/${path}`, {
-      method,
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    if (!response.ok) {
-      toast.error("تعذر تنفيذ العملية");
-      return;
+    try {
+      const response = await fetch(`/api/admin-proxy/${config.endpoint}/${id}/${path}`, {
+        method,
+        headers: body ? { "Content-Type": "application/json" } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      if (response.status === 401) {
+        router.push("/admin/login");
+        return;
+      }
+      if (!response.ok) {
+        throw new Error();
+      }
+      toast.success("تم تنفيذ العملية بنجاح");
+      await load();
+    } catch {
+      toast.error("تعذر تنفيذ العملية.");
     }
-    toast.success("تم تنفيذ العملية");
-    await load();
+  }
+
+  async function reorder(item: Record<string, unknown>, direction: "up" | "down") {
+    const currentIndex = items.findIndex((x) => getId(x) === getId(item));
+    if (direction === "up" && currentIndex === 0) return;
+    if (direction === "down" && currentIndex === items.length - 1) return;
+    
+    const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    const currentItem = items[currentIndex];
+    const targetItem = items[targetIndex];
+    
+    // Swap order values if they exist, or just use numeric indexes
+    const currentOrder = Number(currentItem.order ?? currentItem.sortOrder ?? currentIndex);
+    const targetOrder = Number(targetItem.order ?? targetItem.sortOrder ?? targetIndex);
+
+    // Send single PUT updates for both or utilize Custom FAQ reorder endpoint if it is faqs endpoint
+    if (config.endpoint === "admin/faqs") {
+      const reorderItems = items.map((x, idx) => ({
+        id: getId(x),
+        order: idx === currentIndex ? targetIndex : idx === targetIndex ? currentIndex : idx,
+      }));
+      const response = await fetch(`/api/admin-proxy/admin/faqs/reorder`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: reorderItems }),
+      });
+      if (response.ok) {
+        toast.success("تم تحديث الترتيب");
+        await load();
+      } else {
+        toast.error("فشل حفظ الترتيب الجديد");
+      }
+    } else {
+      // Generic reorder by saving the updated order field for both swapped items
+      try {
+        await Promise.all([
+          fetch(`/api/admin-proxy/${config.endpoint}/${getId(currentItem)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: targetOrder }),
+          }),
+          fetch(`/api/admin-proxy/${config.endpoint}/${getId(targetItem)}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ order: currentOrder }),
+          })
+        ]);
+        toast.success("تم تحديث الترتيب");
+        await load();
+      } catch {
+        toast.error("فشل حفظ الترتيب");
+      }
+    }
   }
 
   function setValue(name: string, value: FormValue) {
     setForm((current) => ({ ...current, [name]: value }));
+  }
+
+  function openMediaPicker(fieldName: string, type: "image" | "document") {
+    setActivePickerField(fieldName);
+    setPickerType(type);
+    setPickerOpen(true);
+  }
+
+  function handleMediaSelect(url: string) {
+    if (activePickerField) {
+      setValue(activePickerField, url);
+    }
+    setPickerOpen(false);
+    setActivePickerField(null);
   }
 
   return (
@@ -207,35 +360,65 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">{config.title}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">إدارة مرتبطة بالباك إند عبر HttpOnly cookies وحقول DTO مباشرة.</p>
+          <p className="mt-1 text-sm text-muted-foreground">لوحة إدارة CMS ديناميكية مع معالجة DTO حقيقية ومصادقة آمنة.</p>
         </div>
         {config.allowCreate !== false && canEdit ? <Button onClick={() => edit()}>إضافة</Button> : null}
       </div>
+
       {loading ? <LoadingSkeleton /> : null}
-      {!loading && !items.length ? <EmptyState /> : null}
-      {items.length ? (
+      
+      {error ? (
+        <ErrorState title="فشل في جلب البيانات من الخادم" description={error}>
+          <Button onClick={load} className="mt-4 flex items-center gap-2">
+            <RefreshCw className="h-4 w-4" /> إعادة المحاولة
+          </Button>
+        </ErrorState>
+      ) : null}
+
+      {!loading && !error && !items.length ? <EmptyState /> : null}
+      
+      {!loading && !error && items.length ? (
         <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-muted text-muted-foreground">
               <tr>
-                <th className="p-3 text-right">العنوان</th>
-                <th className="p-3 text-right">Slug/ID</th>
+                <th className="p-3 text-right">العنوان / الاسم</th>
+                <th className="p-3 text-right">المسار / معرف المعلم</th>
                 <th className="p-3 text-right">الحالة</th>
+                <th className="p-3 text-right">الترتيب</th>
                 <th className="p-3 text-right">إجراءات</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={getId(item, config.idField)} className="border-t border-border">
-                  <td className="p-3">{String(item.title ?? item.name ?? item.question ?? item.fullName ?? item.originalName ?? item.email ?? "عنصر")}</td>
+              {items.map((item, idx) => (
+                <tr key={getId(item, config.idField)} className="border-t border-border hover:bg-muted/10">
+                  <td className="p-3 font-semibold">{String(item.title ?? item.name ?? item.question ?? item.fullName ?? item.originalName ?? item.email ?? "عنصر")}</td>
                   <td dir="ltr" className="p-3 text-left font-mono text-xs text-muted-foreground">{String(item.slug ?? getId(item, config.idField))}</td>
-                  <td className="p-3 text-muted-foreground">{String(item.status ?? item.isPublished ?? item.isActive ?? item.isUsed ?? "")}</td>
+                  <td className="p-3 text-muted-foreground">
+                    {item.status ? (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">{String(item.status)}</span>
+                    ) : item.isPublished !== undefined || item.isActive !== undefined ? (
+                      <span className={`inline-block h-2 w-2 rounded-full ${item.isPublished ?? item.isActive ? "bg-green-500" : "bg-red-500"}`} />
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td className="p-3">
+                    <div className="flex gap-1">
+                      <button disabled={idx === 0} onClick={() => reorder(item, "up")} className="p-1 hover:text-primary disabled:opacity-30">
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button disabled={idx === items.length - 1} onClick={() => reorder(item, "down")} className="p-1 hover:text-primary disabled:opacity-30">
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
                   <td className="space-x-2 space-x-reverse p-3">
-                    {canEdit ? <button onClick={() => edit(item)} className="text-primary">تعديل</button> : null}
+                    {canEdit ? <button onClick={() => edit(item)} className="text-primary hover:underline">تعديل</button> : null}
                     {config.actions?.map((entry) => (
-                      <button key={entry.path} onClick={() => action(item, entry.path, entry.method, entry.body)} className="text-muted-foreground">{entry.label}</button>
+                      <button key={entry.path} onClick={() => action(item, entry.path, entry.method, entry.body)} className="text-muted-foreground hover:text-foreground">{entry.label}</button>
                     ))}
-                    {config.allowDelete !== false ? <button onClick={() => remove(item)} className="text-red-300">حذف</button> : null}
+                    {config.allowDelete !== false ? <button onClick={() => remove(item)} className="text-red-400 hover:text-red-500 hover:underline">حذف</button> : null}
                   </td>
                 </tr>
               ))}
@@ -243,22 +426,29 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
           </table>
         </div>
       ) : null}
+
       {isFormOpen ? (
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h2 className="mb-4 font-semibold">{currentId ? "تعديل" : "إنشاء"} {config.title}</h2>
-          {fieldErrors._form ? <p className="mb-3 text-sm text-red-300">{fieldErrors._form}</p> : null}
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-md space-y-6">
+          <h2 className="text-xl font-bold border-b border-border pb-3">{currentId ? "تعديل" : "إنشاء جديد"} {config.title}</h2>
+          {fieldErrors._form ? <p className="p-3 rounded bg-red-500/10 text-red-400 text-sm font-semibold">{fieldErrors._form}</p> : null}
+          <div className="grid gap-5 md:grid-cols-2">
             {fields.map((field) => {
               const value = form[field.name];
               const error = fieldErrors[field.name];
-              const shared = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+              const shared = "w-full rounded-md border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary transition";
+              
+              const isMediaField = field.type === "image" || field.type === "file";
+              
               return (
-                <label key={field.name} className={field.type === "textarea" ? "md:col-span-2" : ""}>
-                  <span className="mb-1 block text-sm text-muted-foreground">{field.label}{field.required ? " *" : ""}</span>
+                <div key={field.name} className={field.type === "textarea" ? "md:col-span-2 space-y-1.5" : "space-y-1.5"}>
+                  <span className="block text-sm font-medium text-muted-foreground">{field.label}{field.required ? " *" : ""}</span>
+                  
                   {field.type === "textarea" ? (
                     <textarea value={String(value ?? "")} onChange={(event) => setValue(field.name, event.target.value)} rows={field.rows ?? 5} className={shared} placeholder={field.placeholder} />
                   ) : field.type === "checkbox" ? (
-                    <input type="checkbox" checked={Boolean(value)} onChange={(event) => setValue(field.name, event.target.checked)} className="h-5 w-5 accent-primary" />
+                    <div className="flex h-11 items-center">
+                      <input type="checkbox" checked={Boolean(value)} onChange={(event) => setValue(field.name, event.target.checked)} className="h-5 w-5 accent-primary rounded border-border" />
+                    </div>
                   ) : field.type === "select" ? (
                     <select value={String(value ?? "")} onChange={(event) => setValue(field.name, event.target.value)} className={shared}>
                       <option value="">اختر</option>
@@ -269,21 +459,42 @@ export function AdminResourceManager({ config }: { config: ResourceConfig }) {
                       {(field.options ?? optionSets[field.name] ?? []).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                     </select>
                   ) : field.type === "array" ? (
-                    <input value={Array.isArray(value) ? value.join(", ") : String(value ?? "")} onChange={(event) => setValue(field.name, event.target.value)} className={shared} placeholder={field.placeholder ?? "افصل القيم بفواصل"} />
+                    <input value={Array.isArray(value) ? value.join(", ") : String(value ?? "")} onChange={(event) => setValue(field.name, event.target.value)} className={shared} placeholder={field.placeholder ?? "افصل القيم بفواصل (مثال: react, nodejs)"} />
+                  ) : isMediaField ? (
+                    <div className="space-y-2">
+                      <div className="flex gap-2">
+                        <input type="text" value={String(value ?? "")} onChange={(event) => setValue(field.name, event.target.value)} className={shared} placeholder={field.placeholder ?? "أدخل الرابط أو اختر من المكتبة"} />
+                        <Button type="button" variant="secondary" onClick={() => openMediaPicker(field.name, field.type as "image" | "document")} className="flex items-center gap-1.5 h-11 px-4 text-xs shrink-0">
+                          <ImageIcon className="h-4 w-4" /> اختيار ملف
+                        </Button>
+                      </div>
+                      {value && field.type === "image" && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={String(value)} alt="معاينة" className="h-20 max-w-full rounded border border-border object-contain bg-muted/20" />
+                      )}
+                    </div>
                   ) : (
                     <input type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "url" ? "url" : "text"} value={String(value ?? "")} onChange={(event) => setValue(field.name, field.type === "number" ? event.target.valueAsNumber : event.target.value)} className={shared} placeholder={field.placeholder} />
                   )}
-                  {error ? <span className="mt-1 block text-xs text-red-300">{error}</span> : null}
-                </label>
+                  {error ? <span className="block text-xs text-red-400 font-semibold">{error}</span> : null}
+                </div>
               );
             })}
           </div>
-          <div className="mt-4 flex gap-2">
-            <Button onClick={save}>حفظ</Button>
+          <div className="mt-6 flex gap-2 border-t border-border pt-4">
+            <Button onClick={save} className="px-6">حفظ التغييرات</Button>
             <Button variant="secondary" onClick={() => setIsFormOpen(false)}>إلغاء</Button>
           </div>
         </div>
       ) : null}
+
+      {/* Media Picker Dialog */}
+      <MediaPicker
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handleMediaSelect}
+        allowedType={pickerType}
+      />
     </section>
   );
 }

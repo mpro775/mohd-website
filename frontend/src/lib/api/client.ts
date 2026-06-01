@@ -10,7 +10,18 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 };
 
 function buildUrl(path: string, query?: RequestOptions["query"]) {
-  const url = new URL(path.replace(/^\/api/, ""), siteConfig.apiUrl.endsWith("/") ? siteConfig.apiUrl : `${siteConfig.apiUrl}/`);
+  let baseUrl = siteConfig.apiUrl;
+  if (baseUrl.endsWith("/")) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+  let normalizedPath = path;
+  if (normalizedPath.startsWith("/api")) {
+    normalizedPath = normalizedPath.slice(4);
+  }
+  if (!normalizedPath.startsWith("/")) {
+    normalizedPath = "/" + normalizedPath;
+  }
+  const url = new URL(`${baseUrl}${normalizedPath}`);
   Object.entries(query ?? {}).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== "") {
       url.searchParams.set(key, String(value));
