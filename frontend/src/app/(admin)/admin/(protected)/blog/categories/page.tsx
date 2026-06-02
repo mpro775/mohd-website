@@ -1,22 +1,5 @@
-import { AdminResourceManager } from "@/features/admin/AdminResourceManager";
+import { CategoriesPageClient } from "@/features/admin/resources/categories/page-client";
 
 export default function AdminCategoriesPage() {
-  return (
-    <AdminResourceManager
-      config={{
-        title: "تصنيفات المدونة",
-        endpoint: "admin/blog/categories",
-        actions: [
-          { label: "تفعيل", path: "activate", method: "PATCH" },
-          { label: "تعطيل", path: "deactivate", method: "PATCH" },
-        ],
-        starter: { name: "", description: "", isActive: true },
-        fields: [
-          { name: "name", label: "الاسم", required: true },
-          { name: "description", label: "الوصف", type: "textarea", rows: 3 },
-          { name: "isActive", label: "نشط", type: "checkbox" },
-        ],
-      }}
-    />
-  );
+  return <CategoriesPageClient />;
 }

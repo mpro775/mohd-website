@@ -1,21 +1,5 @@
-import { AdminResourceManager } from "@/features/admin/AdminResourceManager";
+import { TagsPageClient } from "@/features/admin/resources/tags/page-client";
 
 export default function AdminTagsPage() {
-  return (
-    <AdminResourceManager
-      config={{
-        title: "وسوم المدونة",
-        endpoint: "admin/blog/tags",
-        actions: [
-          { label: "تفعيل", path: "activate", method: "PATCH" },
-          { label: "تعطيل", path: "deactivate", method: "PATCH" },
-        ],
-        starter: { name: "", isActive: true },
-        fields: [
-          { name: "name", label: "اسم الوسم", required: true },
-          { name: "isActive", label: "نشط", type: "checkbox" },
-        ],
-      }}
-    />
-  );
+  return <TagsPageClient />;
 }

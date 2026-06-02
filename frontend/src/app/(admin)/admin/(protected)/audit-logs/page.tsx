@@ -1,5 +1,5 @@
-import { AdminResourceManager } from "@/features/admin/AdminResourceManager";
+import { AuditLogsPageClient } from "@/features/admin/resources/audit-logs/page-client";
 
 export default function AdminAuditLogsPage() {
-  return <AdminResourceManager config={{ title: "سجل التدقيق", endpoint: "admin/audit-logs", allowCreate: false, allowDelete: false, allowEdit: false }} />;
+  return <AuditLogsPageClient />;
 }

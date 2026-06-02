@@ -216,7 +216,6 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", de
                       >
                         <div className="aspect-square relative flex items-center justify-center bg-muted/40">
                           {isImage ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img src={item.url} alt={item.alt ?? ""} className="h-full w-full object-cover" />
                           ) : (
                             <FileText className="h-10 w-10 text-muted-foreground" />
