@@ -249,7 +249,7 @@ export function TechnologiesPageClient() {
         emptyDescription="لم يتم العثور على أية تقنيات متطابقة لخيارات الفرز الحالية. ابدأ الآن بإضافة مهارتك أو إطار عملك المفضل!"
         filterOptions={[
           {
-            key: "status",
+            key: "isPublished",
             label: "الحالات",
             options: [
               { label: "المسودات", value: "draft" },

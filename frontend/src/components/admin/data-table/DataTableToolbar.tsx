@@ -155,6 +155,9 @@ export function DataTableToolbar<TData>({
 
         {/* Dynamic Filters */}
         {filterOptions.map((filter) => {
+          const hasColumn = table.getAllColumns().some((col) => col.id === filter.key);
+          if (!hasColumn) return null;
+
           const column = table.getColumn(filter.key);
           if (!column) return null;
 

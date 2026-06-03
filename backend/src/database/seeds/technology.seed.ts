@@ -1,0 +1,218 @@
+import { Model } from 'mongoose';
+import { Technology, ProficiencyLevel } from '../../modules/technologies/schemas/technology.schema';
+
+export const technologiesData = [
+  {
+    name: 'TypeScript',
+    slug: 'typescript',
+    description: 'اللغة الأساسية المستخدمة في تطوير التطبيقات الخلفية والأمامية مع دعم قوي للأنواع وقابلية الصيانة.',
+    icon: 'typescript',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Programming Language',
+    group: 'Backend & Frontend',
+    officialUrl: 'https://www.typescriptlang.org',
+    yearsOfExperience: 4,
+    highlighted: true,
+    color: '#3178C6',
+    order: 1
+  },
+  {
+    name: 'JavaScript',
+    slug: 'javascript',
+    description: 'لغة البرمجة الأساسية لتطوير تطبيقات الويب الحديثة.',
+    icon: 'javascript',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Programming Language',
+    group: 'Backend & Frontend',
+    officialUrl: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
+    yearsOfExperience: 5,
+    highlighted: true,
+    color: '#F7DF1E',
+    order: 2
+  },
+  {
+    name: 'NestJS',
+    slug: 'nestjs',
+    description: 'إطار عمل احترافي لبناء الأنظمة الخلفية وواجهات البرمجة القابلة للتوسع.',
+    icon: 'nestjs',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Backend',
+    group: 'Framework',
+    officialUrl: 'https://nestjs.com',
+    yearsOfExperience: 3,
+    highlighted: true,
+    color: '#E0234E',
+    order: 3
+  },
+  {
+    name: 'Node.js',
+    slug: 'nodejs',
+    description: 'بيئة تشغيل JavaScript المستخدمة لبناء الخدمات الخلفية والـ APIs.',
+    icon: 'nodejs',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Backend',
+    group: 'Runtime',
+    officialUrl: 'https://nodejs.org',
+    yearsOfExperience: 4,
+    highlighted: true,
+    color: '#339933',
+    order: 4
+  },
+  {
+    name: 'React',
+    slug: 'react',
+    description: 'مكتبة لبناء واجهات مستخدم تفاعلية وعالية الأداء.',
+    icon: 'react',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Frontend',
+    group: 'Framework',
+    officialUrl: 'https://react.dev',
+    yearsOfExperience: 4,
+    highlighted: true,
+    color: '#61DAFB',
+    order: 5
+  },
+  {
+    name: 'Next.js',
+    slug: 'nextjs',
+    description: 'إطار عمل React لبناء تطبيقات ومواقع ويب حديثة مع تحسين SEO والأداء.',
+    icon: 'nextjs',
+    proficiencyLevel: ProficiencyLevel.ADVANCED,
+    category: 'Frontend',
+    group: 'Framework',
+    officialUrl: 'https://nextjs.org',
+    yearsOfExperience: 2,
+    highlighted: true,
+    color: '#000000',
+    order: 6
+  },
+  {
+    name: 'MongoDB',
+    slug: 'mongodb',
+    description: 'قاعدة بيانات NoSQL مرنة ومناسبة للتطبيقات الحديثة ومنصات SaaS.',
+    icon: 'mongodb',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Database',
+    group: 'NoSQL',
+    officialUrl: 'https://mongodb.com',
+    yearsOfExperience: 4,
+    highlighted: true,
+    color: '#47A248',
+    order: 7
+  },
+  {
+    name: 'PostgreSQL',
+    slug: 'postgresql',
+    description: 'قاعدة بيانات علائقية قوية وموثوقة للتطبيقات المؤسسية.',
+    icon: 'postgresql',
+    proficiencyLevel: ProficiencyLevel.ADVANCED,
+    category: 'Database',
+    group: 'SQL',
+    officialUrl: 'https://postgresql.org',
+    yearsOfExperience: 3,
+    highlighted: true,
+    color: '#4169E1',
+    order: 8
+  },
+  {
+    name: 'Docker',
+    slug: 'docker',
+    description: 'حاويات برمجية لتسهيل النشر والتشغيل وإدارة البيئات المختلفة.',
+    icon: 'docker',
+    proficiencyLevel: ProficiencyLevel.ADVANCED,
+    category: 'DevOps',
+    group: 'Containerization',
+    officialUrl: 'https://docker.com',
+    yearsOfExperience: 3,
+    highlighted: true,
+    color: '#2496ED',
+    order: 9
+  },
+  {
+    name: 'Git',
+    slug: 'git',
+    description: 'نظام إدارة الإصدارات المستخدم في إدارة الأكواد البرمجية والتعاون بين الفرق.',
+    icon: 'git',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Tools',
+    group: 'Version Control',
+    officialUrl: 'https://git-scm.com',
+    yearsOfExperience: 5,
+    highlighted: false,
+    color: '#F05032',
+    order: 10
+  },
+  {
+    name: 'REST API',
+    slug: 'rest-api',
+    description: 'تصميم وتطوير واجهات برمجية احترافية وقابلة للتوسع.',
+    icon: 'api',
+    proficiencyLevel: ProficiencyLevel.EXPERT,
+    category: 'Backend',
+    group: 'API Development',
+    officialUrl: 'https://restfulapi.net',
+    yearsOfExperience: 4,
+    highlighted: false,
+    color: '#2563EB',
+    order: 11
+  },
+  {
+    name: 'OpenAI',
+    slug: 'openai',
+    description: 'بناء حلول الذكاء الاصطناعي والمساعدات الذكية باستخدام النماذج اللغوية الحديثة.',
+    icon: 'sparkles',
+    proficiencyLevel: ProficiencyLevel.ADVANCED,
+    category: 'Artificial Intelligence',
+    group: 'LLM',
+    officialUrl: 'https://openai.com',
+    yearsOfExperience: 2,
+    highlighted: true,
+    color: '#10A37F',
+    order: 12
+  },
+  {
+    name: 'Qdrant',
+    slug: 'qdrant',
+    description: 'قاعدة بيانات متجهية لبناء أنظمة البحث الدلالي والذكاء الاصطناعي.',
+    icon: 'database',
+    proficiencyLevel: ProficiencyLevel.ADVANCED,
+    category: 'Artificial Intelligence',
+    group: 'Vector Database',
+    officialUrl: 'https://qdrant.tech',
+    yearsOfExperience: 2,
+    highlighted: false,
+    color: '#DC244C',
+    order: 13
+  },
+  {
+    name: 'n8n',
+    slug: 'n8n',
+    description: 'منصة أتمتة سير العمل وربط الأنظمة والخدمات المختلفة.',
+    icon: 'workflow',
+    proficiencyLevel: ProficiencyLevel.ADVANCED,
+    category: 'Automation',
+    group: 'Workflow Automation',
+    officialUrl: 'https://n8n.io',
+    yearsOfExperience: 2,
+    highlighted: false,
+    color: '#EA4B71',
+    order: 14
+  }
+];
+
+export async function seedTechnologies(technologyModel: Model<Technology>) {
+  for (const data of technologiesData) {
+    const existing = await technologyModel.findOne({ slug: data.slug });
+    if (existing) {
+      console.log(`Technology with slug "${data.slug}" already exists, updating...`);
+      await technologyModel.updateOne({ slug: data.slug }, { $set: data });
+    } else {
+      console.log(`Creating technology: ${data.name}`);
+      await technologyModel.create({
+        ...data,
+        isPublished: true,
+      });
+    }
+  }
+  console.log('Technologies seeding completed successfully!');
+}

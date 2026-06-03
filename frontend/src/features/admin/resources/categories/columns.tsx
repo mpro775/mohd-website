@@ -79,6 +79,12 @@ export function createCategoryColumns({
     {
       accessorKey: "isActive",
       header: "الحالة",
+      filterFn: (row, columnId, filterValue) => {
+        const isActive = row.getValue(columnId);
+        if (filterValue === "active") return isActive === true;
+        if (filterValue === "inactive") return isActive === false;
+        return true;
+      },
       cell: ({ row }) => {
         const isActive = row.original.isActive !== false;
         return (

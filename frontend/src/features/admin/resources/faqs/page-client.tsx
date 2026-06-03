@@ -237,7 +237,7 @@ export function FaqsPageClient() {
         emptyDescription="لم يتم العثور على أية أسئلة متوافقة لخيارات التصفية الحالية. ابدأ وصغ سؤالك الأول الآن!"
         filterOptions={[
           {
-            key: "status",
+            key: "isPublished",
             label: "الحالات",
             options: [
               { label: "المسودات", value: "draft" },

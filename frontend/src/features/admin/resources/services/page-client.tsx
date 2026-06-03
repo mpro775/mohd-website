@@ -83,7 +83,7 @@ export function ServicesPageClient() {
       // Map deliverables & requirements back to string[]
       const payload = {
         ...values,
-        startingPrice: values.startingPrice !== "" ? Number(values.startingPrice) : undefined,
+        startingPrice: (typeof values.startingPrice === "number" && !isNaN(values.startingPrice)) ? values.startingPrice : undefined,
         ctaUrl: values.ctaUrl || undefined,
         deliverables: (values.deliverables || []).map((x: any) => typeof x === "string" ? x : x.value).filter(Boolean),
         requirements: (values.requirements || []).map((x: any) => typeof x === "string" ? x : x.value).filter(Boolean),
@@ -230,9 +230,15 @@ export function ServicesPageClient() {
     setIsDrawerOpen(true);
   };
 
-  const handleFormSubmit = form.handleSubmit((values: any) => {
-    saveMutation.mutate(values);
-  });
+  const handleFormSubmit = form.handleSubmit(
+    (values: any) => {
+      saveMutation.mutate(values);
+    },
+    (errors) => {
+      console.error("Service Form validation errors:", errors);
+      toast.error("يرجى مراجعة الحقول المطلوبة وتصحيح الأخطاء.");
+    }
+  );
 
   const columns = createServiceColumns({
     onEdit: handleOpenEdit,
@@ -280,7 +286,7 @@ export function ServicesPageClient() {
         emptyDescription="لم يتم العثور على أية خدمات متطابقة لخيارات الفرز الحالية. يمكنك البدء بإضافة باقتك الأولى الآن!"
         filterOptions={[
           {
-            key: "status",
+            key: "isPublished",
             label: "الحالات",
             options: [
               { label: "المسودات", value: "draft" },

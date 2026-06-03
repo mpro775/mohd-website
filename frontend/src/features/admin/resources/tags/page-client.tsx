@@ -180,7 +180,7 @@ export function TagsPageClient() {
         emptyDescription="لم يتم العثور على أية وسوم مطابقة لخيارات الفرز الحالية. ابدأ بالضغط على إضافة وسم جديد!"
         filterOptions={[
           {
-            key: "status",
+            key: "isActive",
             label: "الحالات",
             options: [
               { label: "المعطلة", value: "inactive" },

@@ -6,12 +6,19 @@ export const serviceFormSchema = z.object({
   shortDescription: z.string().min(1, "وصف الخدمة القصير مطلوب"),
   detailedDescription: z.string().optional().or(z.literal("")),
   icon: z.string().nullable().optional(),
-  startingPrice: z.number().min(0, "السعر المبدئي يجب أن يكون صفر أو أكثر").optional().nullable().or(z.literal("")),
+  startingPrice: z.preprocess(
+    (val) => {
+      if (val === "" || val === null || val === undefined) return undefined;
+      const num = Number(val);
+      return isNaN(num) ? undefined : num;
+    },
+    z.number().min(0, "السعر المبدئي يجب أن يكون صفر أو أكثر").optional().nullable()
+  ),
   currency: z.string().default("USD"),
   price: z.string().optional().or(z.literal("")),
   duration: z.string().optional().or(z.literal("")),
-  deliverables: z.array(z.string()).default([]),
-  requirements: z.array(z.string()).default([]),
+  deliverables: z.array(z.object({ value: z.string() })).default([]),
+  requirements: z.array(z.object({ value: z.string() })).default([]),
   ctaText: z.string().optional().or(z.literal("")),
   ctaUrl: z.string().url("يجب إدخال رابط CTA صالح").or(z.string().length(0)).optional().nullable().or(z.literal("")),
   isFeatured: z.boolean(),

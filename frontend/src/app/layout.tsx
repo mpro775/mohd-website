@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { siteConfig } from "@/config/site";
 import "./globals.css";
 
@@ -31,7 +32,9 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-background text-foreground">
-        {children}
+        <NuqsAdapter>
+          {children}
+        </NuqsAdapter>
         <Toaster richColors position="top-center" />
       </body>
     </html>

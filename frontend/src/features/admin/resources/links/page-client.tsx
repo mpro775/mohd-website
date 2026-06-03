@@ -237,7 +237,7 @@ export function LinksPageClient() {
         emptyDescription="لم يتم العثور على أية روابط متطابقة لخيارات التصفية الحالية. أضف أول رابط خارجي الآن!"
         filterOptions={[
           {
-            key: "status",
+            key: "isPublished",
             label: "الحالات",
             options: [
               { label: "المسودات", value: "draft" },

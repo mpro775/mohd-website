@@ -180,7 +180,7 @@ export function CategoriesPageClient() {
         emptyDescription="لم يتم العثور على أية تصنيفات مطابقة لخيارات الفرز الحالية. ابدأ وأنشئ أول تصنيف لمقالاتك!"
         filterOptions={[
           {
-            key: "status",
+            key: "isActive",
             label: "الحالات",
             options: [
               { label: "المعطلة", value: "inactive" },

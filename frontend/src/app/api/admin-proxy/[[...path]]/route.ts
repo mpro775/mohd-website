@@ -9,6 +9,7 @@ function authHeaders(request: Request, token: string, isFormData: boolean) {
   headers.set("Authorization", `Bearer ${token}`);
   headers.delete("host");
   if (isFormData) headers.delete("content-type");
+  headers.delete("content-length");
   return headers;
 }
 

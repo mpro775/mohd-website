@@ -193,6 +193,12 @@ export function createTechnologyColumns({
     {
       accessorKey: "isPublished",
       header: "الحالة",
+      filterFn: (row, columnId, filterValue) => {
+        const isPublished = row.getValue(columnId);
+        if (filterValue === "active") return isPublished === true;
+        if (filterValue === "draft") return isPublished === false;
+        return true;
+      },
       cell: ({ row }) => {
         const isPublished = row.original.isPublished !== false;
         return (
