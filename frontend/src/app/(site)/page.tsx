@@ -33,14 +33,14 @@ export default async function HomePage() {
   return (
     <>
       {profile ? <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd(profile)) }} /> : null}
-      <section className="tech-grid border-b border-border">
+      <section className="relative overflow-hidden tech-grid border-b border-border">
         <Container className="grid min-h-[calc(100vh-4rem)] items-center gap-10 py-16 lg:grid-cols-[1.05fr_0.95fr]">
-          <div>
+          <div className="relative z-10">
             <p className="mb-4 inline-flex rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-sm text-primary">
               {profile?.availableForWork ? "متاح للتعاون والعمل" : "Software Engineer"}
             </p>
-            <h1 className="max-w-4xl text-4xl font-bold leading-tight md:text-6xl">
-              {profile?.fullName ?? "Mohd"}، {profile?.title ?? "Full-Stack Developer"}
+            <h1 className="max-w-4xl text-4xl font-bold leading-tight md:text-6xl tracking-tight">
+              {profile?.fullName ?? "Mohd"}، <span className="bg-gradient-to-r from-primary via-emerald-400 to-secondary bg-clip-text text-transparent">{profile?.title ?? "Full-Stack Developer"}</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-9 text-muted-foreground">
               {profile?.headline ?? profile?.bio ?? "أبني واجهات وتطبيقات ويب متينة باستخدام Next.js وNestJS مع تركيز واضح على تجربة المستخدم، الأداء، وقابلية الصيانة."}
@@ -50,9 +50,15 @@ export default async function HomePage() {
               <LinkButton href="/projects" variant="secondary">شاهد الأعمال</LinkButton>
             </div>
           </div>
-          <div className="grid gap-4">
-            <TerminalCard lines={["npm run build", "api.health() => ok", "ship({ quality: true })"]} />
-            <CodePreviewCard />
+          <div className="relative flex items-center justify-center">
+            {/* Ambient glows behind the code cards */}
+            <div className="ambient-glow -top-12 -right-12 opacity-60" />
+            <div className="ambient-glow -bottom-16 -left-16 opacity-40" />
+            
+            <div className="relative z-10 grid w-full gap-4">
+              <TerminalCard lines={["npm run build", "api.health() => ok", "ship({ quality: true })"]} />
+              <CodePreviewCard />
+            </div>
           </div>
         </Container>
       </section>
@@ -64,7 +70,7 @@ export default async function HomePage() {
             { label: "مقالات", value: posts.meta?.total ?? posts.items.length, icon: FileText },
             { label: "تقنيات", value: technologies.length, icon: Code2 },
           ].map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-border bg-card p-5">
+            <div key={stat.label} className="rounded-lg border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/35 hover:shadow-[0_8px_24px_-8px_rgba(55,211,153,0.1)]">
               <stat.icon className="mb-4 h-5 w-5 text-primary" />
               <p className="text-3xl font-bold">{stat.value}</p>
               <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
