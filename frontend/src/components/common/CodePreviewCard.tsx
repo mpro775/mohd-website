@@ -22,13 +22,13 @@ export function CodePreviewCard() {
       <pre className="overflow-x-auto p-5 text-left font-mono text-xs md:text-sm leading-6 md:leading-7 text-muted-foreground">
         <code>
           <span className="text-purple-400">const</span> <span className="text-sky-300">engineer</span> = &#123;{"\n"}
-          {"  "}<span className="text-amber-200/90">focus</span>: <span className="text-emerald-400">"Full-Stack Web & Apps"</span>,{"\n"}
+          {"  "}<span className="text-amber-200/90">focus</span>: <span className="text-emerald-400">&quot;Full-Stack Web &amp; Apps&quot;</span>,{"\n"}
           {"  "}<span className="text-amber-200/90">stack</span>: [
-          <span className="text-emerald-400">"Next.js"</span>,{" "}
-          <span className="text-emerald-400">"NestJS"</span>,{" "}
-          <span className="text-emerald-400">"PostgreSQL"</span>
+          <span className="text-emerald-400">&quot;Next.js&quot;</span>,{" "}
+          <span className="text-emerald-400">&quot;NestJS&quot;</span>,{" "}
+          <span className="text-emerald-400">&quot;PostgreSQL&quot;</span>
           ],{"\n"}
-          {"  "}<span className="text-amber-200/90">ships</span>: <span className="text-emerald-400">"clean, high-performance code"</span>,{"\n"}
+          {"  "}<span className="text-amber-200/90">ships</span>: <span className="text-emerald-400">&quot;clean, high-performance code&quot;</span>,{"\n"}
           {"  "}<span className="text-amber-200/90">readyToBuild</span>: <span className="text-purple-400">true</span>{"\n"}
           &#125;;
         </code>

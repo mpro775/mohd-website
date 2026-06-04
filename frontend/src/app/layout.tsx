@@ -4,6 +4,7 @@ import { Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { siteConfig } from "@/config/site";
+import { ThemeProvider } from "@/providers/theme-provider";
 import "./globals.css";
 
 const vazirmatn = localFont({
@@ -77,12 +78,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl" className={`${vazirmatn.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="ar" dir="rtl" className={`${vazirmatn.variable} ${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full bg-background text-foreground">
-        <NuqsAdapter>
-          {children}
-        </NuqsAdapter>
-        <Toaster richColors position="top-center" />
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          <NuqsAdapter>
+            {children}
+          </NuqsAdapter>
+          <Toaster richColors position="top-center" />
+        </ThemeProvider>
       </body>
     </html>
   );

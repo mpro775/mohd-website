@@ -91,9 +91,23 @@ a {
 
 .tech-grid {
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    linear-gradient(color-mix(in srgb, var(--foreground) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 7%, transparent) 1px, transparent 1px);
   background-size: 34px 34px;
+}
+
+.tech-card {
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--card) 94%, transparent), var(--card)),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 10%, transparent), transparent 38%);
+  border-radius: var(--radius);
+}
+
+.terminal-surface {
+  background: #071019;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--primary));
+  box-shadow: 0 20px 50px -30px rgba(55, 211, 153, 0.35);
 }
 
 .prose-tech {
@@ -115,6 +129,35 @@ a {
   color: var(--muted-foreground);
 }
 
+.prose-tech a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.prose-tech blockquote {
+  border-inline-start: 3px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  padding: 1rem;
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  margin-bottom: 1rem;
+}
+
+.prose-tech table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: var(--radius);
+  margin-bottom: 1.5rem;
+}
+
+.prose-tech th,
+.prose-tech td {
+  border: 1px solid var(--border);
+  padding: 0.75rem;
+}
+
 .prose-tech pre {
   overflow-x: auto;
   border: 1px solid var(--border);
@@ -123,6 +166,7 @@ a {
   padding: 1rem;
   direction: ltr;
   text-align: left;
+  margin-bottom: 1rem;
 }
 
 .prose-tech code {

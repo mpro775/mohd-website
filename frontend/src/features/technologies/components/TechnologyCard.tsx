@@ -4,13 +4,34 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 
 export function TechnologyCard({ technology }: { technology: Technology }) {
   return (
-    <Link href={`/technologies/${technology.slug}`} className="rounded-lg border border-border bg-card p-5 transition hover:border-primary/50">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-lg font-bold">{technology.name}</h3>
-        <StatusBadge value={technology.proficiencyLevel} />
+    <Link 
+      href={`/technologies/${technology.slug}`} 
+      className="group relative rounded-lg border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-[0_8px_24px_-8px_rgba(55,211,153,0.15)] flex flex-col justify-between h-full"
+      style={technology.color ? { borderTop: `2px solid ${technology.color}` } : undefined}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-3">
+          <h3 className="font-mono text-base font-bold text-foreground transition-colors group-hover:text-primary" dir="ltr">
+            {technology.name}
+          </h3>
+          <StatusBadge value={technology.proficiencyLevel} />
+        </div>
+        
+        <p className="mt-3 line-clamp-3 text-xs leading-6 text-muted-foreground">
+          {technology.description}
+        </p>
       </div>
-      <p className="mt-3 line-clamp-3 text-sm leading-7 text-muted-foreground">{technology.description}</p>
-      <p className="mt-4 text-xs text-primary">{technology.category ?? technology.group}</p>
+
+      <div className="mt-4 pt-3 border-t border-border/20 flex items-center justify-between gap-2 text-[10px] font-mono">
+        <span className="text-primary/95 uppercase tracking-wider">
+          {technology.category ?? technology.group ?? "stack"}
+        </span>
+        {technology.yearsOfExperience ? (
+          <span className="text-muted-foreground/80">
+            exp: {technology.yearsOfExperience} yrs
+          </span>
+        ) : null}
+      </div>
     </Link>
   );
 }
