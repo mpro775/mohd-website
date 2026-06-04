@@ -3,6 +3,7 @@ import { Container } from "@/components/common/Container";
 import { TrackedLink } from "@/features/links/components/TrackedLink";
 import { EmptyState } from "@/components/common/State";
 import { publicApi } from "@/lib/api/public";
+import { ScrollReveal, StaggerReveal, StaggerItem } from "@/components/site/home/ScrollReveal";
 
 export default async function LinksPage() {
   const links = await publicApi.links().catch(() => []);
@@ -16,12 +17,19 @@ export default async function LinksPage() {
         eyebrow="Links"
         routeLabel="~/links"
       />
-      <Container className="py-12">
+      <Container className="py-12 relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="ambient-glow -top-10 left-10 opacity-60" />
+        
         {ordered.length > 0 ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {ordered.map((link) => (
-              <TrackedLink key={link.slug} link={link} />
-            ))}
+          <div className="relative z-10">
+            <StaggerReveal className="grid gap-4 md:grid-cols-2">
+              {ordered.map((link) => (
+                <StaggerItem key={link.slug}>
+                  <TrackedLink link={link} />
+                </StaggerItem>
+              ))}
+            </StaggerReveal>
           </div>
         ) : (
           <EmptyState 

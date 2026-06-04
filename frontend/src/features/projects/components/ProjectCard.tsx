@@ -9,7 +9,7 @@ import { LinkButton } from "@/components/common/Button";
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
-    <article className="group overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_12px_32px_-12px_rgba(55,211,153,0.12)] flex flex-col h-full justify-between">
+    <article className="group overflow-hidden rounded-lg border border-border bg-card transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-[0_16px_48px_-16px_rgba(55,211,153,0.15)] flex flex-col h-full justify-between">
       <div>
         <Link href={`/projects/${project.slug}`} className="block">
           <div className="relative aspect-video overflow-hidden bg-muted">
@@ -21,8 +21,10 @@ export function ProjectCard({ project }: { project: Project }) {
                   fill 
                   className="object-cover transition-transform duration-500 group-hover:scale-105" 
                 />
+                {/* Shimmer overlay on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 group-hover:animate-shimmer" />
                 <div className="absolute inset-0 flex items-center justify-center bg-background/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                  <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold text-primary" dir="ltr">
+                  <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-primary rounded-full border border-primary/30 bg-background/80 backdrop-blur-sm px-3 py-1.5" dir="ltr">
                     {"// View Case Study "} &rarr;
                   </span>
                 </div>

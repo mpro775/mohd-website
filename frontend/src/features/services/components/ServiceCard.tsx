@@ -5,9 +5,12 @@ import { LinkButton } from "@/components/common/Button";
 export function ServiceCard({ service }: { service: Service }) {
   const price = service.price ?? (service.startingPrice ? `${service.startingPrice} ${service.currency ?? "USD"}` : "حسب نطاق العمل");
   return (
-    <article className="rounded-lg border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_12px_32px_-12px_rgba(55,211,153,0.12)] flex flex-col justify-between h-full">
-      <div>
-        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-primary/20 bg-primary/5 font-mono text-xl text-primary shadow-sm select-none">
+    <article className="group rounded-lg border border-border bg-card p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40 hover:shadow-[0_16px_48px_-16px_rgba(55,211,153,0.15)] flex flex-col justify-between h-full relative overflow-hidden">
+      {/* Subtle glow behind icon on hover */}
+      <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-primary/0 transition-all duration-500 group-hover:bg-primary/5 blur-2xl pointer-events-none" />
+      
+      <div className="relative">
+        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-primary/20 bg-primary/5 font-mono text-xl text-primary shadow-sm select-none transition-all duration-300 group-hover:bg-primary/10 group-hover:border-primary/40 group-hover:shadow-[0_0_16px_-4px_rgba(55,211,153,0.2)]">
           {service.icon ?? "</>"}
         </div>
         
@@ -15,11 +18,11 @@ export function ServiceCard({ service }: { service: Service }) {
         <p className="mt-3 text-sm leading-7 text-muted-foreground">{service.shortDescription}</p>
         
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          <span className="inline-flex rounded border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-bold text-primary">
+          <span className="inline-flex rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary">
             {price}
           </span>
           {service.duration && (
-            <span className="inline-flex rounded border border-border bg-muted/50 px-2.5 py-1 text-xs text-muted-foreground font-mono" dir="ltr">
+            <span className="inline-flex rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground font-mono" dir="ltr">
               duration: {service.duration}
             </span>
           )}

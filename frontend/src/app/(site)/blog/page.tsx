@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/common/State";
 import { Pagination } from "@/components/common/Pagination";
 import { PostCard } from "@/features/blog/components/PostCard";
 import { publicApi } from "@/lib/api/public";
+import { ScrollReveal, StaggerReveal, StaggerItem } from "@/components/site/home/ScrollReveal";
 
 export default async function BlogPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
@@ -35,67 +36,74 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
         eyebrow="Blog"
         routeLabel="~/blog"
       />
-      <Container className="py-12">
+      <Container className="py-12 relative overflow-hidden">
+        {/* Ambient background glow */}
+        <div className="ambient-glow -top-24 right-10 opacity-70" />
+        
         {/* Filtering Options */}
-        <div className="mb-10 space-y-4 border-b border-border/40 pb-6">
-          {/* Categories */}
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <span className="font-mono text-muted-foreground/80">{"// Categories:"}</span>
-            <Link
-              href="/blog"
-              className={`rounded-full px-3 py-1 border transition ${
-                isNoFilter ? "bg-primary/10 border-primary/40 text-primary font-semibold" : "border-border bg-card text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              الكل
-            </Link>
-            {categories.map((category) => {
-              const isActive = activeCategory === category.slug;
-              return (
-                <Link
-                  key={category.slug}
-                  href={`/blog?category=${category.slug}`}
-                  className={`rounded-full px-3 py-1 border transition ${
-                    isActive ? "bg-primary/10 border-primary/40 text-primary font-semibold" : "border-border bg-card text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {category.name}
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Tags */}
-          {tags.length > 0 && (
+        <ScrollReveal>
+          <div className="mb-10 space-y-4 border-b border-border/40 pb-6 relative z-10">
+            {/* Categories */}
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="font-mono text-muted-foreground/80">{"// Tags:"}</span>
-              {tags.map((tag) => {
-                const isActive = activeTag === tag.slug;
+              <span className="font-mono text-primary font-semibold">{"/* categories */"}</span>
+              <Link
+                href="/blog"
+                className={`rounded-full px-3 py-1 border transition ${
+                  isNoFilter ? "bg-primary/10 border-primary/40 text-primary font-semibold" : "border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                الكل
+              </Link>
+              {categories.map((category) => {
+                const isActive = activeCategory === category.slug;
                 return (
                   <Link
-                    key={tag.slug}
-                    href={`/blog?tag=${tag.slug}`}
+                    key={category.slug}
+                    href={`/blog?category=${category.slug}`}
                     className={`rounded-full px-3 py-1 border transition ${
                       isActive ? "bg-primary/10 border-primary/40 text-primary font-semibold" : "border-border bg-card text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    #{tag.name}
+                    {category.name}
                   </Link>
                 );
               })}
             </div>
-          )}
-        </div>
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-mono text-primary font-semibold">{"/* tags */"}</span>
+                {tags.map((tag) => {
+                  const isActive = activeTag === tag.slug;
+                  return (
+                    <Link
+                      key={tag.slug}
+                      href={`/blog?tag=${tag.slug}`}
+                      className={`rounded-full px-3 py-1 border transition ${
+                        isActive ? "bg-primary/10 border-primary/40 text-primary font-semibold" : "border-border bg-card text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      #{tag.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </ScrollReveal>
 
         {posts.items.length ? (
-          <>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          <div className="relative z-10 space-y-8">
+            <StaggerReveal className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {posts.items.map((post) => (
-                <PostCard key={post.slug} post={post} />
+                <StaggerItem key={post.slug}>
+                  <PostCard post={post} />
+                </StaggerItem>
               ))}
-            </div>
+            </StaggerReveal>
             <Pagination meta={posts.meta} basePath="/blog" />
-          </>
+          </div>
         ) : (
           <EmptyState 
             title="لا توجد مقالات منشورة" 
