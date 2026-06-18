@@ -44,7 +44,7 @@ type DashboardStats = {
   contact: { total: number; unread: number; replied: number; archived: number; spam: number };
   media: { total: number; used: number; unused: number; totalSize: number };
   recent: {
-    messages: Array<{ _id: string; name: string; email: string; subject: string; message: string; status: string; createdAt: string }>;
+    messages: Array<{ _id: string; fullName: string; email: string; subject: string; message: string; status: string; createdAt: string }>;
     posts: Array<{ _id: string; title: string; slug: string; status: string; views: number; createdAt: string }>;
     projects: Array<{ _id: string; title: string; coverImage?: string; views: number; createdAt: string }>;
   };
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                     <div key={msg._id} className="p-3.5 rounded-lg border border-border bg-card/45 hover:border-primary/20 transition flex flex-col sm:flex-row items-start justify-between gap-3">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <h5 className="text-xs font-bold text-foreground">{msg.name}</h5>
+                          <h5 className="text-xs font-bold text-foreground">{msg.fullName || (msg as any).name}</h5>
                           <span className="text-[9px] font-mono text-muted-foreground" dir="ltr">({msg.email})</span>
                           {msg.status === "new" && (
                             <span className="px-1.5 py-0.5 rounded text-[8px] bg-red-500/10 text-red-400 font-bold">جديدة</span>

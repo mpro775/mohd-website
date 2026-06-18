@@ -3,6 +3,8 @@ import { z } from "zod";
 export const socialLinkSchema = z.object({
   platform: z.string().min(1, "منصة التواصل الاجتماعي مطلوبة"),
   url: z.string().url("يجب إدخال رابط صحيح"),
+  icon: z.string().optional().nullable().or(z.literal("")),
+  order: z.number().optional().nullable(),
 });
 
 export const languageSchema = z.object({
@@ -33,8 +35,9 @@ export const profileFormSchema = z.object({
   phone: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
   profileImage: z.string().nullable().optional(),
+  profileImageAlt: z.string().optional().nullable().or(z.literal("")),
   cvFile: z.string().nullable().optional(),
-  yearsOfExperience: z.number().min(0, "سنوات الخبرة يجب أن تكون رقم إيجابي").optional().or(z.literal("")),
+  yearsOfExperience: z.union([z.number(), z.string(), z.null(), z.undefined()]).optional(),
   availableForWork: z.boolean(),
   socialLinks: z.array(socialLinkSchema),
   languages: z.array(languageSchema),

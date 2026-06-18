@@ -19,7 +19,7 @@ import { ResourceFormDrawer } from "@/components/admin/forms/ResourceFormDrawer"
 
 export function ContactPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
@@ -72,9 +72,9 @@ export function ContactPageClient() {
     setSelectedMessage(msg);
     setIsDrawerOpen(true);
 
-    // If message is pending, automatically mark it as read upon opening
+    // If message is new, automatically mark it as read upon opening
     const id = msg.id ?? msg._id;
-    if (id && msg.status === "pending") {
+    if (id && msg.status === "new") {
       statusMutation.mutate({ id, status: "read" });
     }
   };
@@ -117,6 +117,17 @@ export function ContactPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ status: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ [key]: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}
@@ -131,9 +142,11 @@ export function ContactPageClient() {
             key: "status",
             label: "الحالات",
             options: [
-              { label: "غير مقروءة (Pending)", value: "pending" },
+              { label: "غير مقروءة (New)", value: "new" },
               { label: "مقروءة (Read)", value: "read" },
               { label: "تم الرد (Replied)", value: "replied" },
+              { label: "مؤرشفة (Archived)", value: "archived" },
+              { label: "مزعجة (Spam)", value: "spam" },
             ],
           },
         ]}

@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function ServicesPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -68,7 +68,7 @@ export function ServicesPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
-        status: queryParams.status === "all" ? undefined : queryParams.status,
+        isPublished: queryParams.status === "published" ? true : queryParams.status === "draft" ? false : undefined,
       }),
   });
 
@@ -83,10 +83,21 @@ export function ServicesPageClient() {
       // Map deliverables & requirements back to string[]
       const payload = {
         ...values,
-        startingPrice: (typeof values.startingPrice === "number" && !isNaN(values.startingPrice)) ? values.startingPrice : undefined,
+        startingPrice: (typeof values.startingPrice === "number" && !isNaN(values.startingPrice)) ? values.startingPrice : (values.startingPrice && !isNaN(Number(values.startingPrice))) ? Number(values.startingPrice) : undefined,
         ctaUrl: values.ctaUrl || undefined,
+        detailedDescription: values.detailedDescription || undefined,
+        price: values.price || undefined,
+        duration: values.duration || undefined,
+        ctaText: values.ctaText || undefined,
         deliverables: (values.deliverables || []).map((x: any) => typeof x === "string" ? x : x.value).filter(Boolean),
         requirements: (values.requirements || []).map((x: any) => typeof x === "string" ? x : x.value).filter(Boolean),
+        seo: values.seo
+          ? {
+              metaTitle: values.seo.metaTitle || undefined,
+              metaDescription: values.seo.metaDescription || undefined,
+              ogImage: values.seo.ogImage || undefined,
+            }
+          : undefined,
       };
 
       if (editingService) {
@@ -122,7 +133,7 @@ export function ServicesPageClient() {
   // Action (Publish, Unpublish)
   const patchActionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "publish" | "unpublish" }) => {
-      return adminClient.updateResource<Service>(`services`, `${id}/${action}`, {});
+      return adminClient.patchResource<Service>("services", `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const msg = variables.action === "publish" ? "تم نشر الخدمة للعامة!" : "تم إلغاء النشر بنجاح!";
@@ -135,10 +146,7 @@ export function ServicesPageClient() {
   // Reorder Mutation
   const reorderMutation = useMutation({
     mutationFn: async ({ items }: { items: Array<{ id: string; order: number }> }) => {
-      return clientApiRequest(`services/reorder`, {
-        method: "PATCH",
-        body: { items },
-      });
+      return adminClient.reorderResource("services", items);
     },
     onSuccess: () => {
       toast.success("تم تحديث ترتيب الخدمات بنجاح!");
@@ -275,6 +283,17 @@ export function ServicesPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ isPublished: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const faqFormSchema = z.object({
-  question: z.string().min(1, "حقل السؤال مطلوب ويجب كتابته بالتفصيل"),
-  answer: z.string().min(1, "حقل الإجابة مطلوب لتوضيح السؤال للعملاء والمستخدمين"),
+  question: z.string().min(3, "حقل السؤال يجب أن يكون 3 أحرف على الأقل"),
+  answer: z.string().min(3, "حقل الإجابة يجب أن يكون 3 أحرف على الأقل"),
   category: z.string().optional().or(z.literal("")),
   isFeatured: z.boolean(),
   isPublished: z.boolean(),

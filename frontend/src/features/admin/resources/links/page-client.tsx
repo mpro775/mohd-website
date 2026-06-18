@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function LinksPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -58,7 +58,7 @@ export function LinksPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
-        status: queryParams.status === "all" ? undefined : queryParams.status,
+        isPublished: queryParams.status === "published" ? true : queryParams.status === "draft" ? false : undefined,
       }),
   });
 
@@ -70,11 +70,18 @@ export function LinksPageClient() {
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: LinkFormValues) => {
+      const payload = {
+        ...values,
+        icon: values.icon || undefined,
+        platform: values.platform || undefined,
+        description: values.description || undefined,
+      };
+
       if (editingLink) {
         const id = editingLink.id ?? editingLink._id ?? "";
-        return adminClient.updateResource<LinkItem>("links", id, values);
+        return adminClient.updateResource<LinkItem>("links", id, payload);
       } else {
-        return adminClient.createResource<LinkItem>("links", values);
+        return adminClient.createResource<LinkItem>("links", payload);
       }
     },
     onSuccess: (res: any) => {
@@ -104,7 +111,7 @@ export function LinksPageClient() {
   // 4. Publish / Unpublish Action Mutation
   const patchActionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "publish" | "unpublish" }) => {
-      return adminClient.updateResource<LinkItem>(`links`, `${id}/${action}`, {});
+      return adminClient.patchResource<LinkItem>("links", `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const msg = variables.action === "publish" ? "تم تفعيل ونشر الرابط بنجاح!" : "تم تعطيل الرابط بنجاح!";
@@ -117,10 +124,7 @@ export function LinksPageClient() {
   // 5. Reorder Mutation
   const reorderMutation = useMutation({
     mutationFn: async ({ items }: { items: Array<{ id: string; order: number }> }) => {
-      return clientApiRequest(`links/reorder`, {
-        method: "PATCH",
-        body: { items },
-      });
+      return adminClient.reorderResource("links", items);
     },
     onSuccess: () => {
       toast.success("تم تحديث ترتيب الروابط بنجاح!");
@@ -226,6 +230,17 @@ export function LinksPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ isPublished: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

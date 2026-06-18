@@ -70,6 +70,7 @@ export function MediaAdmin() {
   const [editFolder, setEditFolder] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isCleanupOpen, setIsCleanupOpen] = useState(false);
+  const [editUsage, setEditUsage] = useState("");
 
   // Upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -129,8 +130,8 @@ export function MediaAdmin() {
 
   // Update Alt/Folder Mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, alt, folder }: { id: string; alt: string; folder: string }) => {
-      return adminClient.updateResource<MediaItem>("media", id, { alt, folder });
+    mutationFn: async ({ id, alt, folder, usage }: { id: string; alt: string; folder: string; usage?: string }) => {
+      return adminClient.patchResource<MediaItem>("media", id, { alt, folder, usage });
     },
     onSuccess: (res: any) => {
       toast.success(res?.message || "تم تحديث بيانات الملف بنجاح!");
@@ -238,12 +239,13 @@ export function MediaAdmin() {
     setSelectedItem(item);
     setEditAlt(item.alt || "");
     setEditFolder(item.folder || "misc");
+    setEditUsage(typeof item.usage === "string" ? item.usage : Array.isArray(item.usage) ? item.usage.join(", ") : "");
   };
 
   const handleSaveDetails = () => {
     if (!selectedItem) return;
     const id = selectedItem.id ?? selectedItem._id ?? "";
-    updateMutation.mutate({ id, alt: editAlt, folder: editFolder });
+    updateMutation.mutate({ id, alt: editAlt, folder: editFolder, usage: editUsage || undefined });
   };
 
   // Filters logic
@@ -742,6 +744,17 @@ export function MediaAdmin() {
                     onChange={(e) => setEditAlt(e.target.value)}
                     rows={2}
                     placeholder="اكتب وصفاً معبراً للصورة لمحركات البحث وقارئ الشاشة..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary transition"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground font-semibold">الاستخدام (Usage)</label>
+                  <input
+                    type="text"
+                    value={editUsage}
+                    onChange={(e) => setEditUsage(e.target.value)}
+                    placeholder="مثال: صورة غلاف، أو لوجو الهيدر..."
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary transition"
                   />
                 </div>

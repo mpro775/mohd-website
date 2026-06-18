@@ -199,6 +199,41 @@ export function ProjectForm({ form }: ProjectFormProps) {
         />
       </FormSection>
 
+      {/* 4.5. Additional Details */}
+      <FormSection title="تفاصيل إضافية للمشروع" description="اسم العميل وتواريخ بداية ونهاية المشروع." columns={2}>
+        <div className="md:col-span-2">
+          <InputField
+            label="اسم العميل"
+            placeholder="مثال: شركة الحلول البرمجية..."
+            register={register("clientName")}
+            error={errors.clientName?.message}
+          />
+        </div>
+
+        <InputField
+          label="تاريخ البدء"
+          type="date"
+          register={register("startDate")}
+          error={errors.startDate?.message}
+        />
+
+        <InputField
+          label="تاريخ الانتهاء"
+          type="date"
+          register={register("endDate")}
+          error={errors.endDate?.message}
+        />
+
+        <div className="md:col-span-2">
+          <InputField
+            label="تاريخ اكتمال المشروع"
+            type="date"
+            register={register("completionDate")}
+            error={errors.completionDate?.message}
+          />
+        </div>
+      </FormSection>
+
       {/* 5. Case Study Fields */}
       <FormSection title="دراسة الحالة الكاملة (Case Study)" description="تفاصيل معقدة حول التحديات والحلول وتفاصيل دورك الشخصي.">
         <InputField

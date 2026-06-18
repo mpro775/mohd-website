@@ -13,13 +13,12 @@ export type AuditLog = {
   resourceId?: string;
   ipAddress?: string;
   userAgent?: string;
-  payload?: any;
-  details?: string;
+  before?: any;
+  after?: any;
+  metadata?: any;
   createdAt: string;
-  user?: {
-    fullName: string;
-    email: string;
-  } | null;
+  actorId?: string | { name?: string; fullName?: string; email?: string } | null;
+  actorEmail?: string;
 };
 
 export const auditColumnLabels: Record<string, string> = {
@@ -86,12 +85,23 @@ export function createAuditColumns({ onView }: CreateColumnsProps): ColumnDef<Au
       id: "user",
       header: "المسؤول",
       cell: ({ row }) => {
-        const user = row.original.user;
-        if (!user) return <span className="text-xs text-muted-foreground italic">عملية تلقائية / زائر</span>;
+        const actor = row.original.actorId;
+        const actorName =
+          typeof actor === "object" && actor
+            ? actor.fullName || actor.name || actor.email
+            : row.original.actorEmail || "عملية تلقائية / زائر";
+
+        const actorEmail =
+          typeof actor === "object" && actor
+            ? actor.email
+            : row.original.actorEmail;
+
         return (
           <div className="flex flex-col text-right">
-            <span className="text-xs font-bold text-foreground">{user.fullName}</span>
-            <span className="text-[10px] text-muted-foreground font-mono" dir="ltr">{user.email}</span>
+            <span className="text-xs font-bold text-foreground">{actorName}</span>
+            {actorEmail && (
+              <span className="text-[10px] text-muted-foreground font-mono" dir="ltr">{actorEmail}</span>
+            )}
           </div>
         );
       },

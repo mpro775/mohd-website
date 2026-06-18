@@ -1,9 +1,9 @@
 import { z } from "zod";
 
 export const serviceFormSchema = z.object({
-  name: z.string().min(1, "اسم الخدمة مطلوب ويجب ملؤه"),
+  name: z.string().min(3, "اسم الخدمة يجب أن يكون 3 أحرف على الأقل"),
   slug: z.string().optional().or(z.literal("")),
-  shortDescription: z.string().min(1, "وصف الخدمة القصير مطلوب"),
+  shortDescription: z.string().min(10, "وصف الخدمة القصير يجب أن يكون 10 أحرف على الأقل"),
   detailedDescription: z.string().optional().or(z.literal("")),
   icon: z.string().nullable().optional(),
   startingPrice: z.preprocess(

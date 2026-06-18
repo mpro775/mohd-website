@@ -154,36 +154,67 @@ Body:
 
 ## FAQ
 
-Public FAQ routes return published FAQs only:
+## Admin Custom Actions
 
-- `GET /api/public/faqs`
-- `GET /api/public/faqs/:id`
+### Status & Publication Actions (PATCH)
 
-Admin/editor FAQ routes return and manage both published and unpublished FAQs:
+All status modifications and publication transitions are executed via `PATCH`:
 
-- `GET /api/admin/faqs`
-- `POST /api/admin/faqs`
-- `GET /api/admin/faqs/:id`
-- `PATCH /api/admin/faqs/:id`
-- `PUT /api/admin/faqs/:id`
-- `DELETE /api/admin/faqs/:id`
-- `PATCH /api/admin/faqs/:id/publish`
-- `PATCH /api/admin/faqs/:id/unpublish`
-- `PATCH /api/admin/faqs/reorder`
+- `PATCH /api/admin/projects/:id/publish` - Set project status to published.
+- `PATCH /api/admin/projects/:id/unpublish` - Set project status to unpublished/draft.
+- `PATCH /api/admin/projects/:id/archive` - Set project status to archived.
+- `PATCH /api/admin/blog/posts/:id/publish` - Publish a blog post.
+- `PATCH /api/admin/blog/posts/:id/unpublish` - Revert blog post to draft.
+- `PATCH /api/admin/blog/posts/:id/archive` - Archive a blog post.
+- `PATCH /api/admin/blog/categories/:id/activate` - Activate category.
+- `PATCH /api/admin/blog/categories/:id/deactivate` - Deactivate category.
+- `PATCH /api/admin/blog/tags/:id/activate` - Activate tag.
+- `PATCH /api/admin/blog/tags/:id/deactivate` - Deactivate tag.
+- `PATCH /api/admin/services/:id/publish` - Publish a service.
+- `PATCH /api/admin/services/:id/unpublish` - Unpublish a service.
+- `PATCH /api/admin/technologies/:id/publish` - Publish a technology.
+- `PATCH /api/admin/technologies/:id/unpublish` - Unpublish a technology.
+- `PATCH /api/admin/links/:id/publish` - Publish a link.
+- `PATCH /api/admin/links/:id/unpublish` - Unpublish a link.
+- `PATCH /api/admin/faqs/:id/publish` - Publish a FAQ.
+- `PATCH /api/admin/faqs/:id/unpublish` - Unpublish a FAQ.
+- `PATCH /api/admin/media/:id` - Update alt text, folder, or usage on a media item.
+- `PATCH /api/admin/contact/messages/:id/status` - Update contact message status (accepts `new`, `read`, `replied`, `archived`, `spam`).
 
-Reorder body:
+### Bulk Actions (POST)
 
-```ts
+Bulk actions allow applying status updates or deletion to multiple items at once.
+
+- `POST /api/admin/projects/bulk`
+- `POST /api/admin/blog/posts/bulk`
+
+Body format:
+```json
 {
-  items: { id: string; order: number }[];
+  "action": "publish" | "unpublish" | "archive" | "delete",
+  "ids": ["mongo_id_1", "mongo_id_2", ...]
 }
 ```
 
-## SEO
+### Reorder Actions (PATCH)
 
-- `GET /sitemap.xml` returns XML.
-- `GET /robots.txt` returns text.
-- `GET /rss.xml` and `GET /feed.xml` return RSS XML.
+Ordering of resources (for pages supporting drag-and-drop/reordering) is updated by sending the full ordered items mapping:
+
+- `PATCH /api/admin/projects/reorder`
+- `PATCH /api/admin/services/reorder`
+- `PATCH /api/admin/technologies/reorder`
+- `PATCH /api/admin/links/reorder`
+- `PATCH /api/admin/faqs/reorder`
+
+Body format:
+```json
+{
+  "items": [
+    { "id": "mongo_id_1", "order": 0 },
+    { "id": "mongo_id_2", "order": 1 }
+  ]
+}
+```
 
 ## Scheduled Posts
 

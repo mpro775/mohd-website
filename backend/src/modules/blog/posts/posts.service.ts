@@ -11,6 +11,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { FilterPostDto } from './dto/filter-post.dto';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
+import { BulkActionDto } from '../../../common/dto/bulk-action.dto';
 import { MediaService } from '../../media/media.service';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
 import { Category } from '../categories/schemas/category.schema';
@@ -363,6 +364,47 @@ export class PostsService {
       resource: 'Post',
       resourceId: id,
       before,
+      request: req,
+    });
+  }
+
+  async bulkAction(dto: BulkActionDto, req?: any): Promise<void> {
+    const { action, ids } = dto;
+    if (!ids || ids.length === 0) return;
+
+    if (action === 'publish') {
+      const now = new Date();
+      await this.postModel.updateMany(
+        { _id: { $in: ids } },
+        {
+          status: PostStatus.PUBLISHED,
+          publishDate: now,
+          lastPublishedAt: now,
+        },
+      ).exec();
+    } else if (action === 'unpublish') {
+      await this.postModel.updateMany(
+        { _id: { $in: ids } },
+        { status: PostStatus.DRAFT },
+      ).exec();
+    } else if (action === 'archive') {
+      await this.postModel.updateMany(
+        { _id: { $in: ids } },
+        { status: PostStatus.ARCHIVED },
+      ).exec();
+    } else if (action === 'delete') {
+      await this.postModel.deleteMany({ _id: { $in: ids } }).exec();
+      await Promise.all(
+        ids.map((id) =>
+          this.mediaService.removeUsageForEntity('Post', id),
+        ),
+      );
+    }
+
+    await this.auditLogsService.log({
+      action: `post.bulk_${action}`,
+      resource: 'Post',
+      metadata: { ids },
       request: req,
     });
   }

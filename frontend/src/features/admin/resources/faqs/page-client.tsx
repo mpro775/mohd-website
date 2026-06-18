@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function FaqsPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -58,7 +58,7 @@ export function FaqsPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
-        status: queryParams.status === "all" ? undefined : queryParams.status,
+        isPublished: queryParams.status === "published" ? true : queryParams.status === "draft" ? false : undefined,
       }),
   });
 
@@ -70,11 +70,21 @@ export function FaqsPageClient() {
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: FaqFormValues) => {
+      const payload = {
+        ...values,
+        seo: values.seo
+          ? {
+              metaTitle: values.seo.metaTitle || undefined,
+              metaDescription: values.seo.metaDescription || undefined,
+            }
+          : undefined,
+      };
+
       if (editingFaq) {
         const id = editingFaq.id ?? editingFaq._id ?? "";
-        return adminClient.updateResource<Faq>("faqs", id, values);
+        return adminClient.updateResource<Faq>("faqs", id, payload);
       } else {
-        return adminClient.createResource<Faq>("faqs", values);
+        return adminClient.createResource<Faq>("faqs", payload);
       }
     },
     onSuccess: (res: any) => {
@@ -104,7 +114,7 @@ export function FaqsPageClient() {
   // 4. Publish / Unpublish Action Mutation
   const patchActionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "publish" | "unpublish" }) => {
-      return adminClient.updateResource<Faq>(`faqs`, `${id}/${action}`, {});
+      return adminClient.patchResource<Faq>("faqs", `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const msg = variables.action === "publish" ? "تم تفعيل ونشر السؤال!" : "تم إلغاء نشر السؤال بنجاح!";
@@ -117,10 +127,7 @@ export function FaqsPageClient() {
   // 5. Reorder Mutation
   const reorderMutation = useMutation({
     mutationFn: async ({ items }: { items: Array<{ id: string; order: number }> }) => {
-      return clientApiRequest(`faqs/reorder`, {
-        method: "PATCH",
-        body: { items },
-      });
+      return adminClient.reorderResource("faqs", items);
     },
     onSuccess: () => {
       toast.success("تم تحديث ترتيب الأسئلة بنجاح!");
@@ -226,6 +233,17 @@ export function FaqsPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ isPublished: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

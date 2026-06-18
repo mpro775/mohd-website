@@ -22,3 +22,13 @@ export function absoluteUrl(path = "") {
 export function compact<T>(items: Array<T | null | undefined | false>) {
   return items.filter(Boolean) as T[];
 }
+
+export function emptyToUndefined<T>(value: T): T | undefined {
+  return value === "" || value === null ? undefined : value;
+}
+
+export function cleanObject<T extends Record<string, any>>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([, value]) => value !== "" && value !== null && value !== undefined)
+  ) as Partial<T>;
+}

@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function PostsPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // Modal and drawers states
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -82,11 +82,24 @@ export function PostsPageClient() {
   // Create or Update
   const saveMutation = useMutation({
     mutationFn: async (values: PostFormValues) => {
-      // Map category ID format correctly
+      const { slug, ...cleanValues } = values;
       const payload = {
-        ...values,
-        category: values.category || undefined,
-        tags: values.tags || [],
+        ...cleanValues,
+        category: cleanValues.category || undefined,
+        tags: cleanValues.tags || [],
+        canonicalUrl: cleanValues.canonicalUrl || undefined,
+        publishDate: cleanValues.publishDate || undefined,
+        scheduledAt: cleanValues.scheduledAt || undefined,
+        featuredImage: cleanValues.featuredImage || undefined,
+        coverImage: cleanValues.coverImage || undefined,
+        readTime: cleanValues.readTime === "" ? undefined : cleanValues.readTime ?? undefined,
+        seo: cleanValues.seo
+          ? {
+              metaTitle: cleanValues.seo.metaTitle || undefined,
+              metaDescription: cleanValues.seo.metaDescription || undefined,
+              ogImage: cleanValues.seo.ogImage || undefined,
+            }
+          : undefined,
       };
 
       if (editingPost) {
@@ -123,7 +136,7 @@ export function PostsPageClient() {
   // Individual Actions (Publish, Unpublish, Archive)
   const patchActionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "publish" | "unpublish" | "archive" }) => {
-      return adminClient.updateResource<Post>(`blog/posts`, `${id}/${action}`, {});
+      return adminClient.patchResource<Post>("blog/posts", `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const actionsMap = {
@@ -274,6 +287,17 @@ export function PostsPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ status: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ [key]: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

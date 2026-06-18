@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const linkFormSchema = z.object({
-  title: z.string().min(1, "عنوان الرابط مطلوب ويجب ملؤه"),
+  title: z.string().min(2, "عنوان الرابط يجب أن يكون حرفين على الأقل"),
   slug: z.string().optional().or(z.literal("")),
   url: z.string().url("يجب إدخال رابط URL صالح ومستوفي الشروط").min(1, "رابط URL مطلوب للوصول للموقع"),
   description: z.string().optional().or(z.literal("")),

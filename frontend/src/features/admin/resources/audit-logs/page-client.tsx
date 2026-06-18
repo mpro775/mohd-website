@@ -16,7 +16,7 @@ import { createAuditColumns, auditColumnLabels } from "./columns";
 import { ResourceFormDrawer } from "@/components/admin/forms/ResourceFormDrawer";
 
 export function AuditLogsPageClient() {
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
@@ -86,6 +86,15 @@ export function AuditLogsPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}
@@ -117,7 +126,11 @@ export function AuditLogsPageClient() {
                 <div className="flex flex-col">
                   <span className="text-xs text-muted-foreground">العملية والمشرف</span>
                   <span className="font-bold text-foreground text-sm">
-                    {selectedLog.action} - {selectedLog.user?.fullName || "مشرف مجهول"}
+                    {selectedLog.action} - {
+                      typeof selectedLog.actorId === "object" && selectedLog.actorId
+                        ? selectedLog.actorId.fullName || selectedLog.actorId.name || selectedLog.actorId.email
+                        : selectedLog.actorEmail || "عملية تلقائية / زائر"
+                    }
                   </span>
                 </div>
               </div>
@@ -167,19 +180,55 @@ export function AuditLogsPageClient() {
               </div>
             )}
 
-            {/* JSON payload inspector */}
-            {(selectedLog.payload || selectedLog.details) && (
+            {/* JSON before inspector */}
+            {selectedLog.before && (
               <div className="space-y-2">
                 <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
                   <Terminal className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span>حزمة البيانات المُرسلة (Payload Data JSON):</span>
+                  <span>البيانات قبل التعديل (Before):</span>
                 </span>
                 <div className="relative overflow-hidden rounded-xl border border-border bg-muted/60">
                   <pre
-                    className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[300px] leading-relaxed whitespace-pre"
+                    className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[200px] leading-relaxed whitespace-pre"
                     dir="ltr"
                   >
-                    {renderPayload(selectedLog.payload || selectedLog.details)}
+                    {renderPayload(selectedLog.before)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* JSON after inspector */}
+            {selectedLog.after && (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                  <Terminal className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>البيانات بعد التعديل (After):</span>
+                </span>
+                <div className="relative overflow-hidden rounded-xl border border-border bg-muted/60">
+                  <pre
+                    className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[200px] leading-relaxed whitespace-pre"
+                    dir="ltr"
+                  >
+                    {renderPayload(selectedLog.after)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            {/* JSON metadata inspector */}
+            {selectedLog.metadata && (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                  <Terminal className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span>بيانات إضافية (Metadata):</span>
+                </span>
+                <div className="relative overflow-hidden rounded-xl border border-border bg-muted/60">
+                  <pre
+                    className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[200px] leading-relaxed whitespace-pre"
+                    dir="ltr"
+                  >
+                    {renderPayload(selectedLog.metadata)}
                   </pre>
                 </div>
               </div>

@@ -11,6 +11,7 @@ import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { FilterProjectDto } from './dto/filter-project.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { BulkActionDto } from '../../common/dto/bulk-action.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { generateSlug } from '../../common/utils/slug.util';
@@ -241,6 +242,40 @@ export class ProjectsService {
       resourceId: id,
       before,
       after: result.toObject(),
+      request: req,
+    });
+  }
+
+  async bulkAction(dto: BulkActionDto, req?: any): Promise<void> {
+    const { action, ids } = dto;
+    if (!ids || ids.length === 0) return;
+
+    if (action === 'publish') {
+      await this.projectModel.updateMany(
+        { _id: { $in: ids } },
+        { isPublished: true },
+      ).exec();
+    } else if (action === 'unpublish') {
+      await this.projectModel.updateMany(
+        { _id: { $in: ids } },
+        { isPublished: false },
+      ).exec();
+    } else if (action === 'archive' || action === 'delete') {
+      await this.projectModel.updateMany(
+        { _id: { $in: ids } },
+        { isArchived: true },
+      ).exec();
+      await Promise.all(
+        ids.map((id) =>
+          this.mediaService.removeUsageForEntity('Project', id),
+        ),
+      );
+    }
+
+    await this.auditLogsService.log({
+      action: `project.bulk_${action}`,
+      resource: 'Project',
+      metadata: { ids },
       request: req,
     });
   }

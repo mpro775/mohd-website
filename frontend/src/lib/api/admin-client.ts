@@ -133,6 +133,25 @@ export const adminClient = {
     return r;
   },
 
+  // Patch an existing item by id or path
+  patchResource: async <T>(resource: string, idOrPath: string, data?: unknown) => {
+    const r = await clientApiRequest<T>(`/${resource}/${idOrPath}`, {
+      method: "PATCH",
+      body: data ?? {},
+    });
+    return r;
+  },
+
+  // Send a custom api request
+  customRequest: async <T>(path: string, method: string, data?: unknown, query?: Query) => {
+    const r = await clientApiRequest<T>(path, {
+      method,
+      body: data,
+      query,
+    });
+    return r;
+  },
+
   // Delete an item by id
   deleteResource: async <T>(resource: string, id: string) => {
     const r = await clientApiRequest<T>(`/${resource}/${id}`, {
@@ -142,10 +161,10 @@ export const adminClient = {
   },
 
   // Reorder resources
-  reorderResource: async (resource: string, ids: string[]) => {
+  reorderResource: async (resource: string, items: { id: string; order: number }[]) => {
     const r = await clientApiRequest<unknown>(`/${resource}/reorder`, {
-      method: "PUT",
-      body: { ids },
+      method: "PATCH",
+      body: { items },
     });
     return r;
   },
@@ -160,12 +179,15 @@ export const adminClient = {
   },
 
   // Upload a media file
-  uploadMedia: async <T>(file: File, folder: string, alt?: string) => {
+  uploadMedia: async <T>(file: File, folder: string, alt?: string, usage?: string) => {
     const formData = new FormData();
     formData.set("file", file);
     formData.set("folder", folder);
     if (alt) {
       formData.set("alt", alt);
+    }
+    if (usage) {
+      formData.set("usage", usage);
     }
     const r = await clientApiRequest<T>("/media/upload", {
       method: "POST",

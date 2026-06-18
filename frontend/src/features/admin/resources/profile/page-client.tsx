@@ -35,7 +35,7 @@ export function ProfilePageClient() {
 
   // React Hook Form initialization
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileFormSchema),
+    resolver: zodResolver(profileFormSchema) as any,
     defaultValues: {
       fullName: "",
       title: "",
@@ -46,6 +46,7 @@ export function ProfilePageClient() {
       phone: "",
       location: "",
       profileImage: null,
+      profileImageAlt: "",
       cvFile: null,
       yearsOfExperience: 0,
       availableForWork: false,
@@ -88,10 +89,16 @@ export function ProfilePageClient() {
         phone: profile.phone || "",
         location: profile.location || "",
         profileImage: profile.profileImage || null,
+        profileImageAlt: (profile as any).profileImageAlt || "",
         cvFile: profile.cvFile || null,
         yearsOfExperience: profile.yearsOfExperience || 0,
         availableForWork: !!profile.availableForWork,
-        socialLinks: profile.socialLinks || [],
+        socialLinks: (profile.socialLinks || []).map((link: any) => ({
+          platform: link.platform || "",
+          url: link.url || "",
+          icon: link.icon || "",
+          order: link.order || 0,
+        })),
         languages: profile.languages || [],
         certificates: profile.certificates || [],
         seo: {
@@ -109,7 +116,37 @@ export function ProfilePageClient() {
       // Clean up values before saving
       const payload = {
         ...values,
-        yearsOfExperience: values.yearsOfExperience !== "" ? Number(values.yearsOfExperience) : 0,
+        yearsOfExperience: values.yearsOfExperience !== "" && values.yearsOfExperience !== null && values.yearsOfExperience !== undefined ? Number(values.yearsOfExperience) : undefined,
+        headline: values.headline || undefined,
+        about: values.about || undefined,
+        phone: values.phone || undefined,
+        location: values.location || undefined,
+        profileImage: values.profileImage || undefined,
+        profileImageAlt: values.profileImageAlt || undefined,
+        cvFile: values.cvFile || undefined,
+        socialLinks: (values.socialLinks || []).map((link: any) => ({
+          platform: link.platform,
+          url: link.url,
+          icon: link.icon || undefined,
+          order: link.order !== undefined && link.order !== null && link.order !== "" ? Number(link.order) : undefined,
+        })),
+        languages: (values.languages || []).map((lang: any) => ({
+          name: lang.name,
+          level: lang.level || undefined,
+        })),
+        certificates: (values.certificates || []).map((cert: any) => ({
+          title: cert.title,
+          issuer: cert.issuer || undefined,
+          date: cert.date || undefined,
+          url: cert.url || undefined,
+        })),
+        seo: values.seo
+          ? {
+              metaTitle: values.seo.metaTitle || undefined,
+              metaDescription: values.seo.metaDescription || undefined,
+              ogImage: values.seo.ogImage || undefined,
+            }
+          : undefined,
       };
       
       return clientApiRequest<Profile>("profile", {
@@ -270,6 +307,14 @@ export function ProfilePageClient() {
                         />
                       )}
                     />
+                    <div className="md:col-span-2">
+                      <InputField
+                        label="النص البديل للصورة الشخصية (Alt Text)"
+                        register={register("profileImageAlt")}
+                        error={errors.profileImageAlt?.message}
+                        placeholder="مثال: صورة شخصية للمطور محمد"
+                      />
+                    </div>
                   </FormSection>
 
                   <div className="border-t border-border/40 my-6 pt-5" />

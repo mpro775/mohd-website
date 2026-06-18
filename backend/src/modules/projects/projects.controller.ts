@@ -15,6 +15,7 @@ import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { FilterProjectDto } from './dto/filter-project.dto';
+import { BulkActionDto } from '../../common/dto/bulk-action.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -75,6 +76,14 @@ export class AdminProjectsController {
     return {
       message: 'Project created successfully',
       data: await this.projectsService.create(createProjectDto, req),
+    };
+  }
+
+  @Post('bulk')
+  async bulk(@Request() req, @Body() dto: BulkActionDto) {
+    return {
+      message: 'Bulk action completed successfully',
+      data: await this.projectsService.bulkAction(dto, req),
     };
   }
 

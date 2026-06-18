@@ -11,4 +11,5 @@ export const adminSearchParamsSchema = {
   sortBy: parseAsString.withDefault("createdAt"),
   sortOrder: parseAsString.withDefault("desc"),
   status: parseAsString.withDefault("all"),
+  category: parseAsString.withDefault(""),
 };

@@ -14,7 +14,7 @@ export type ContactMessage = {
   phone?: string;
   subject: string;
   message: string;
-  status: "pending" | "read" | "replied";
+  status: "new" | "read" | "replied" | "archived" | "spam";
   createdAt: string;
 };
 
@@ -107,7 +107,7 @@ export function createContactColumns({
       accessorKey: "status",
       header: "الحالة",
       cell: ({ row }) => {
-        const status = row.original.status || "pending";
+        const status = row.original.status || "new";
         return (
           <span
             className={cn(
@@ -116,7 +116,9 @@ export function createContactColumns({
                 ? "bg-emerald-500/10 text-emerald-500"
                 : status === "read"
                 ? "bg-blue-500/10 text-blue-500"
-                : "bg-amber-500/10 text-amber-500"
+                : status === "new"
+                ? "bg-amber-500/10 text-amber-500"
+                : "bg-muted text-muted-foreground"
             )}
           >
             {status === "replied" ? (
@@ -127,7 +129,7 @@ export function createContactColumns({
               <AlertCircle className="h-3 w-3 shrink-0" />
             )}
             <span>
-              {status === "replied" ? "تم الرد" : status === "read" ? "مقروءة" : "غير مقروءة"}
+              {status === "replied" ? "تم الرد" : status === "read" ? "مقروءة" : status === "new" ? "غير مقروءة" : status}
             </span>
           </span>
         );
@@ -191,7 +193,7 @@ export function createContactColumns({
                   <div className="h-px bg-border my-1" />
 
                   {/* Mark as read */}
-                  {onMarkRead && msg.status === "pending" && (
+                  {onMarkRead && msg.status === "new" && (
                     <DropdownMenuPrimitive.Item
                       onClick={() => onMarkRead(id)}
                       className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-blue-500 hover:bg-blue-500/10 cursor-pointer outline-none select-none"

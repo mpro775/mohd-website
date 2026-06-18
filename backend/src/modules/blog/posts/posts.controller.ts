@@ -16,6 +16,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { FilterPostDto } from './dto/filter-post.dto';
 import { PostStatus } from './schemas/post.schema';
+import { BulkActionDto } from '../../../common/dto/bulk-action.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -76,6 +77,14 @@ export class AdminPostsController {
     return {
       message: 'Post created successfully',
       data: await this.postsService.create(createPostDto, req.user.userId, req),
+    };
+  }
+
+  @Post('bulk')
+  async bulk(@Request() req, @Body() dto: BulkActionDto) {
+    return {
+      message: 'Bulk action completed successfully',
+      data: await this.postsService.bulkAction(dto, req),
     };
   }
 

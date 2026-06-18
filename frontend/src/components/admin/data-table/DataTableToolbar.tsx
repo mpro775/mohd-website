@@ -30,6 +30,11 @@ interface DataTableToolbarProps<TData> {
   columnLabels?: Record<string, string>;
   exportFilename?: string;
   className?: string;
+  serverSide?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  filtersValue?: Record<string, string>;
+  onFilterChange?: (key: string, value: string) => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -42,6 +47,11 @@ export function DataTableToolbar<TData>({
   columnLabels = {},
   exportFilename = "export_data",
   className,
+  serverSide = false,
+  searchValue: propSearchValue = "",
+  onSearchChange,
+  filtersValue = {},
+  onFilterChange,
 }: DataTableToolbarProps<TData>) {
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const hasSelection = selectedRows.length > 0;
@@ -51,19 +61,26 @@ export function DataTableToolbar<TData>({
 
   // Sync initial state
   useEffect(() => {
-    const tableSearchValue = (table.getColumn(searchKey)?.getFilterValue() as string) ?? "";
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSearchValue(tableSearchValue);
-  }, [table, searchKey]);
+    if (serverSide) {
+      setSearchValue(propSearchValue);
+    } else {
+      const tableSearchValue = (table.getColumn(searchKey)?.getFilterValue() as string) ?? "";
+      setSearchValue(tableSearchValue);
+    }
+  }, [table, searchKey, serverSide, propSearchValue]);
 
   // Debounced search trigger (300ms)
   useEffect(() => {
     const timer = setTimeout(() => {
-      table.getColumn(searchKey)?.setFilterValue(searchValue);
+      if (serverSide) {
+        if (onSearchChange) onSearchChange(searchValue);
+      } else {
+        table.getColumn(searchKey)?.setFilterValue(searchValue);
+      }
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchValue, searchKey, table]);
+  }, [searchValue, searchKey, table, serverSide, onSearchChange]);
 
   // Helper to export table data to UTF-8 CSV with Arabic BOM support
   const handleExportCSV = () => {
@@ -75,8 +92,8 @@ export function DataTableToolbar<TData>({
       }
 
       const columns = table
-        .getAllColumns()
-        .filter((col) => typeof col.accessorFn !== "undefined" && col.id !== "select" && col.id !== "actions");
+         .getAllColumns()
+         .filter((col) => typeof col.accessorFn !== "undefined" && col.id !== "select" && col.id !== "actions");
 
       // Build CSV headers
       const headers = columns.map((col) => columnLabels[col.id] || col.id);
@@ -156,12 +173,14 @@ export function DataTableToolbar<TData>({
         {/* Dynamic Filters */}
         {filterOptions.map((filter) => {
           const hasColumn = table.getAllColumns().some((col) => col.id === filter.key);
-          if (!hasColumn) return null;
+          if (!hasColumn && !serverSide) return null;
 
           const column = table.getColumn(filter.key);
-          if (!column) return null;
+          if (!column && !serverSide) return null;
 
-          const filterValue = (column.getFilterValue() as string) ?? "all";
+          const filterValue = serverSide
+            ? (filtersValue[filter.key] || "all")
+            : (column ? ((column.getFilterValue() as string) ?? "all") : "all");
 
           return (
             <select
@@ -169,7 +188,11 @@ export function DataTableToolbar<TData>({
               value={filterValue}
               onChange={(e) => {
                 const value = e.target.value;
-                column.setFilterValue(value === "all" ? undefined : value);
+                if (serverSide && onFilterChange) {
+                  onFilterChange(filter.key, value === "all" ? "" : value);
+                } else if (column) {
+                  column.setFilterValue(value === "all" ? undefined : value);
+                }
               }}
               className="h-9 rounded-lg border border-border bg-card px-3 text-xs font-bold outline-none focus:border-primary cursor-pointer"
             >

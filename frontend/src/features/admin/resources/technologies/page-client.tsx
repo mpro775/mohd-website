@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function TechnologiesPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -33,7 +33,7 @@ export function TechnologiesPageClient() {
 
   // Form initialization
   const form = useForm<TechnologyFormValues>({
-    resolver: zodResolver(technologyFormSchema),
+    resolver: zodResolver(technologyFormSchema) as any,
     defaultValues: {
       name: "",
       slug: "",
@@ -60,7 +60,7 @@ export function TechnologiesPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
-        status: queryParams.status === "all" ? undefined : queryParams.status,
+        isPublished: queryParams.status === "published" ? true : queryParams.status === "draft" ? false : undefined,
       }),
   });
 
@@ -74,8 +74,10 @@ export function TechnologiesPageClient() {
     mutationFn: async (values: TechnologyFormValues) => {
       const payload = {
         ...values,
-        yearsOfExperience: values.yearsOfExperience !== "" ? Number(values.yearsOfExperience) : undefined,
+        yearsOfExperience: values.yearsOfExperience !== "" && values.yearsOfExperience !== null && values.yearsOfExperience !== undefined ? Number(values.yearsOfExperience) : undefined,
         officialUrl: values.officialUrl || undefined,
+        description: values.description || undefined,
+        group: values.group || undefined,
       };
 
       if (editingTech) {
@@ -112,7 +114,7 @@ export function TechnologiesPageClient() {
   // 4. Publish / Unpublish Action Mutation
   const patchActionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "publish" | "unpublish" }) => {
-      return adminClient.updateResource<Technology>(`technologies`, `${id}/${action}`, {});
+      return adminClient.patchResource<Technology>("technologies", `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const msg = variables.action === "publish" ? "تم تنشيط وعرض التقنية!" : "تم إخاء وتجميد التقنية!";
@@ -125,10 +127,7 @@ export function TechnologiesPageClient() {
   // 5. Reorder Mutation
   const reorderMutation = useMutation({
     mutationFn: async ({ items }: { items: Array<{ id: string; order: number }> }) => {
-      return clientApiRequest(`technologies/reorder`, {
-        method: "PATCH",
-        body: { items },
-      });
+      return adminClient.reorderResource("technologies", items);
     },
     onSuccess: () => {
       toast.success("تم تحديث ترتيب التقنيات بنجاح!");
@@ -238,6 +237,17 @@ export function TechnologiesPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ isPublished: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

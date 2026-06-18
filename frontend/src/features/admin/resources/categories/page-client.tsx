@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function CategoriesPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // States
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -64,11 +64,12 @@ export function CategoriesPageClient() {
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: CategoryFormValues) => {
+      const { slug, ...payload } = values;
       if (editingCategory) {
         const id = editingCategory.id ?? editingCategory._id ?? "";
-        return adminClient.updateResource<Category>("blog/categories", id, values);
+        return adminClient.updateResource<Category>("blog/categories", id, payload);
       } else {
-        return adminClient.createResource<Category>("blog/categories", values);
+        return adminClient.createResource<Category>("blog/categories", payload);
       }
     },
     onSuccess: (res: any) => {
@@ -98,7 +99,7 @@ export function CategoriesPageClient() {
   // 4. Activate / Deactivate Action Mutation
   const actionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "activate" | "deactivate" }) => {
-      return adminClient.updateResource<Category>(`blog/categories`, `${id}/${action}`, {});
+      return adminClient.patchResource<Category>(`blog/categories`, `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const msg = variables.action === "activate" ? "تم تفعيل وتنشيط التصنيف!" : "تم تعطيل وتجميد التصنيف بنجاح!";
@@ -169,6 +170,17 @@ export function CategoriesPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ isActive: queryParams.status }}
+        onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

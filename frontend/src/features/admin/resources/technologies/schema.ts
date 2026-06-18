@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const technologyFormSchema = z.object({
-  name: z.string().min(1, "اسم التقنية مطلوب ويجب ملؤه"),
+  name: z.string().min(2, "اسم التقنية يجب أن يكون حرفين على الأقل"),
   slug: z.string().optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
   icon: z.string().nullable().optional(),
@@ -9,7 +9,7 @@ export const technologyFormSchema = z.object({
   group: z.string().optional().or(z.literal("")),
   proficiencyLevel: z.enum(["beginner", "intermediate", "advanced", "expert"]),
   officialUrl: z.string().url("يجب إدخال رابط صالح").or(z.string().length(0)).optional().nullable().or(z.literal("")),
-  yearsOfExperience: z.number().min(0, "سنوات الخبرة يجب أن تكون صفر أو أكثر").optional().nullable().or(z.literal("")),
+  yearsOfExperience: z.union([z.number(), z.string(), z.null(), z.undefined()]).optional(),
   color: z.string().optional().or(z.literal("")),
   highlighted: z.boolean(),
   isPublished: z.boolean(),

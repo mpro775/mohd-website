@@ -24,7 +24,7 @@ import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 
 export function ProjectsPageClient() {
   const queryClient = useQueryClient();
-  const [queryParams] = useQueryStates(adminSearchParamsSchema);
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
 
   // Modal and drawers states
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -47,6 +47,12 @@ export function ProjectsPageClient() {
       githubUrl: "",
       isPublished: true,
       featured: false,
+      clientName: "",
+      startDate: "",
+      endDate: "",
+      completionDate: "",
+      gallery: [],
+      images: [],
       caseStudy: "",
       problem: "",
       solution: "",
@@ -71,6 +77,7 @@ export function ProjectsPageClient() {
         limit: queryParams.limit,
         search: queryParams.search || undefined,
         status: queryParams.status === "all" ? undefined : queryParams.status,
+        category: queryParams.category || undefined,
       }),
   });
 
@@ -87,6 +94,24 @@ export function ProjectsPageClient() {
         ...values,
         liveUrl: values.liveUrl || undefined,
         githubUrl: values.githubUrl || undefined,
+        clientName: values.clientName || undefined,
+        startDate: values.startDate || undefined,
+        endDate: values.endDate || undefined,
+        completionDate: values.completionDate || undefined,
+        coverImage: values.coverImage || undefined,
+        caseStudy: values.caseStudy || undefined,
+        problem: values.problem || undefined,
+        solution: values.solution || undefined,
+        results: values.results || undefined,
+        role: values.role || undefined,
+        slug: values.slug || undefined,
+        seo: values.seo
+          ? {
+              metaTitle: values.seo.metaTitle || undefined,
+              metaDescription: values.seo.metaDescription || undefined,
+              ogImage: values.seo.ogImage || undefined,
+            }
+          : undefined,
       };
 
       if (editingProject) {
@@ -123,7 +148,7 @@ export function ProjectsPageClient() {
   // Individual Actions (Publish, Unpublish, Archive)
   const patchActionMutation = useMutation({
     mutationFn: async ({ id, action }: { id: string; action: "publish" | "unpublish" | "archive" }) => {
-      return adminClient.updateResource<Project>(`projects`, `${id}/${action}`, {});
+      return adminClient.patchResource<Project>("projects", `${id}/${action}`);
     },
     onSuccess: (_, variables) => {
       const actionsMap = {
@@ -171,6 +196,12 @@ export function ProjectsPageClient() {
       githubUrl: "",
       isPublished: true,
       featured: false,
+      clientName: "",
+      startDate: "",
+      endDate: "",
+      completionDate: "",
+      gallery: [],
+      images: [],
       caseStudy: "",
       problem: "",
       solution: "",
@@ -185,7 +216,7 @@ export function ProjectsPageClient() {
     setIsDrawerOpen(true);
   };
 
-  const handleOpenEdit = (project: Project) => {
+  const handleOpenEdit = (project: Project & { clientName?: string; startDate?: string; endDate?: string; completionDate?: string; gallery?: string[]; images?: string[] }) => {
     setEditingProject(project);
     reset({
       title: project.title || "",
@@ -200,6 +231,12 @@ export function ProjectsPageClient() {
       githubUrl: project.githubUrl || "",
       isPublished: project.isPublished !== false,
       featured: project.featured === true,
+      clientName: project.clientName || "",
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : "",
+      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : "",
+      completionDate: project.completionDate ? new Date(project.completionDate).toISOString().split('T')[0] : "",
+      gallery: project.gallery || [],
+      images: project.images || [],
       caseStudy: project.caseStudy || "",
       problem: project.problem || "",
       solution: project.solution || "",
@@ -263,6 +300,17 @@ export function ProjectsPageClient() {
 
       {/* Main DataTable list */}
       <DataTable
+        serverSide
+        page={data?.meta?.page ?? queryParams.page}
+        limit={data?.meta?.limit ?? queryParams.limit}
+        total={data?.meta?.total ?? 0}
+        totalPages={data?.meta?.totalPages ?? 1}
+        searchValue={queryParams.search}
+        onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
+        onPageChange={(p) => setQueryParams({ page: p })}
+        onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        filtersValue={{ category: queryParams.category }}
+        onFilterChange={(key, val) => setQueryParams({ [key]: val || undefined, page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

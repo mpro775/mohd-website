@@ -45,6 +45,17 @@ interface DataTableProps<TData, TValue> {
   emptyTitle?: string;
   emptyDescription?: string;
   className?: string;
+  serverSide?: boolean;
+  page?: number;
+  limit?: number;
+  total?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onLimitChange?: (limit: number) => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  filtersValue?: Record<string, string>;
+  onFilterChange?: (key: string, value: string) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -61,6 +72,17 @@ export function DataTable<TData, TValue>({
   emptyTitle = "لا توجد نتائج معروضة",
   emptyDescription = "لم نجد أي بيانات مطابقة لخيارات البحث الحالية.",
   className,
+  serverSide = false,
+  page,
+  limit,
+  total,
+  totalPages,
+  onPageChange,
+  onLimitChange,
+  searchValue,
+  onSearchChange,
+  filtersValue,
+  onFilterChange,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -73,7 +95,7 @@ export function DataTable<TData, TValue>({
     columns,
     state: {
       sorting,
-      columnFilters,
+      columnFilters: serverSide ? [] : columnFilters,
       columnVisibility,
       rowSelection,
     },
@@ -82,9 +104,9 @@ export function DataTable<TData, TValue>({
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: serverSide ? undefined : getPaginationRowModel(),
+    getSortedRowModel: serverSide ? undefined : getSortedRowModel(),
+    getFilteredRowModel: serverSide ? undefined : getFilteredRowModel(),
   });
 
   const visibleColumnsCount = table.getVisibleFlatColumns().length;
@@ -102,6 +124,11 @@ export function DataTable<TData, TValue>({
           onBulkAction={onBulkAction}
           columnLabels={columnLabels}
           exportFilename={exportFilename}
+          serverSide={serverSide}
+          searchValue={searchValue}
+          onSearchChange={onSearchChange}
+          filtersValue={filtersValue}
+          onFilterChange={onFilterChange}
         />
       )}
 
@@ -263,7 +290,16 @@ export function DataTable<TData, TValue>({
 
       {/* 3. Pagination Controls */}
       {table.getRowModel().rows.length > 0 && !isLoading && (
-        <DataTablePagination table={table} />
+        <DataTablePagination
+          table={table}
+          serverSide={serverSide}
+          page={page}
+          limit={limit}
+          total={total}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          onLimitChange={onLimitChange}
+        />
       )}
     </div>
   );
