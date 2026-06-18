@@ -22,6 +22,7 @@ import { MediaQueryDto } from './dto/media-query.dto';
 import { UpdateMediaMetadataDto } from './dto/update-media-metadata.dto';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { buildSafeRegex } from '../../common/utils/regex.util';
 
 const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 const ALLOWED_DOC_MIMES = ['application/pdf'];
@@ -226,8 +227,8 @@ export class MediaService {
     if (query.isUsed !== undefined) filter.isUsed = query.isUsed;
 
     // Search query: filters in filename, originalName, alt, usage
-    if (query.search) {
-      const searchRegex = new RegExp(query.search, 'i');
+    const searchRegex = buildSafeRegex(query.search);
+    if (searchRegex) {
       filter.$or = [
         { filename: searchRegex },
         { originalName: searchRegex },

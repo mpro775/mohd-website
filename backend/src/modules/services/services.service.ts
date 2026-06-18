@@ -9,9 +9,13 @@ import { Model } from 'mongoose';
 import { Service } from './schemas/service.schema';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { FilterServiceDto } from './dto/filter-service.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { generateSlug } from '../../common/utils/slug.util';
+import { buildSafeRegex } from '../../common/utils/regex.util';
+import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { IPaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class ServicesService {
@@ -89,8 +93,47 @@ export class ServicesService {
       .sort({ order: 1, name: 1 });
   }
 
-  async findAllAdmin(): Promise<Service[]> {
-    return this.serviceModel.find().sort({ order: 1, name: 1 });
+  async findAllAdmin(queryDto: FilterServiceDto): Promise<IPaginatedResponse<Service>> {
+    const page = Number(queryDto.page ?? 1);
+    const limit = Number(queryDto.limit ?? 10);
+    const skip = (page - 1) * limit;
+
+    const query: any = {};
+
+    if (queryDto.category) {
+      query.category = queryDto.category;
+    }
+
+    if (typeof queryDto.isPublished === 'boolean') {
+      query.isPublished = queryDto.isPublished;
+    }
+
+    const searchRegex = buildSafeRegex(queryDto.search);
+    if (searchRegex) {
+      query.$or = [
+        { name: searchRegex },
+        { slug: searchRegex },
+        { shortDescription: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+      ];
+    }
+
+    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'order', 'name', 'category']);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
+
+    const [data, total] = await Promise.all([
+      this.serviceModel
+        .find(query)
+        .sort({ [sortBy as string]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.serviceModel.countDocuments(query),
+    ]);
+
+    return createPaginatedResponse(data, total, page, limit);
   }
 
   async findOne(slug: string): Promise<Service> {

@@ -14,6 +14,7 @@ import {
 import { LinksService } from './links.service';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
+import { FilterLinkDto } from './dto/filter-link.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -58,10 +59,12 @@ export class AdminLinksController {
   constructor(private readonly linksService: LinksService) {}
 
   @Get()
-  async findAll(@Query('category') category?: string) {
+  async findAll(@Query() query: FilterLinkDto) {
+    const result = await this.linksService.findAllAdmin(query);
     return {
       message: 'Links loaded successfully',
-      data: await this.linksService.findAllAdmin(category),
+      data: result.data,
+      meta: result.meta,
     };
   }
 

@@ -134,15 +134,15 @@ export function ProjectsPageClient() {
     },
   });
 
-  // Delete
+  // Delete (Archives project)
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminClient.deleteResource("projects", id),
     onSuccess: () => {
-      toast.success("تم حذف المشروع بنجاح");
+      toast.success("تم أرشفة المشروع بنجاح");
       setDeletingId(null);
       invalidateKeys();
     },
-    onError: (err) => handleAdminError(err, "فشل حذف المشروع"),
+    onError: (err) => handleAdminError(err, "فشل أرشفة المشروع"),
   });
 
   // Individual Actions (Publish, Unpublish, Archive)
@@ -335,8 +335,7 @@ export function ProjectsPageClient() {
         bulkActions={[
           { action: "publish", label: "نشر المحدد", variant: "primary" },
           { action: "unpublish", label: "إلغاء نشر المحدد", variant: "warning" },
-          { action: "archive", label: "أرشفة المحدد" },
-          { action: "delete", label: "حذف المحدد نهائياً", variant: "danger" },
+          { action: "archive", label: "أرشفة المحدد", variant: "danger" },
         ]}
         onBulkAction={handleBulkAction}
       />
@@ -358,11 +357,11 @@ export function ProjectsPageClient() {
         isOpen={deletingId !== null}
         onClose={() => setDeletingId(null)}
         onConfirm={handleConfirmDelete}
-        title="حذف المشروع نهائياً؟"
-        description="هل أنت متأكد من رغبتك في حذف هذا المشروع نهائياً من معرض أعمالك ومحركات البحث؟ لا يمكن التراجع عن هذا الإجراء!"
-        confirmText="نعم، حذف نهائي"
+        title="أرشفة المشروع؟"
+        description="هل أنت متأكد من رغبتك في أرشفة هذا المشروع؟ سيتم إخفاء المشروع من المعرض العام ويمكنك الوصول إليه وإعادة تفعيله لاحقاً."
+        confirmText="نعم، أرشفة المشروع"
         cancelText="إلغاء التراجع"
-        variant="danger"
+        variant="warning"
         isSubmitting={deleteMutation.isPending}
       />
     </div>

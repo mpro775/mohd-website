@@ -14,6 +14,7 @@ import {
 import { TechnologiesService } from './technologies.service';
 import { CreateTechnologyDto } from './dto/create-technology.dto';
 import { UpdateTechnologyDto } from './dto/update-technology.dto';
+import { FilterTechnologyDto } from './dto/filter-technology.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -50,10 +51,12 @@ export class AdminTechnologiesController {
   constructor(private readonly technologiesService: TechnologiesService) {}
 
   @Get()
-  async findAll(@Query('category') category?: string) {
+  async findAll(@Query() query: FilterTechnologyDto) {
+    const result = await this.technologiesService.findAllAdmin(query);
     return {
       message: 'Technologies loaded successfully',
-      data: await this.technologiesService.findAllAdmin(category),
+      data: result.data,
+      meta: result.meta,
     };
   }
 

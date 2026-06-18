@@ -9,9 +9,13 @@ import { Model } from 'mongoose';
 import { Category } from './schemas/category.schema';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { FilterCategoryDto } from './dto/filter-category.dto';
 import { Post } from '../posts/schemas/post.schema';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
 import { generateSlug } from '../../../common/utils/slug.util';
+import { buildSafeRegex } from '../../../common/utils/regex.util';
+import { createPaginatedResponse } from '../../../common/utils/pagination.util';
+import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
 
 @Injectable()
 export class CategoriesService {
@@ -75,8 +79,48 @@ export class CategoriesService {
     return this.categoryModel.find({ isActive: true }).sort({ name: 1 });
   }
 
-  async findAllAdmin(): Promise<Category[]> {
-    return this.categoryModel.find().sort({ name: 1 });
+  async findAllAdmin(queryDto: FilterCategoryDto): Promise<IPaginatedResponse<Category>> {
+    const page = Number(queryDto.page ?? 1);
+    const limit = Number(queryDto.limit ?? 10);
+    const skip = (page - 1) * limit;
+
+    const query: any = {};
+
+    const isActive =
+      typeof queryDto.isActive === 'boolean'
+        ? queryDto.isActive
+        : queryDto.status === 'active'
+          ? true
+          : queryDto.status === 'inactive'
+            ? false
+            : undefined;
+
+    if (typeof isActive === 'boolean') query.isActive = isActive;
+
+    const searchRegex = buildSafeRegex(queryDto.search);
+    if (searchRegex) {
+      query.$or = [
+        { name: searchRegex },
+        { slug: searchRegex },
+        { description: searchRegex },
+      ];
+    }
+
+    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'name', 'order']);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
+
+    const [data, total] = await Promise.all([
+      this.categoryModel
+        .find(query)
+        .sort({ [sortBy as string]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.categoryModel.countDocuments(query),
+    ]);
+
+    return createPaginatedResponse(data, total, page, limit);
   }
 
   async findOnePublic(slug: string): Promise<Category> {

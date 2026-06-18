@@ -12,4 +12,12 @@ export const adminSearchParamsSchema = {
   sortOrder: parseAsString.withDefault("desc"),
   status: parseAsString.withDefault("all"),
   category: parseAsString.withDefault(""),
+  isActive: parseAsString.withDefault("all"),
+  isPublished: parseAsString.withDefault("all"),
+  action: parseAsString.withDefault(""),
+  resource: parseAsString.withDefault(""),
+  type: parseAsString.withDefault("all"),
+  folder: parseAsString.withDefault("all"),
+  isUsed: parseAsString.withDefault("all"),
 };
+

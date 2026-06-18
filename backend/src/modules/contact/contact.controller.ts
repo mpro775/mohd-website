@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ContactService } from './contact.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
+import { FilterContactMessageDto } from './dto/filter-contact-message.dto';
 import { MessageStatus } from './schemas/contact-message.schema';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -50,12 +51,8 @@ export class AdminContactController {
   constructor(private readonly contactService: ContactService) {}
 
   @Get()
-  async findAll(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('status') status?: MessageStatus,
-  ) {
-    const result = await this.contactService.findAll(page, limit, status);
+  async findAll(@Query() query: FilterContactMessageDto) {
+    const result = await this.contactService.findAll(query);
     return {
       message: 'Messages loaded successfully',
       data: result.data,

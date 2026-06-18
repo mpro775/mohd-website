@@ -30,7 +30,8 @@ export function AuditLogsPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
-        status: queryParams.status === "all" ? undefined : queryParams.status,
+        sortBy: queryParams.sortBy || "createdAt",
+        sortOrder: queryParams.sortOrder || "desc",
       }),
   });
 

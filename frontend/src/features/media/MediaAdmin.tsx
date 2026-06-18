@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { 
@@ -18,13 +18,19 @@ import {
   X, 
   HardDrive, 
   UploadCloud,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { adminClient } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { handleAdminError } from "@/lib/api/admin-errors";
+import { useQueryStates } from "nuqs";
+import { adminSearchParamsSchema } from "@/lib/api/admin-search-params";
 
 type MediaItem = {
   id?: string;
@@ -59,10 +65,25 @@ export function MediaAdmin() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // States
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFolderFilter, setSelectedFolderFilter] = useState("all");
+  const [queryParams, setQueryParams] = useQueryStates(adminSearchParamsSchema);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState(queryParams.search || "");
+
+  // Sync query search state to local input value
+  useEffect(() => {
+    setSearchTerm(queryParams.search || "");
+  }, [queryParams.search]);
+
+  // Debounce search state updates
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if ((queryParams.search || "") !== searchTerm) {
+        setQueryParams({ search: searchTerm || undefined, page: 1 });
+      }
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [searchTerm, queryParams.search, setQueryParams]);
 
   // Modal / Dialog States
   const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
@@ -97,13 +118,30 @@ export function MediaAdmin() {
   ];
 
   // 1. Fetch Media List using React Query
-  const { data: mediaItems = [], isLoading, isRefetching, refetch } = useQuery<MediaItem[]>({
-    queryKey: adminQueryKeys.resource("media"),
-    queryFn: async () => {
-      const response = await adminClient.listResource<MediaItem>("media");
-      return response.items;
-    },
+  const { data, isLoading, isRefetching, refetch } = useQuery({
+    queryKey: adminQueryKeys.resource("media", queryParams),
+    queryFn: () =>
+      adminClient.listResource<MediaItem>("media", {
+        page: queryParams.page,
+        limit: queryParams.limit,
+        search: queryParams.search || undefined,
+        folder: queryParams.folder === "all" ? undefined : queryParams.folder,
+        type: queryParams.type === "all" ? undefined : queryParams.type,
+        isUsed: queryParams.isUsed === "used" ? true : queryParams.isUsed === "unused" ? false : undefined,
+        sortBy: queryParams.sortBy || "createdAt",
+        sortOrder: queryParams.sortOrder || "desc",
+      }),
   });
+
+  const mediaItems = data?.items || [];
+  const meta = data?.meta || {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  };
 
   // 2. Mutations
   const invalidateKeys = () => {
@@ -248,14 +286,7 @@ export function MediaAdmin() {
     updateMutation.mutate({ id, alt: editAlt, folder: editFolder, usage: editUsage || undefined });
   };
 
-  // Filters logic
-  const filteredMedia = mediaItems.filter((item) => {
-    const matchesSearch = 
-      item.originalName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      (item.alt ?? "").toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFolder = selectedFolderFilter === "all" || item.folder === selectedFolderFilter;
-    return matchesSearch && matchesFolder;
-  });
+  // Filtering is handled server-side via queryParams
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
@@ -410,10 +441,10 @@ export function MediaAdmin() {
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="rounded-lg bg-muted/30 border border-border p-3 text-center">
                 <span className="text-[10px] text-muted-foreground block font-semibold">إجمالي الملفات</span>
-                <span className="text-lg font-bold text-foreground mt-0.5 block">{mediaItems.length}</span>
+                <span className="text-lg font-bold text-foreground mt-0.5 block">{meta.total}</span>
               </div>
               <div className="rounded-lg bg-muted/30 border border-border p-3 text-center">
-                <span className="text-[10px] text-muted-foreground block font-semibold">حجم التخزين التقريبي</span>
+                <span className="text-[10px] text-muted-foreground block font-semibold">حجم الصفحة الحالية</span>
                 <span className="text-xs font-bold text-foreground mt-1.5 block">
                   {formatBytes(mediaItems.reduce((acc, curr) => acc + (curr.size || 0), 0))}
                 </span>
@@ -427,8 +458,8 @@ export function MediaAdmin() {
           
           {/* Controls Bar */}
           <div className="rounded-xl border border-border bg-card/60 backdrop-blur-md p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-1 items-center gap-2 min-w-[240px]">
-              <div className="relative flex-1">
+            <div className="flex flex-wrap flex-1 items-center gap-2 min-w-[240px]">
+              <div className="relative flex-1 min-w-[180px]">
                 <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <input
                   type="text"
@@ -440,14 +471,34 @@ export function MediaAdmin() {
               </div>
               
               <select
-                value={selectedFolderFilter}
-                onChange={(e) => setSelectedFolderFilter(e.target.value)}
-                className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition"
+                value={queryParams.folder || "all"}
+                onChange={(e) => setQueryParams({ folder: e.target.value === "all" ? undefined : e.target.value, page: 1 })}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
               >
                 <option value="all">كل المجلدات</option>
                 {folders.map((f) => (
                   <option key={f.value} value={f.value}>{f.value}</option>
                 ))}
+              </select>
+
+              <select
+                value={queryParams.type || "all"}
+                onChange={(e) => setQueryParams({ type: e.target.value === "all" ? undefined : e.target.value, page: 1 })}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
+              >
+                <option value="all">كل الأنواع</option>
+                <option value="image">صور</option>
+                <option value="document">مستندات</option>
+              </select>
+
+              <select
+                value={queryParams.isUsed || "all"}
+                onChange={(e) => setQueryParams({ isUsed: e.target.value === "all" ? undefined : e.target.value, page: 1 })}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
+              >
+                <option value="all">كل الملفات (مستعمل/مهمل)</option>
+                <option value="used">مستعمل فقط</option>
+                <option value="unused">غير مستعمل فقط</option>
               </select>
             </div>
 
@@ -476,7 +527,7 @@ export function MediaAdmin() {
               <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
               <p className="mt-3 text-xs text-muted-foreground font-semibold">جاري جلب ملفات الوسائط...</p>
             </div>
-          ) : filteredMedia.length === 0 ? (
+          ) : mediaItems.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-12 text-center space-y-3">
               <div className="h-12 w-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mx-auto">
                 <Search className="h-6 w-6" />
@@ -490,7 +541,7 @@ export function MediaAdmin() {
             
             // Grid Gallery View
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {filteredMedia.map((item) => {
+              {mediaItems.map((item) => {
                 const isImage = item.mimeType?.startsWith("image/") || item.type === "image";
                 return (
                   <div
@@ -575,7 +626,7 @@ export function MediaAdmin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {filteredMedia.map((item) => {
+                  {mediaItems.map((item) => {
                     const isImage = item.mimeType?.startsWith("image/") || item.type === "image";
                     return (
                       <tr key={item.id ?? item._id} className="hover:bg-muted/10 transition">
@@ -642,6 +693,78 @@ export function MediaAdmin() {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {meta.totalPages > 1 && (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 py-3 select-none border-t border-border mt-6 animate-in fade-in duration-200" dir="rtl">
+              <div className="flex-1 text-sm text-muted-foreground text-right font-semibold">
+                <span>إجمالي الملفات: {meta.total}</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-8 justify-end">
+                {/* Page size selector */}
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-semibold text-muted-foreground">عدد العناصر المعروضة:</p>
+                  <select
+                    value={meta.limit}
+                    onChange={(e) => setQueryParams({ limit: Number(e.target.value), page: 1 })}
+                    className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-semibold outline-none focus:border-primary cursor-pointer transition"
+                  >
+                    {[10, 20, 30, 50, 100].map((size) => (
+                      <option key={size} value={size}>
+                        {size} عناصر
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Current page indicator */}
+                <div className="flex items-center justify-center text-xs font-bold text-foreground" dir="ltr">
+                  <span>
+                    الصفحة {meta.page} من {meta.totalPages}
+                  </span>
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setQueryParams({ page: 1 })}
+                    disabled={meta.page <= 1}
+                    className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition shadow-sm"
+                    title="الصفحة الأولى"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setQueryParams({ page: meta.page - 1 })}
+                    disabled={meta.page <= 1}
+                    className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition shadow-sm"
+                    title="الصفحة السابقة"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setQueryParams({ page: meta.page + 1 })}
+                    disabled={meta.page >= meta.totalPages}
+                    className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition shadow-sm"
+                    title="الصفحة التالية"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+
+                  <button
+                    onClick={() => setQueryParams({ page: meta.totalPages })}
+                    disabled={meta.page >= meta.totalPages}
+                    className="h-8 w-8 rounded-lg border border-border bg-card flex items-center justify-center text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition shadow-sm"
+                    title="الصفحة الأخيرة"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

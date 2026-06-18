@@ -7,12 +7,14 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { FilterServiceDto } from './dto/filter-service.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -49,10 +51,12 @@ export class AdminServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
   @Get()
-  async findAll() {
+  async findAll(@Query() query: FilterServiceDto) {
+    const result = await this.servicesService.findAllAdmin(query);
     return {
       message: 'Services loaded successfully',
-      data: await this.servicesService.findAllAdmin(),
+      data: result.data,
+      meta: result.meta,
     };
   }
 

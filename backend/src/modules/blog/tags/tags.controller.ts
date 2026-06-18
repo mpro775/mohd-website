@@ -7,12 +7,14 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
+import { FilterTagDto } from './dto/filter-tag.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -51,11 +53,12 @@ export class AdminTagsController {
   constructor(private readonly tagsService: TagsService) {}
 
   @Get()
-  async findAll() {
-    const tags = await this.tagsService.findAllAdmin();
+  async findAll(@Query() query: FilterTagDto) {
+    const result = await this.tagsService.findAllAdmin(query);
     return {
       message: 'تم جلب الوسوم بنجاح',
-      data: tags,
+      data: result.data,
+      meta: result.meta,
     };
   }
 

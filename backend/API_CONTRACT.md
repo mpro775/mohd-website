@@ -72,24 +72,61 @@ Public blog filters use slugs. Unknown `categorySlug` or `tagSlug` returns `data
 
 Editors can manage content routes. Admins can manage everything.
 
-- `/api/admin/projects`
-- `/api/admin/blog/posts`
-- `/api/admin/blog/categories`
-- `/api/admin/blog/tags`
-- `/api/admin/services`
-- `/api/admin/technologies`
-- `/api/admin/links`
-- `/api/admin/faqs`
-- `/api/admin/media`
+All administrative resource lists return a unified paginated response shape `{ data, meta }` and support:
+- **Pagination**: `page` (default 1) and `limit` (default 10, max 100).
+- **Sorting**: `sortBy` (whitelisted fields) and `sortOrder` (`asc` or `desc`).
+- **Safe Search**: Safe regex query searches are executed server-side via `search`.
 
-Admin-only:
+### Admin Routes and Filters
 
-- `/api/admin/profile`
-- `/api/admin/contact/messages`
-- `/api/admin/dashboard`
-- `/api/admin/audit-logs`
-- `DELETE /api/admin/media/:id`
-- `POST /api/admin/media/cleanup-unused`
+- `GET /api/admin/projects`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `status`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `order`, `completionDate`, `title`.
+
+- `GET /api/admin/blog/posts`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category` (ObjectId), `tag` (ObjectId), `isPublished`, `status`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `publishDate`, `views`, `title`.
+
+- `GET /api/admin/blog/categories`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `isActive`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`, `order`.
+
+- `GET /api/admin/blog/tags`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `isActive`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`.
+
+- `GET /api/admin/services`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`, `order`.
+
+- `GET /api/admin/technologies`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`, `order`.
+
+- `GET /api/admin/links`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `title`, `slug`, `order`.
+
+- `GET /api/admin/faqs`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `question`, `order`.
+
+- `GET /api/admin/media`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `folder`, `type` (`image` or `document`), `isUsed`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `filename`, `size`, `mimeType`, `folder`, `type`.
+
+Admin-only endpoints:
+
+- `GET /api/admin/profile` - Manage settings, profile bio, CV links.
+- `GET /api/admin/contact/messages`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `status` (new, read, replied, archived, spam).
+  - Allowed sort fields: `createdAt`, `updatedAt`, `fullName`, `email`, `subject`.
+- `GET /api/admin/audit-logs`
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `action`, `resource`, `actorId`, `actorEmail`, `resourceId`, `startDate`, `endDate`.
+  - Allowed sort fields: `createdAt`, `action`, `resource`, `actorEmail`.
+- `GET /api/admin/dashboard` - Quick administrative stats and graphs.
+- `DELETE /api/admin/media/:id` - Hard delete media file from R2 and DB (fails if in use).
+- `POST /api/admin/media/cleanup-unused` - Purge inactive media files.
 
 Admin post relations accept Mongo ObjectIds only for `category` and `tags`.
 

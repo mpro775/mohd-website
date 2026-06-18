@@ -223,25 +223,13 @@ export function createProjectColumns({
                     </DropdownMenuPrimitive.Item>
                   )}
 
-                  {onArchive && (
-                    <DropdownMenuPrimitive.Item
-                      onClick={() => onArchive(id)}
-                      className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer outline-none select-none"
-                    >
-                      <Archive className="h-3.5 w-3.5" />
-                      <span>أرشفة المشروع</span>
-                    </DropdownMenuPrimitive.Item>
-                  )}
-
-                  <div className="h-px bg-border my-1" />
-
-                  {/* Delete */}
+                  {/* Archive (Triggers confirm dialog via onDelete) */}
                   <DropdownMenuPrimitive.Item
                     onClick={() => onDelete(id)}
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-danger hover:bg-danger/10 cursor-pointer outline-none select-none"
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-amber-500 hover:bg-amber-500/10 cursor-pointer outline-none select-none"
                   >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>حذف نهائي</span>
+                    <Archive className="h-3.5 w-3.5" />
+                    <span>أرشفة المشروع</span>
                   </DropdownMenuPrimitive.Item>
                 </div>
               </DropdownMenuPrimitive.Content>

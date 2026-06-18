@@ -9,9 +9,13 @@ import { Model } from 'mongoose';
 import { Technology } from './schemas/technology.schema';
 import { CreateTechnologyDto } from './dto/create-technology.dto';
 import { UpdateTechnologyDto } from './dto/update-technology.dto';
+import { FilterTechnologyDto } from './dto/filter-technology.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { generateSlug } from '../../common/utils/slug.util';
+import { buildSafeRegex } from '../../common/utils/regex.util';
+import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { IPaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class TechnologiesService {
@@ -82,10 +86,46 @@ export class TechnologiesService {
     return this.technologyModel.find(query).sort({ order: 1, name: 1 });
   }
 
-  async findAllAdmin(category?: string): Promise<Technology[]> {
+  async findAllAdmin(queryDto: FilterTechnologyDto): Promise<IPaginatedResponse<Technology>> {
+    const page = Number(queryDto.page ?? 1);
+    const limit = Number(queryDto.limit ?? 10);
+    const skip = (page - 1) * limit;
+
     const query: any = {};
-    if (category) query.category = category;
-    return this.technologyModel.find(query).sort({ order: 1, name: 1 });
+
+    if (queryDto.category) {
+      query.category = queryDto.category;
+    }
+
+    if (typeof queryDto.isPublished === 'boolean') {
+      query.isPublished = queryDto.isPublished;
+    }
+
+    const searchRegex = buildSafeRegex(queryDto.search);
+    if (searchRegex) {
+      query.$or = [
+        { name: searchRegex },
+        { slug: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+      ];
+    }
+
+    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'order', 'name', 'category']);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
+
+    const [data, total] = await Promise.all([
+      this.technologyModel
+        .find(query)
+        .sort({ [sortBy as string]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.technologyModel.countDocuments(query),
+    ]);
+
+    return createPaginatedResponse(data, total, page, limit);
   }
 
   async findOne(slug: string): Promise<Technology> {

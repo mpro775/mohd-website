@@ -7,7 +7,9 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
 import { AuditLog } from './schemas/audit-log.schema';
+import { FilterAuditLogDto } from './dto/filter-audit-log.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { buildSafeRegex } from '../../common/utils/regex.util';
 
 @Injectable()
 export class AuditLogsService {
@@ -115,48 +117,51 @@ export class AuditLogsService {
     }
   }
 
-  async findAll(queryDto: any) {
-    const {
-      page = 1,
-      limit = 20,
-      action,
-      resource,
-      actorId,
-      resourceId,
-      dateFrom,
-      dateTo,
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
-    } = queryDto;
+  async findAll(queryDto: FilterAuditLogDto) {
+    const page = Number(queryDto.page ?? 1);
+    const limit = Number(queryDto.limit ?? 20);
+    const skip = (page - 1) * limit;
+
+    const query: Record<string, any> = {};
+
+    if (queryDto.action) query.action = queryDto.action;
+    if (queryDto.resource) query.resource = queryDto.resource;
+    if (queryDto.actorId && isValidObjectId(queryDto.actorId)) query.actorId = queryDto.actorId;
+    if (queryDto.resourceId) query.resourceId = queryDto.resourceId;
+
+    if (queryDto.actorEmail) {
+      const emailRegex = buildSafeRegex(queryDto.actorEmail);
+      if (emailRegex) query.actorEmail = emailRegex;
+    }
+
+    if (queryDto.dateFrom || queryDto.dateTo) {
+      query.createdAt = {};
+      if (queryDto.dateFrom) query.createdAt.$gte = new Date(queryDto.dateFrom);
+      if (queryDto.dateTo) query.createdAt.$lte = new Date(queryDto.dateTo);
+    }
+
+    const searchRegex = buildSafeRegex(queryDto.search);
+    if (searchRegex) {
+      query.$or = [
+        { action: searchRegex },
+        { resource: searchRegex },
+        { actorEmail: searchRegex },
+        { resourceId: searchRegex },
+      ];
+    }
 
     const ALLOWED_SORT_FIELDS = [
       'createdAt',
+      'updatedAt',
       'action',
       'resource',
       'actorEmail',
     ];
-    if (sortBy && !ALLOWED_SORT_FIELDS.includes(sortBy)) {
-      throw new BadRequestException(`Sorting by ${sortBy} is not allowed`);
-    }
-
-    const query: Record<string, any> = {};
-
-    if (action) query.action = action;
-    if (resource) query.resource = resource;
-    if (actorId && isValidObjectId(actorId)) query.actorId = actorId;
-    if (resourceId) query.resourceId = resourceId;
-
-    if (dateFrom || dateTo) {
-      query.createdAt = {};
-      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
-      if (dateTo) query.createdAt.$lte = new Date(dateTo);
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
-    const sort = { [sortBy]: sortOrder === 'asc' ? 1 : -1 } as Record<
-      string,
-      1 | -1
-    >;
+    const sortBy = ALLOWED_SORT_FIELDS.includes(queryDto.sortBy ?? '')
+      ? (queryDto.sortBy as string)
+      : 'createdAt';
+    const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
+    const sort = { [sortBy]: sortOrder } as Record<string, 1 | -1>;
 
     const [data, total] = await Promise.all([
       this.auditLogModel
@@ -164,11 +169,11 @@ export class AuditLogsService {
         .populate('actorId', 'name email')
         .sort(sort)
         .skip(skip)
-        .limit(Number(limit)),
+        .limit(limit),
       this.auditLogModel.countDocuments(query),
     ]);
 
-    return createPaginatedResponse(data, total, Number(page), Number(limit));
+    return createPaginatedResponse(data, total, page, limit);
   }
 
   async findOne(id: string): Promise<AuditLog> {

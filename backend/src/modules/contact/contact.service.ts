@@ -10,9 +10,11 @@ import {
   MessageStatus,
 } from './schemas/contact-message.schema';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { FilterContactMessageDto } from './dto/filter-contact-message.dto';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { MailService } from '../mail/mail.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { buildSafeRegex } from '../../common/utils/regex.util';
 
 @Injectable()
 export class ContactService {
@@ -22,51 +24,6 @@ export class ContactService {
     private mailService: MailService,
     private readonly auditLogsService: AuditLogsService,
   ) {}
-
-  async create(
-    createMessageDto: CreateMessageDto,
-    ipAddress: string,
-    req?: any,
-  ): Promise<ContactMessage | null> {
-    if (createMessageDto.website) {
-      return null;
-    }
-
-    await this.verifyTurnstile(createMessageDto.turnstileToken, ipAddress);
-    const spam = await this.scoreSpam(createMessageDto, ipAddress);
-    const message = new this.contactMessageModel({
-      ...createMessageDto,
-      website: undefined,
-      turnstileToken: undefined,
-      ipAddress,
-      userAgent: req?.headers?.['user-agent'],
-      spamScore: spam.score,
-      spamReason: spam.reasons.join(', '),
-      isSpam: spam.score >= 5,
-      status: spam.score >= 5 ? MessageStatus.SPAM : MessageStatus.NEW,
-    });
-
-    const saved = await message.save();
-    if (!saved.isSpam) {
-      await this.mailService.sendContactNotification({
-        name: saved.fullName,
-        email: saved.email,
-        subject: saved.subject,
-        message: saved.message,
-      });
-    }
-
-    // Audit Log (Public request, no authenticated user expected)
-    await this.auditLogsService.log({
-      action: 'contact.message.created',
-      resource: 'ContactMessage',
-      resourceId: saved._id.toString(),
-      after: saved.toObject(),
-      request: req,
-    });
-
-    return saved;
-  }
 
   private async verifyTurnstile(token: string | undefined, ipAddress: string) {
     if (process.env.CONTACT_TURNSTILE_ENABLED !== 'true') {
@@ -130,21 +87,84 @@ export class ContactService {
     return { score, reasons };
   }
 
-  async findAll(page: number = 1, limit: number = 10, status?: MessageStatus) {
+  async create(
+    createMessageDto: CreateMessageDto,
+    ipAddress: string,
+    req?: any,
+  ): Promise<ContactMessage | null> {
+    if (createMessageDto.website) {
+      return null;
+    }
+
+    await this.verifyTurnstile(createMessageDto.turnstileToken, ipAddress);
+    const spam = await this.scoreSpam(createMessageDto, ipAddress);
+    const message = new this.contactMessageModel({
+      ...createMessageDto,
+      website: undefined,
+      turnstileToken: undefined,
+      ipAddress,
+      userAgent: req?.headers?.['user-agent'],
+      spamScore: spam.score,
+      spamReason: spam.reasons.join(', '),
+      isSpam: spam.score >= 5,
+      status: spam.score >= 5 ? MessageStatus.SPAM : MessageStatus.NEW,
+    });
+
+    const saved = await message.save();
+    if (!saved.isSpam) {
+      await this.mailService.sendContactNotification({
+        name: saved.fullName,
+        email: saved.email,
+        subject: saved.subject,
+        message: saved.message,
+      });
+    }
+
+    // Audit Log (Public request, no authenticated user expected)
+    await this.auditLogsService.log({
+      action: 'contact.message.created',
+      resource: 'ContactMessage',
+      resourceId: saved._id.toString(),
+      after: saved.toObject(),
+      request: req,
+    });
+
+    return saved;
+  }
+
+  async findAll(queryDto: FilterContactMessageDto) {
+    const page = Number(queryDto.page ?? 1);
+    const limit = Number(queryDto.limit ?? 10);
+    const skip = (page - 1) * limit;
+
     const query: any = {};
 
-    if (status) {
-      query.status = status;
+    if (queryDto.status) {
+      query.status = queryDto.status;
     } else {
       query.isSpam = { $ne: true };
     }
 
-    const skip = (page - 1) * limit;
+    const searchRegex = buildSafeRegex(queryDto.search);
+    if (searchRegex) {
+      query.$or = [
+        { fullName: searchRegex },
+        { email: searchRegex },
+        { subject: searchRegex },
+        { message: searchRegex },
+        { phone: searchRegex },
+        { company: searchRegex },
+      ];
+    }
+
+    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'fullName', 'email', 'status']);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([
       this.contactMessageModel
         .find(query)
-        .sort({ createdAt: -1 })
+        .sort({ [sortBy as string]: sortOrder })
         .skip(skip)
         .limit(limit)
         .exec(),

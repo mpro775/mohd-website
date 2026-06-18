@@ -7,12 +7,14 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   UseGuards,
   Request,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { FilterCategoryDto } from './dto/filter-category.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../common/guards/roles.guard';
@@ -51,11 +53,12 @@ export class AdminCategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
   @Get()
-  async findAll() {
-    const categories = await this.categoriesService.findAllAdmin();
+  async findAll(@Query() query: FilterCategoryDto) {
+    const result = await this.categoriesService.findAllAdmin(query);
     return {
       message: 'تم جلب التصنيفات بنجاح',
-      data: categories,
+      data: result.data,
+      meta: result.meta,
     };
   }
 

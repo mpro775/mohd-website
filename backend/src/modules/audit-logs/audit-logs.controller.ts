@@ -4,6 +4,7 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { AuditLogsService } from './audit-logs.service';
+import { FilterAuditLogDto } from './dto/filter-audit-log.dto';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13,7 +14,7 @@ export class AuditLogsController {
   constructor(private readonly auditLogsService: AuditLogsService) {}
 
   @Get()
-  async findAll(@Query() query: any) {
+  async findAll(@Query() query: FilterAuditLogDto) {
     const result = await this.auditLogsService.findAll(query);
     return {
       message: 'Audit logs loaded successfully',
@@ -31,3 +32,4 @@ export class AuditLogsController {
     };
   }
 }
+

@@ -60,7 +60,12 @@ export function TechnologiesPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
-        isPublished: queryParams.status === "published" ? true : queryParams.status === "draft" ? false : undefined,
+        isPublished:
+          queryParams.isPublished === "published"
+            ? true
+            : queryParams.isPublished === "draft"
+            ? false
+            : undefined,
       }),
   });
 
@@ -246,8 +251,8 @@ export function TechnologiesPageClient() {
         onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
         onPageChange={(p) => setQueryParams({ page: p })}
         onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
-        filtersValue={{ isPublished: queryParams.status }}
-        onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
+        filtersValue={{ isPublished: queryParams.isPublished }}
+        onFilterChange={(key, val) => setQueryParams({ isPublished: val || "all", page: 1 })}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}

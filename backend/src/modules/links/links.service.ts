@@ -9,9 +9,13 @@ import { Model } from 'mongoose';
 import { Link } from './schemas/link.schema';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { UpdateLinkDto } from './dto/update-link.dto';
+import { FilterLinkDto } from './dto/filter-link.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { generateSlug } from '../../common/utils/slug.util';
+import { buildSafeRegex } from '../../common/utils/regex.util';
+import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { IPaginatedResponse } from '../../common/dto/pagination.dto';
 
 @Injectable()
 export class LinksService {
@@ -77,10 +81,48 @@ export class LinksService {
     return this.linkModel.find(query).sort({ order: 1, title: 1 });
   }
 
-  async findAllAdmin(category?: string): Promise<Link[]> {
+  async findAllAdmin(queryDto: FilterLinkDto): Promise<IPaginatedResponse<Link>> {
+    const page = Number(queryDto.page ?? 1);
+    const limit = Number(queryDto.limit ?? 10);
+    const skip = (page - 1) * limit;
+
     const query: any = {};
-    if (category) query.category = category;
-    return this.linkModel.find(query).sort({ order: 1, title: 1 });
+
+    if (queryDto.category) {
+      query.category = queryDto.category;
+    }
+
+    if (typeof queryDto.isPublished === 'boolean') {
+      query.isPublished = queryDto.isPublished;
+    }
+
+    const searchRegex = buildSafeRegex(queryDto.search);
+    if (searchRegex) {
+      query.$or = [
+        { title: searchRegex },
+        { slug: searchRegex },
+        { description: searchRegex },
+        { url: searchRegex },
+        { platform: searchRegex },
+        { category: searchRegex },
+      ];
+    }
+
+    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'order', 'title', 'category', 'clicks']);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
+
+    const [data, total] = await Promise.all([
+      this.linkModel
+        .find(query)
+        .sort({ [sortBy as string]: sortOrder })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
+      this.linkModel.countDocuments(query),
+    ]);
+
+    return createPaginatedResponse(data, total, page, limit);
   }
 
   async findOne(slug: string): Promise<Link> {
