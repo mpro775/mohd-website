@@ -1,38 +1,59 @@
 import Link from "next/link";
-import type { Technology } from "@/lib/api/types";
+import { ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/common/StatusBadge";
+import type { Technology } from "@/lib/api/types";
+
+const meter = {
+  beginner: "w-1/4",
+  intermediate: "w-1/2",
+  advanced: "w-3/4",
+  expert: "w-full",
+};
 
 export function TechnologyCard({ technology }: { technology: Technology }) {
+  const initials = technology.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 3);
+  const level = technology.proficiencyLevel ?? "intermediate";
+
   return (
-    <Link 
-      href={`/technologies/${technology.slug}`} 
-      className="group relative rounded-lg border border-border bg-card p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_12px_36px_-12px_rgba(55,211,153,0.18)] flex flex-col justify-between h-full overflow-hidden"
+    <Link
+      href={`/technologies/${technology.slug}`}
+      className="premium-card group flex h-full flex-col justify-between p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40"
       style={technology.color ? { borderTop: `2px solid ${technology.color}` } : undefined}
     >
-      {/* Subtle hover glow */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-primary/0 transition-all duration-500 group-hover:bg-primary/[0.06] blur-2xl pointer-events-none" />
-      
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-3">
-          <h3 className="font-mono text-base font-bold text-foreground transition-colors group-hover:text-primary" dir="ltr">
-            {technology.name}
-          </h3>
-          <StatusBadge value={technology.proficiencyLevel} />
+      <div>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <span dir="ltr" className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 font-mono text-sm font-bold text-primary">
+            {technology.icon ?? initials}
+          </span>
+          {technology.highlighted ? (
+            <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 font-mono text-[10px] text-primary">
+              highlighted
+            </span>
+          ) : null}
         </div>
-        
-        <p className="mt-3 line-clamp-3 text-xs leading-6 text-muted-foreground">
-          {technology.description}
-        </p>
+        <h3 dir="ltr" className="font-mono text-base font-bold text-foreground transition group-hover:text-primary">
+          {technology.name}
+        </h3>
+        <p className="mt-3 line-clamp-3 text-xs leading-6 text-muted-foreground">{technology.description}</p>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-border/20 flex items-center justify-between gap-2 text-[10px] font-mono">
-        <span className="text-primary/95 uppercase tracking-wider">
-          {technology.category ?? technology.group ?? "stack"}
-        </span>
-        {technology.yearsOfExperience ? (
-          <span className="text-muted-foreground/80 flex items-center gap-1">
-            <span className="inline-block h-1 w-1 rounded-full bg-primary/50" />
-            exp: {technology.yearsOfExperience} yrs
+      <div className="mt-5 space-y-3 border-t border-border/30 pt-4">
+        <div className="flex items-center justify-between gap-2">
+          <StatusBadge value={level} />
+          <span dir="ltr" className="font-mono text-[10px] text-muted-foreground">
+            {technology.yearsOfExperience ? `${technology.yearsOfExperience} yrs` : technology.category ?? technology.group ?? "stack"}
+          </span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className={`h-full rounded-full bg-gradient-to-r from-primary to-secondary ${meter[level]}`} />
+        </div>
+        {technology.officialUrl ? (
+          <span dir="ltr" className="inline-flex items-center gap-1 font-mono text-[10px] text-primary">
+            docs <ExternalLink className="h-3 w-3" />
           </span>
         ) : null}
       </div>

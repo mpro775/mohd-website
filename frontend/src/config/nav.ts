@@ -1,12 +1,11 @@
 export const siteNav = [
   { href: "/", label: "الرئيسية" },
-  { href: "/about", label: "من أنا" },
   { href: "/projects", label: "المشاريع" },
   { href: "/services", label: "الخدمات" },
-  { href: "/technologies", label: "التقنيات" },
-  { href: "/blog", label: "المدونة" },
-  { href: "/faqs", label: "الأسئلة" },
-  { href: "/contact", label: "التواصل" },
+  { href: "/blog", label: "المقالات" },
+  { href: "/about", label: "عني" },
+  { href: "/now", label: "الآن" },
+  { href: "/contact", label: "تواصل" },
 ];
 
 export const adminNav = [

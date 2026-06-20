@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540" fill="none">
+  <rect width="960" height="540" fill="#071019"/>
+  <rect x="135" y="105" width="690" height="330" rx="24" fill="#101720" stroke="#8AB4F8" stroke-opacity=".35"/>
+  <text x="190" y="190" fill="#37D399" font-family="monospace" font-size="34">GET /api/products</text>
+  <rect x="190" y="230" width="420" height="20" rx="10" fill="#94A3B8" fill-opacity=".16"/>
+  <rect x="190" y="275" width="520" height="20" rx="10" fill="#94A3B8" fill-opacity=".12"/>
+  <rect x="190" y="320" width="300" height="20" rx="10" fill="#37D399" fill-opacity=".22"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#0B0F14"/>
+  <path d="M0 70H1200M0 140H1200M0 210H1200M0 280H1200M0 350H1200M0 420H1200M0 490H1200M0 560H1200M100 0V630M200 0V630M300 0V630M400 0V630M500 0V630M600 0V630M700 0V630M800 0V630M900 0V630M1000 0V630M1100 0V630" stroke="#94A3B8" stroke-opacity=".07"/>
+  <circle cx="940" cy="120" r="280" fill="#37D399" fill-opacity=".13"/>
+  <circle cx="220" cy="540" r="260" fill="#8AB4F8" fill-opacity=".1"/>
+  <text x="90" y="240" fill="#37D399" font-family="monospace" font-size="38">&lt;Mohd.dev /&gt;</text>
+  <text x="90" y="330" fill="#EEF2F6" font-family="Arial, sans-serif" font-size="68" font-weight="700">Personal Engineering OS</text>
+  <text x="90" y="395" fill="#9AA7B6" font-family="Arial, sans-serif" font-size="34">Full-stack products from UI to production</text>
+</svg>

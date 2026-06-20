@@ -1,8 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { FloatingParticles } from "./FloatingParticles";
 import { TypingEffect } from "./TypingEffect";
-import { motion } from "framer-motion";
 
 type HeroBadgeProps = {
   text: string;
@@ -19,7 +19,7 @@ export function HeroBadge({ text, isAvailable }: HeroBadgeProps) {
       className="mb-4 inline-flex items-center"
     >
       <span
-        className={`rounded-full border px-3 py-1.5 font-mono text-xs flex items-center gap-2 ${
+        className={`flex items-center gap-2 rounded-full border px-3 py-1.5 font-mono text-xs ${
           isAvailable
             ? "border-primary/30 bg-primary/10 text-primary"
             : "border-secondary/30 bg-secondary/10 text-secondary"
@@ -49,9 +49,9 @@ export function HeroTypingSubtitle() {
       {"// "}
       <TypingEffect
         phrases={[
-          "Full-stack developer crafting reliable web products",
-          "Building scalable apps with Next.js & NestJS",
-          "Clean code • High performance • User focused",
+          "Personal Engineering OS",
+          "Full-stack products from UI to production",
+          "Clean architecture - thoughtful UX - stable APIs",
           "Turning ideas into production-ready software",
         ]}
         typingSpeed={50}
@@ -63,7 +63,7 @@ export function HeroTypingSubtitle() {
 }
 
 export function HeroParticles() {
-  return <FloatingParticles count={24} />;
+  return <FloatingParticles count={14} />;
 }
 
 export function HeroContent({ children }: { children: React.ReactNode }) {

@@ -22,7 +22,13 @@
   --destructive-foreground: #05120d;
   --ring: #37d399;
   --input: #233044;
-  --radius: 0.5rem;
+  --radius: 0.85rem;
+  --surface-1: #0f1722;
+  --surface-2: #121c29;
+  --glass: rgba(16, 23, 32, 0.68);
+  --grid-line: rgba(148, 163, 184, 0.08);
+  --glow-primary: rgba(55, 211, 153, 0.18);
+  --glow-secondary: rgba(138, 180, 248, 0.14);
 }
 
 .light {
@@ -47,6 +53,12 @@
   --destructive-foreground: #ffffff;
   --ring: #10b981;
   --input: #e2e8f0;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --glass: rgba(255, 255, 255, 0.72);
+  --grid-line: rgba(15, 23, 42, 0.08);
+  --glow-primary: rgba(16, 185, 129, 0.16);
+  --glow-secondary: rgba(59, 130, 246, 0.14);
 }
 
 @theme inline {
@@ -79,6 +91,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-vazirmatn), Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -192,8 +205,8 @@ a {
 
 .tech-grid {
   background-image:
-    linear-gradient(color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--foreground) 5%, transparent) 1px, transparent 1px);
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 34px 34px;
 }
 
@@ -201,11 +214,75 @@ a {
   position: relative;
   border: 1px solid var(--border);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--card) 94%, transparent), var(--card)),
-    radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 10%, transparent), transparent 38%);
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 82%, transparent), var(--surface-1)),
+    radial-gradient(circle at top left, color-mix(in srgb, var(--primary) 8%, transparent), transparent 42%);
   border-radius: var(--radius);
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 86%, transparent), color-mix(in srgb, var(--surface-1) 96%, transparent)),
+    radial-gradient(circle at top right, var(--glow-secondary), transparent 34%);
+  box-shadow: 0 18px 60px -36px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+}
+
+.glass-panel {
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: calc(var(--radius) - 0.2rem);
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.section-shell {
+  position: relative;
+  overflow: hidden;
+  padding: 4rem 0;
+}
+
+.section-shell > * {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 80rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.soft-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--primary) 24%, var(--border)), transparent);
+}
+
+.motion-safe-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+.architecture-line {
+  position: absolute;
+  inset-inline-end: -1.1rem;
+  top: 50%;
+  display: none;
+  height: 1px;
+  width: 2.2rem;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  opacity: 0.45;
+}
+
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px);
+  background-size: 24px 24px, 32px 32px;
 }
 
 .tech-card::before {
@@ -486,4 +563,36 @@ a {
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
+}
+
+@media (min-width: 640px) {
+  .architecture-line {
+    display: block;
+  }
+}
+
+@media (max-width: 640px) {
+  .ambient-glow,
+  .ambient-glow-strong,
+  .orbit-ring {
+    opacity: 0.16 !important;
+    filter: blur(56px);
+  }
+
+  .tech-grid {
+    background-size: 42px 42px;
+  }
+
+  .section-shell {
+    padding: 3rem 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
 }
