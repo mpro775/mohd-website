@@ -19,7 +19,10 @@ export function TypingEffect({
 }: TypingEffectProps) {
   const [currentText, setCurrentText] = useState("");
   const phrasesRef = useRef(phrases);
-  phrasesRef.current = phrases;
+
+  useEffect(() => {
+    phrasesRef.current = phrases;
+  }, [phrases]);
 
   useEffect(() => {
     let timeout: ReturnType<typeof setTimeout>;
@@ -30,7 +33,7 @@ export function TypingEffect({
 
     function step() {
       if (!active) return;
-      const fullText = phrasesRef.current[phraseIdx];
+      const fullText = phrasesRef.current[phraseIdx] ?? "";
 
       if (!deleting) {
         charIndex++;

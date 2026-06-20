@@ -79,7 +79,9 @@ export class CategoriesService {
     return this.categoryModel.find({ isActive: true }).sort({ name: 1 });
   }
 
-  async findAllAdmin(queryDto: FilterCategoryDto): Promise<IPaginatedResponse<Category>> {
+  async findAllAdmin(
+    queryDto: FilterCategoryDto,
+  ): Promise<IPaginatedResponse<Category>> {
     const page = Number(queryDto.page ?? 1);
     const limit = Number(queryDto.limit ?? 10);
     const skip = (page - 1) * limit;
@@ -106,8 +108,15 @@ export class CategoriesService {
       ];
     }
 
-    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'name', 'order']);
-    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const allowedSortFields = new Set([
+      'createdAt',
+      'updatedAt',
+      'name',
+      'order',
+    ]);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '')
+      ? queryDto.sortBy
+      : 'createdAt';
     const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([

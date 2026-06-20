@@ -20,7 +20,7 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
       tagSlug: activeTag 
     }).catch(() => ({ 
       items: [], 
-      meta: { total: 0, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPrevPage: false } 
+      meta: { total: 0, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPreviousPage: false } 
     })),
     publicApi.categories().catch(() => []),
     publicApi.tags().catch(() => []),

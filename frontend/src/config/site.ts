@@ -4,5 +4,8 @@ export const siteConfig = {
   description:
     "موقع شخصي تقني لمبرمج يعرض المشاريع، المقالات، الخدمات، والخبرة العملية.",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001",
-  apiUrl: process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api",
+  apiUrl:
+    typeof window === "undefined"
+      ? process.env.API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api"
+      : process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api",
 };

@@ -24,7 +24,7 @@ export type AuditLog = {
 export const auditColumnLabels: Record<string, string> = {
   action: "العملية",
   resource: "المورد المتأثر",
-  user: "المسؤول / المشرف",
+  actorEmail: "المسؤول / المشرف",
   ipAddress: "عنوان IP",
   createdAt: "التاريخ والوقت",
 };
@@ -82,7 +82,7 @@ export function createAuditColumns({ onView }: CreateColumnsProps): ColumnDef<Au
 
     // 3. User Actor
     {
-      id: "user",
+      id: "actorEmail",
       header: "المسؤول",
       cell: ({ row }) => {
         const actor = row.original.actorId;

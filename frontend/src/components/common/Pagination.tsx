@@ -6,7 +6,7 @@ export function Pagination({ meta, basePath }: { meta: PaginationMeta; basePath:
   const pageHref = (page: number) => `${basePath}${basePath.includes("?") ? "&" : "?"}page=${page}`;
   return (
     <nav className="mt-8 flex items-center justify-between gap-3 text-sm">
-      <LinkButton href={pageHref(Math.max(1, meta.page - 1))} variant="secondary" className={!meta.hasPrevPage ? "pointer-events-none opacity-50" : ""}>
+      <LinkButton href={pageHref(Math.max(1, meta.page - 1))} variant="secondary" className={!meta.hasPreviousPage ? "pointer-events-none opacity-50" : ""}>
         السابق
       </LinkButton>
       <span className="text-muted-foreground">

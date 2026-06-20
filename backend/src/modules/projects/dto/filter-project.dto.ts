@@ -1,7 +1,8 @@
 import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
 import { ProjectStatus } from '../schemas/project.schema';
+import { transformBooleanQuery } from '../../../common/transforms/boolean-query.transform';
 
 export class FilterProjectDto extends PaginationDto {
   @IsOptional()
@@ -17,7 +18,7 @@ export class FilterProjectDto extends PaginationDto {
   technology?: string;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => transformBooleanQuery(value))
   @IsBoolean()
   isPublished?: boolean;
 }

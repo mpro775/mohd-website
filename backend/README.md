@@ -87,6 +87,6 @@ All JSON endpoints are wrapped as:
 }
 ```
 
-Paginated list endpoints include `meta` with `total`, `page`, `limit`, `totalPages`, `hasNextPage`, and `hasPrevPage`.
+Paginated list endpoints include `meta` with `total`, `page`, `limit`, `totalPages`, `hasNextPage`, and `hasPreviousPage`.
 
 See `API_CONTRACT.md` for the frontend-facing endpoint contract.

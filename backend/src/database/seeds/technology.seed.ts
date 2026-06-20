@@ -1,11 +1,15 @@
 import { Model } from 'mongoose';
-import { Technology, ProficiencyLevel } from '../../modules/technologies/schemas/technology.schema';
+import {
+  Technology,
+  ProficiencyLevel,
+} from '../../modules/technologies/schemas/technology.schema';
 
 export const technologiesData = [
   {
     name: 'TypeScript',
     slug: 'typescript',
-    description: 'اللغة الأساسية المستخدمة في تطوير التطبيقات الخلفية والأمامية مع دعم قوي للأنواع وقابلية الصيانة.',
+    description:
+      'اللغة الأساسية المستخدمة في تطوير التطبيقات الخلفية والأمامية مع دعم قوي للأنواع وقابلية الصيانة.',
     icon: 'typescript',
     proficiencyLevel: ProficiencyLevel.EXPERT,
     category: 'Programming Language',
@@ -14,7 +18,7 @@ export const technologiesData = [
     yearsOfExperience: 4,
     highlighted: true,
     color: '#3178C6',
-    order: 1
+    order: 1,
   },
   {
     name: 'JavaScript',
@@ -28,12 +32,13 @@ export const technologiesData = [
     yearsOfExperience: 5,
     highlighted: true,
     color: '#F7DF1E',
-    order: 2
+    order: 2,
   },
   {
     name: 'NestJS',
     slug: 'nestjs',
-    description: 'إطار عمل احترافي لبناء الأنظمة الخلفية وواجهات البرمجة القابلة للتوسع.',
+    description:
+      'إطار عمل احترافي لبناء الأنظمة الخلفية وواجهات البرمجة القابلة للتوسع.',
     icon: 'nestjs',
     proficiencyLevel: ProficiencyLevel.EXPERT,
     category: 'Backend',
@@ -42,12 +47,13 @@ export const technologiesData = [
     yearsOfExperience: 3,
     highlighted: true,
     color: '#E0234E',
-    order: 3
+    order: 3,
   },
   {
     name: 'Node.js',
     slug: 'nodejs',
-    description: 'بيئة تشغيل JavaScript المستخدمة لبناء الخدمات الخلفية والـ APIs.',
+    description:
+      'بيئة تشغيل JavaScript المستخدمة لبناء الخدمات الخلفية والـ APIs.',
     icon: 'nodejs',
     proficiencyLevel: ProficiencyLevel.EXPERT,
     category: 'Backend',
@@ -56,7 +62,7 @@ export const technologiesData = [
     yearsOfExperience: 4,
     highlighted: true,
     color: '#339933',
-    order: 4
+    order: 4,
   },
   {
     name: 'React',
@@ -70,12 +76,13 @@ export const technologiesData = [
     yearsOfExperience: 4,
     highlighted: true,
     color: '#61DAFB',
-    order: 5
+    order: 5,
   },
   {
     name: 'Next.js',
     slug: 'nextjs',
-    description: 'إطار عمل React لبناء تطبيقات ومواقع ويب حديثة مع تحسين SEO والأداء.',
+    description:
+      'إطار عمل React لبناء تطبيقات ومواقع ويب حديثة مع تحسين SEO والأداء.',
     icon: 'nextjs',
     proficiencyLevel: ProficiencyLevel.ADVANCED,
     category: 'Frontend',
@@ -84,12 +91,13 @@ export const technologiesData = [
     yearsOfExperience: 2,
     highlighted: true,
     color: '#000000',
-    order: 6
+    order: 6,
   },
   {
     name: 'MongoDB',
     slug: 'mongodb',
-    description: 'قاعدة بيانات NoSQL مرنة ومناسبة للتطبيقات الحديثة ومنصات SaaS.',
+    description:
+      'قاعدة بيانات NoSQL مرنة ومناسبة للتطبيقات الحديثة ومنصات SaaS.',
     icon: 'mongodb',
     proficiencyLevel: ProficiencyLevel.EXPERT,
     category: 'Database',
@@ -98,7 +106,7 @@ export const technologiesData = [
     yearsOfExperience: 4,
     highlighted: true,
     color: '#47A248',
-    order: 7
+    order: 7,
   },
   {
     name: 'PostgreSQL',
@@ -112,7 +120,7 @@ export const technologiesData = [
     yearsOfExperience: 3,
     highlighted: true,
     color: '#4169E1',
-    order: 8
+    order: 8,
   },
   {
     name: 'Docker',
@@ -126,12 +134,13 @@ export const technologiesData = [
     yearsOfExperience: 3,
     highlighted: true,
     color: '#2496ED',
-    order: 9
+    order: 9,
   },
   {
     name: 'Git',
     slug: 'git',
-    description: 'نظام إدارة الإصدارات المستخدم في إدارة الأكواد البرمجية والتعاون بين الفرق.',
+    description:
+      'نظام إدارة الإصدارات المستخدم في إدارة الأكواد البرمجية والتعاون بين الفرق.',
     icon: 'git',
     proficiencyLevel: ProficiencyLevel.EXPERT,
     category: 'Tools',
@@ -140,7 +149,7 @@ export const technologiesData = [
     yearsOfExperience: 5,
     highlighted: false,
     color: '#F05032',
-    order: 10
+    order: 10,
   },
   {
     name: 'REST API',
@@ -154,12 +163,13 @@ export const technologiesData = [
     yearsOfExperience: 4,
     highlighted: false,
     color: '#2563EB',
-    order: 11
+    order: 11,
   },
   {
     name: 'OpenAI',
     slug: 'openai',
-    description: 'بناء حلول الذكاء الاصطناعي والمساعدات الذكية باستخدام النماذج اللغوية الحديثة.',
+    description:
+      'بناء حلول الذكاء الاصطناعي والمساعدات الذكية باستخدام النماذج اللغوية الحديثة.',
     icon: 'sparkles',
     proficiencyLevel: ProficiencyLevel.ADVANCED,
     category: 'Artificial Intelligence',
@@ -168,12 +178,13 @@ export const technologiesData = [
     yearsOfExperience: 2,
     highlighted: true,
     color: '#10A37F',
-    order: 12
+    order: 12,
   },
   {
     name: 'Qdrant',
     slug: 'qdrant',
-    description: 'قاعدة بيانات متجهية لبناء أنظمة البحث الدلالي والذكاء الاصطناعي.',
+    description:
+      'قاعدة بيانات متجهية لبناء أنظمة البحث الدلالي والذكاء الاصطناعي.',
     icon: 'database',
     proficiencyLevel: ProficiencyLevel.ADVANCED,
     category: 'Artificial Intelligence',
@@ -182,7 +193,7 @@ export const technologiesData = [
     yearsOfExperience: 2,
     highlighted: false,
     color: '#DC244C',
-    order: 13
+    order: 13,
   },
   {
     name: 'n8n',
@@ -196,15 +207,17 @@ export const technologiesData = [
     yearsOfExperience: 2,
     highlighted: false,
     color: '#EA4B71',
-    order: 14
-  }
+    order: 14,
+  },
 ];
 
 export async function seedTechnologies(technologyModel: Model<Technology>) {
   for (const data of technologiesData) {
     const existing = await technologyModel.findOne({ slug: data.slug });
     if (existing) {
-      console.log(`Technology with slug "${data.slug}" already exists, updating...`);
+      console.log(
+        `Technology with slug "${data.slug}" already exists, updating...`,
+      );
       await technologyModel.updateOne({ slug: data.slug }, { $set: data });
     } else {
       console.log(`Creating technology: ${data.name}`);

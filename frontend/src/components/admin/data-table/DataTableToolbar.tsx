@@ -61,12 +61,16 @@ export function DataTableToolbar<TData>({
 
   // Sync initial state
   useEffect(() => {
-    if (serverSide) {
-      setSearchValue(propSearchValue);
-    } else {
-      const tableSearchValue = (table.getColumn(searchKey)?.getFilterValue() as string) ?? "";
-      setSearchValue(tableSearchValue);
-    }
+    const timer = setTimeout(() => {
+      if (serverSide) {
+        setSearchValue(propSearchValue);
+      } else {
+        const tableSearchValue = (table.getColumn(searchKey)?.getFilterValue() as string) ?? "";
+        setSearchValue(tableSearchValue);
+      }
+    }, 0);
+
+    return () => clearTimeout(timer);
   }, [table, searchKey, serverSide, propSearchValue]);
 
   // Debounced search trigger (300ms)

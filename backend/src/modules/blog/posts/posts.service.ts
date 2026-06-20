@@ -374,30 +374,28 @@ export class PostsService {
 
     if (action === 'publish') {
       const now = new Date();
-      await this.postModel.updateMany(
-        { _id: { $in: ids } },
-        {
-          status: PostStatus.PUBLISHED,
-          publishDate: now,
-          lastPublishedAt: now,
-        },
-      ).exec();
+      await this.postModel
+        .updateMany(
+          { _id: { $in: ids } },
+          {
+            status: PostStatus.PUBLISHED,
+            publishDate: now,
+            lastPublishedAt: now,
+          },
+        )
+        .exec();
     } else if (action === 'unpublish') {
-      await this.postModel.updateMany(
-        { _id: { $in: ids } },
-        { status: PostStatus.DRAFT },
-      ).exec();
+      await this.postModel
+        .updateMany({ _id: { $in: ids } }, { status: PostStatus.DRAFT })
+        .exec();
     } else if (action === 'archive') {
-      await this.postModel.updateMany(
-        { _id: { $in: ids } },
-        { status: PostStatus.ARCHIVED },
-      ).exec();
+      await this.postModel
+        .updateMany({ _id: { $in: ids } }, { status: PostStatus.ARCHIVED })
+        .exec();
     } else if (action === 'delete') {
       await this.postModel.deleteMany({ _id: { $in: ids } }).exec();
       await Promise.all(
-        ids.map((id) =>
-          this.mediaService.removeUsageForEntity('Post', id),
-        ),
+        ids.map((id) => this.mediaService.removeUsageForEntity('Post', id)),
       );
     }
 

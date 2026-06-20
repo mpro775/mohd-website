@@ -1,14 +1,11 @@
 import { IsBoolean, IsEnum, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../../common/dto/pagination.dto';
+import { transformBooleanQuery } from '../../../../common/transforms/boolean-query.transform';
 
 export class FilterTagDto extends PaginationDto {
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === 'true' || value === true) return true;
-    if (value === 'false' || value === false) return false;
-    return value;
-  })
+  @Transform(({ value }) => transformBooleanQuery(value))
   @IsBoolean()
   isActive?: boolean;
 

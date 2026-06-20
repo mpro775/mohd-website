@@ -16,7 +16,6 @@ import { ContactService } from './contact.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateStatusDto } from './dto/update-status.dto';
 import { FilterContactMessageDto } from './dto/filter-contact-message.dto';
-import { MessageStatus } from './schemas/contact-message.schema';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';

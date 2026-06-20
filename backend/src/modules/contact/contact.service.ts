@@ -157,8 +157,16 @@ export class ContactService {
       ];
     }
 
-    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'fullName', 'email', 'status']);
-    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const allowedSortFields = new Set([
+      'createdAt',
+      'updatedAt',
+      'fullName',
+      'email',
+      'status',
+    ]);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '')
+      ? queryDto.sortBy
+      : 'createdAt';
     const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([

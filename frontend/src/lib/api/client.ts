@@ -78,16 +78,21 @@ export function normalizePaginated<T>(data: unknown, meta?: PaginationMeta) {
     : Array.isArray((data as { items?: unknown[] })?.items)
       ? (data as { items: unknown[] }).items
       : [];
+  const incomingMeta = meta ?? (data as { meta?: PaginationMeta })?.meta;
   const resolvedMeta =
-    meta ??
-    (data as { meta?: PaginationMeta })?.meta ?? {
-      total: items.length,
-      page: 1,
-      limit: items.length || 10,
-      totalPages: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
+    incomingMeta
+      ? {
+          ...incomingMeta,
+          hasPreviousPage: incomingMeta.hasPreviousPage ?? incomingMeta.hasPrevPage ?? false,
+        }
+      : {
+          total: items.length,
+          page: 1,
+          limit: items.length || 10,
+          totalPages: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        };
   return { items: items as T[], meta: resolvedMeta };
 }
 

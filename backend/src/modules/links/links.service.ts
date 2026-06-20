@@ -81,7 +81,9 @@ export class LinksService {
     return this.linkModel.find(query).sort({ order: 1, title: 1 });
   }
 
-  async findAllAdmin(queryDto: FilterLinkDto): Promise<IPaginatedResponse<Link>> {
+  async findAllAdmin(
+    queryDto: FilterLinkDto,
+  ): Promise<IPaginatedResponse<Link>> {
     const page = Number(queryDto.page ?? 1);
     const limit = Number(queryDto.limit ?? 10);
     const skip = (page - 1) * limit;
@@ -108,8 +110,17 @@ export class LinksService {
       ];
     }
 
-    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'order', 'title', 'category', 'clicks']);
-    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const allowedSortFields = new Set([
+      'createdAt',
+      'updatedAt',
+      'order',
+      'title',
+      'category',
+      'clicks',
+    ]);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '')
+      ? queryDto.sortBy
+      : 'createdAt';
     const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([

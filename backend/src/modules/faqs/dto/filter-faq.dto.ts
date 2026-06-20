@@ -1,6 +1,7 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
+import { transformBooleanQuery } from '../../../common/transforms/boolean-query.transform';
 
 export class FilterFaqDto extends PaginationDto {
   @IsOptional()
@@ -8,12 +9,12 @@ export class FilterFaqDto extends PaginationDto {
   category?: string;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => transformBooleanQuery(value))
   @IsBoolean()
   featured?: boolean;
 
   @IsOptional()
-  @Type(() => Boolean)
+  @Transform(({ value }) => transformBooleanQuery(value))
   @IsBoolean()
   isPublished?: boolean;
 }

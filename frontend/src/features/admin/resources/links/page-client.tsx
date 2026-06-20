@@ -64,6 +64,8 @@ export function LinksPageClient() {
             : queryParams.isPublished === "draft"
             ? false
             : undefined,
+        sortBy: queryParams.sortBy || "createdAt",
+        sortOrder: queryParams.sortOrder || "desc",
       }),
   });
 
@@ -244,6 +246,10 @@ export function LinksPageClient() {
         onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
         onPageChange={(p) => setQueryParams({ page: p })}
         onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        sortBy={queryParams.sortBy}
+        sortOrder={queryParams.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setQueryParams({ sortBy, sortOrder, page: 1 })}
+        serverSortableColumns={["createdAt", "updatedAt", "order", "title", "category", "clicks"]}
         filtersValue={{ isPublished: queryParams.isPublished }}
         onFilterChange={(key, val) => setQueryParams({ isPublished: val || "all", page: 1 })}
         columns={columns}

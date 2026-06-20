@@ -36,6 +36,6 @@ export interface IPaginatedResponse<T> {
     limit: number;
     totalPages: number;
     hasNextPage: boolean;
-    hasPrevPage: boolean;
+    hasPreviousPage: boolean;
   };
 }

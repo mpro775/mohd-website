@@ -20,7 +20,8 @@ export type PaginationMeta = {
   limit: number;
   totalPages: number;
   hasNextPage: boolean;
-  hasPrevPage: boolean;
+  hasPreviousPage: boolean;
+  hasPrevPage?: boolean;
 };
 
 export type Paginated<T> = {

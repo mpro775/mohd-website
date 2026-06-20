@@ -21,7 +21,7 @@ describe("Admin Client Data Helpers", () => {
           limit: 1,
           totalPages: 10,
           hasNextPage: true,
-          hasPrevPage: true,
+          hasPreviousPage: true,
         },
       };
       const normalized = normalizeClientPaginated(payload);

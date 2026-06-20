@@ -101,8 +101,15 @@ export class TagsService {
       ];
     }
 
-    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'name', 'order']);
-    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const allowedSortFields = new Set([
+      'createdAt',
+      'updatedAt',
+      'name',
+      'order',
+    ]);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '')
+      ? queryDto.sortBy
+      : 'createdAt';
     const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([

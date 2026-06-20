@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -56,6 +56,10 @@ interface DataTableProps<TData, TValue> {
   onSearchChange?: (value: string) => void;
   filtersValue?: Record<string, string>;
   onFilterChange?: (key: string, value: string) => void;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  onSortChange?: (sortBy: string, sortOrder: "asc" | "desc") => void;
+  serverSortableColumns?: string[];
 }
 
 export function DataTable<TData, TValue>({
@@ -83,11 +87,20 @@ export function DataTable<TData, TValue>({
   onSearchChange,
   filtersValue,
   onFilterChange,
+  sortBy,
+  sortOrder = "desc",
+  onSortChange,
+  serverSortableColumns,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+
+  useEffect(() => {
+    if (!serverSide || !sortBy) return;
+    setSorting([{ id: sortBy, desc: sortOrder === "desc" }]);
+  }, [serverSide, sortBy, sortOrder]);
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -99,7 +112,19 @@ export function DataTable<TData, TValue>({
       columnVisibility,
       rowSelection,
     },
-    onSortingChange: setSorting,
+    onSortingChange: (updater) => {
+      const nextSorting = typeof updater === "function" ? updater(sorting) : updater;
+      setSorting(nextSorting);
+
+      if (serverSide && onSortChange) {
+        const next = nextSorting[0];
+        if (next) {
+          onSortChange(next.id, next.desc ? "desc" : "asc");
+        } else {
+          onSortChange("createdAt", "desc");
+        }
+      }
+    },
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -107,6 +132,8 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: serverSide ? undefined : getPaginationRowModel(),
     getSortedRowModel: serverSide ? undefined : getSortedRowModel(),
     getFilteredRowModel: serverSide ? undefined : getFilteredRowModel(),
+    manualSorting: serverSide,
+    enableSortingRemoval: false,
   });
 
   const visibleColumnsCount = table.getVisibleFlatColumns().length;
@@ -141,7 +168,11 @@ export function DataTable<TData, TValue>({
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="border-b border-border bg-muted/20 hover:bg-muted/30">
                   {headerGroup.headers.map((header) => {
-                    const isSortable = header.column.getCanSort();
+                    const isSortable =
+                      header.column.getCanSort() &&
+                      (!serverSide ||
+                        !serverSortableColumns ||
+                        serverSortableColumns.includes(header.column.id));
                     const sortState = header.column.getIsSorted();
 
                     return (
@@ -151,7 +182,7 @@ export function DataTable<TData, TValue>({
                           "px-4 py-3.5 text-xs font-black text-muted-foreground whitespace-nowrap",
                           isSortable && "cursor-pointer hover:text-foreground"
                         )}
-                        onClick={header.column.getToggleSortingHandler()}
+                        onClick={isSortable ? header.column.getToggleSortingHandler() : undefined}
                       >
                         {header.isPlaceholder ? null : (
                           <div className="flex items-center gap-1.5 select-none">

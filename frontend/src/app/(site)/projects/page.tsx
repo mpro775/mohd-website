@@ -19,7 +19,7 @@ export default async function ProjectsPage({ searchParams }: { searchParams: Pro
     technology 
   }).catch(() => ({ 
     items: [], 
-    meta: { total: 0, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPrevPage: false } 
+    meta: { total: 0, page: 1, limit: 10, totalPages: 1, hasNextPage: false, hasPreviousPage: false } 
   }));
 
   // Dynamically extract categories from the loaded projects list for filtering visual aid

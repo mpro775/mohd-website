@@ -21,7 +21,7 @@ This is contract v1 for the current URL shape. The URL does not include `/v1`.
     limit: number;
     totalPages: number;
     hasNextPage: boolean;
-    hasPrevPage: boolean;
+    hasPreviousPage: boolean;
   };
   errors?: { field: string; message: string }[];
   timestamp: string;
@@ -72,10 +72,26 @@ Public blog filters use slugs. Unknown `categorySlug` or `tagSlug` returns `data
 
 Editors can manage content routes. Admins can manage everything.
 
-All administrative resource lists return a unified paginated response shape `{ data, meta }` and support:
+All administrative resource lists return a unified paginated response shape inside the global envelope and support:
 - **Pagination**: `page` (default 1) and `limit` (default 10, max 100).
 - **Sorting**: `sortBy` (whitelisted fields) and `sortOrder` (`asc` or `desc`).
 - **Safe Search**: Safe regex query searches are executed server-side via `search`.
+
+List response data:
+
+```ts
+{
+  data: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+```
 
 ### Admin Routes and Filters
 
@@ -84,32 +100,32 @@ All administrative resource lists return a unified paginated response shape `{ d
   - Allowed sort fields: `createdAt`, `updatedAt`, `order`, `completionDate`, `title`.
 
 - `GET /api/admin/blog/posts`
-  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category` (ObjectId), `tag` (ObjectId), `isPublished`, `status`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `publishDate`, `views`, `title`.
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category` (ObjectId), `categorySlug`, `tag` (ObjectId), `tagSlug`, `status`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `publishDate`, `title`, `views`, `readTime`.
 
 - `GET /api/admin/blog/categories`
-  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `isActive`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`, `order`.
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `isActive`, `status` (`active` or `inactive`).
+  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `order`.
 
 - `GET /api/admin/blog/tags`
-  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `isActive`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`.
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `isActive`, `status` (`active` or `inactive`).
+  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `order`.
 
 - `GET /api/admin/services`
   - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`, `order`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `order`, `name`, `category`.
 
 - `GET /api/admin/technologies`
   - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `name`, `slug`, `order`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `order`, `name`, `category`.
 
 - `GET /api/admin/links`
   - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `title`, `slug`, `order`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `order`, `title`, `category`, `clicks`.
 
 - `GET /api/admin/faqs`
-  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `isPublished`.
-  - Allowed sort fields: `createdAt`, `updatedAt`, `question`, `order`.
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `category`, `featured`, `isPublished`.
+  - Allowed sort fields: `order`, `createdAt`, `updatedAt`, `question`.
 
 - `GET /api/admin/media`
   - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `folder`, `type` (`image` or `document`), `isUsed`.
@@ -120,10 +136,11 @@ Admin-only endpoints:
 - `GET /api/admin/profile` - Manage settings, profile bio, CV links.
 - `GET /api/admin/contact/messages`
   - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `status` (new, read, replied, archived, spam).
-  - Allowed sort fields: `createdAt`, `updatedAt`, `fullName`, `email`, `subject`.
+  - Search fields: `fullName`, `email`, `subject`, `message`, `phone`, `company`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `fullName`, `email`, `status`.
 - `GET /api/admin/audit-logs`
-  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `action`, `resource`, `actorId`, `actorEmail`, `resourceId`, `startDate`, `endDate`.
-  - Allowed sort fields: `createdAt`, `action`, `resource`, `actorEmail`.
+  - Query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `action`, `resource`, `actorId`, `actorEmail`, `resourceId`, `dateFrom`, `dateTo`.
+  - Allowed sort fields: `createdAt`, `updatedAt`, `action`, `resource`, `actorEmail`.
 - `GET /api/admin/dashboard` - Quick administrative stats and graphs.
 - `DELETE /api/admin/media/:id` - Hard delete media file from R2 and DB (fails if in use).
 - `POST /api/admin/media/cleanup-unused` - Purge inactive media files.

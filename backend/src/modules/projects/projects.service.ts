@@ -251,24 +251,19 @@ export class ProjectsService {
     if (!ids || ids.length === 0) return;
 
     if (action === 'publish') {
-      await this.projectModel.updateMany(
-        { _id: { $in: ids } },
-        { isPublished: true },
-      ).exec();
+      await this.projectModel
+        .updateMany({ _id: { $in: ids } }, { isPublished: true })
+        .exec();
     } else if (action === 'unpublish') {
-      await this.projectModel.updateMany(
-        { _id: { $in: ids } },
-        { isPublished: false },
-      ).exec();
+      await this.projectModel
+        .updateMany({ _id: { $in: ids } }, { isPublished: false })
+        .exec();
     } else if (action === 'archive' || action === 'delete') {
-      await this.projectModel.updateMany(
-        { _id: { $in: ids } },
-        { isArchived: true },
-      ).exec();
+      await this.projectModel
+        .updateMany({ _id: { $in: ids } }, { isArchived: true })
+        .exec();
       await Promise.all(
-        ids.map((id) =>
-          this.mediaService.removeUsageForEntity('Project', id),
-        ),
+        ids.map((id) => this.mediaService.removeUsageForEntity('Project', id)),
       );
     }
 

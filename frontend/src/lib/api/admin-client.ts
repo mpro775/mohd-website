@@ -87,16 +87,20 @@ export function normalizeClientPaginated<T>(data: unknown, meta?: PaginationMeta
     ? (data as { items: unknown[] }).items
     : [];
 
-  const resolvedMeta =
-    meta ??
-    (data as { meta?: PaginationMeta })?.meta ?? {
-      total: items.length,
-      page: 1,
-      limit: items.length || 10,
-      totalPages: 1,
-      hasNextPage: false,
-      hasPrevPage: false,
-    };
+  const incomingMeta = meta ?? (data as { meta?: PaginationMeta })?.meta;
+  const resolvedMeta = incomingMeta
+    ? {
+        ...incomingMeta,
+        hasPreviousPage: incomingMeta.hasPreviousPage ?? incomingMeta.hasPrevPage ?? false,
+      }
+    : {
+        total: items.length,
+        page: 1,
+        limit: items.length || 10,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      };
 
   return { items: items as T[], meta: resolvedMeta };
 }

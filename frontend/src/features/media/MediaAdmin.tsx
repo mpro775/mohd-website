@@ -72,7 +72,11 @@ export function MediaAdmin() {
 
   // Sync query search state to local input value
   useEffect(() => {
-    setSearchTerm(queryParams.search || "");
+    const handler = setTimeout(() => {
+      setSearchTerm(queryParams.search || "");
+    }, 0);
+
+    return () => clearTimeout(handler);
   }, [queryParams.search]);
 
   // Debounce search state updates
@@ -140,7 +144,7 @@ export function MediaAdmin() {
     limit: 10,
     totalPages: 1,
     hasNextPage: false,
-    hasPrevPage: false,
+    hasPreviousPage: false,
   };
 
   // 2. Mutations
@@ -398,6 +402,7 @@ export function MediaAdmin() {
                   <option key={f.value} value={f.value}>{f.label}</option>
                 ))}
               </select>
+
             </div>
 
             {/* Alt Text Description */}
@@ -499,6 +504,28 @@ export function MediaAdmin() {
                 <option value="all">كل الملفات (مستعمل/مهمل)</option>
                 <option value="used">مستعمل فقط</option>
                 <option value="unused">غير مستعمل فقط</option>
+              </select>
+              <select
+                value={queryParams.sortBy || "createdAt"}
+                onChange={(e) => setQueryParams({ sortBy: e.target.value, page: 1 })}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
+              >
+                <option value="createdAt">الأحدث إضافة</option>
+                <option value="updatedAt">آخر تحديث</option>
+                <option value="filename">اسم الملف</option>
+                <option value="size">حجم الملف</option>
+                <option value="mimeType">نوع MIME</option>
+                <option value="folder">المجلد</option>
+                <option value="type">النوع</option>
+              </select>
+
+              <select
+                value={queryParams.sortOrder || "desc"}
+                onChange={(e) => setQueryParams({ sortOrder: e.target.value, page: 1 })}
+                className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
+              >
+                <option value="desc">تنازلي</option>
+                <option value="asc">تصاعدي</option>
               </select>
             </div>
 

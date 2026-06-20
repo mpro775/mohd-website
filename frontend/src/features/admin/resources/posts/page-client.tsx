@@ -70,6 +70,8 @@ export function PostsPageClient() {
         limit: queryParams.limit,
         search: queryParams.search || undefined,
         status: queryParams.status === "all" ? undefined : queryParams.status,
+        sortBy: queryParams.sortBy || "createdAt",
+        sortOrder: queryParams.sortOrder || "desc",
       }),
   });
 
@@ -296,6 +298,10 @@ export function PostsPageClient() {
         onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
         onPageChange={(p) => setQueryParams({ page: p })}
         onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        sortBy={queryParams.sortBy}
+        sortOrder={queryParams.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setQueryParams({ sortBy, sortOrder, page: 1 })}
+        serverSortableColumns={["createdAt", "updatedAt", "publishDate", "title", "views", "readTime"]}
         filtersValue={{ status: queryParams.status }}
         onFilterChange={(key, val) => setQueryParams({ [key]: val || undefined, page: 1 })}
         columns={columns}

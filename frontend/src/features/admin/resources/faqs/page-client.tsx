@@ -59,6 +59,8 @@ export function FaqsPageClient() {
         limit: queryParams.limit,
         search: queryParams.search || undefined,
         isPublished: queryParams.status === "published" ? true : queryParams.status === "draft" ? false : undefined,
+        sortBy: queryParams.sortBy || "createdAt",
+        sortOrder: queryParams.sortOrder || "desc",
       }),
   });
 
@@ -242,6 +244,10 @@ export function FaqsPageClient() {
         onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
         onPageChange={(p) => setQueryParams({ page: p })}
         onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        sortBy={queryParams.sortBy}
+        sortOrder={queryParams.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setQueryParams({ sortBy, sortOrder, page: 1 })}
+        serverSortableColumns={["order", "createdAt", "updatedAt", "question"]}
         filtersValue={{ isPublished: queryParams.status }}
         onFilterChange={(key, val) => setQueryParams({ status: val || undefined, page: 1 })}
         columns={columns}

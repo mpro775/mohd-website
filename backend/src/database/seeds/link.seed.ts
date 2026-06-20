@@ -12,7 +12,7 @@ export const linksData = [
     category: 'Social',
     openInNewTab: true,
     isFeatured: true,
-    order: 1
+    order: 1,
   },
   {
     title: 'جيت هب',
@@ -24,7 +24,7 @@ export const linksData = [
     category: 'Developer',
     openInNewTab: true,
     isFeatured: true,
-    order: 2
+    order: 2,
   },
   {
     title: 'السيرة الذاتية',
@@ -36,7 +36,7 @@ export const linksData = [
     category: 'Professional',
     openInNewTab: true,
     isFeatured: true,
-    order: 3
+    order: 3,
   },
   {
     title: 'بريد إلكتروني',
@@ -48,7 +48,7 @@ export const linksData = [
     category: 'Contact',
     openInNewTab: false,
     isFeatured: true,
-    order: 4
+    order: 4,
   },
   {
     title: 'واتساب',
@@ -60,19 +60,20 @@ export const linksData = [
     category: 'Contact',
     openInNewTab: true,
     isFeatured: true,
-    order: 5
+    order: 5,
   },
   {
     title: 'تيك توك',
     slug: 'tiktok',
     url: 'https://tiktok.com/@your-account',
-    description: 'محتوى تقني وريادي حول البرمجة والذكاء الاصطناعي وريادة الأعمال.',
+    description:
+      'محتوى تقني وريادي حول البرمجة والذكاء الاصطناعي وريادة الأعمال.',
     icon: 'Music2',
     platform: 'TikTok',
     category: 'Content',
     openInNewTab: true,
     isFeatured: false,
-    order: 6
+    order: 6,
   },
   {
     title: 'سناب شات',
@@ -84,31 +85,33 @@ export const linksData = [
     category: 'Content',
     openInNewTab: true,
     isFeatured: false,
-    order: 7
+    order: 7,
   },
   {
     title: 'كليم',
     slug: 'kaleem',
     url: 'https://kaleem.sa',
-    description: 'منصة كليم لبناء المتاجر الإلكترونية وحلول الذكاء الاصطناعي للأعمال.',
+    description:
+      'منصة كليم لبناء المتاجر الإلكترونية وحلول الذكاء الاصطناعي للأعمال.',
     icon: 'Rocket',
     platform: 'Product',
     category: 'Startup',
     openInNewTab: true,
     isFeatured: true,
-    order: 8
+    order: 8,
   },
   {
     title: 'وكالة سمارت',
     slug: 'smart-agency',
     url: 'https://smartagency.com',
-    description: 'الوكالة المتخصصة في تطوير الأنظمة والمنصات الرقمية وحلول SaaS.',
+    description:
+      'الوكالة المتخصصة في تطوير الأنظمة والمنصات الرقمية وحلول SaaS.',
     icon: 'Building2',
     platform: 'Company',
     category: 'Business',
     openInNewTab: true,
     isFeatured: false,
-    order: 9
+    order: 9,
   },
   {
     title: 'معرض المشاريع',
@@ -120,8 +123,8 @@ export const linksData = [
     category: 'Portfolio',
     openInNewTab: false,
     isFeatured: true,
-    order: 10
-  }
+    order: 10,
+  },
 ];
 
 export async function seedLinks(linkModel: Model<Link>) {

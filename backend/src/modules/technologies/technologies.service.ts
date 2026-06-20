@@ -86,7 +86,9 @@ export class TechnologiesService {
     return this.technologyModel.find(query).sort({ order: 1, name: 1 });
   }
 
-  async findAllAdmin(queryDto: FilterTechnologyDto): Promise<IPaginatedResponse<Technology>> {
+  async findAllAdmin(
+    queryDto: FilterTechnologyDto,
+  ): Promise<IPaginatedResponse<Technology>> {
     const page = Number(queryDto.page ?? 1);
     const limit = Number(queryDto.limit ?? 10);
     const skip = (page - 1) * limit;
@@ -111,8 +113,16 @@ export class TechnologiesService {
       ];
     }
 
-    const allowedSortFields = new Set(['createdAt', 'updatedAt', 'order', 'name', 'category']);
-    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '') ? queryDto.sortBy : 'createdAt';
+    const allowedSortFields = new Set([
+      'createdAt',
+      'updatedAt',
+      'order',
+      'name',
+      'category',
+    ]);
+    const sortBy = allowedSortFields.has(queryDto.sortBy ?? '')
+      ? queryDto.sortBy
+      : 'createdAt';
     const sortOrder = queryDto.sortOrder === 'asc' ? 1 : -1;
 
     const [data, total] = await Promise.all([

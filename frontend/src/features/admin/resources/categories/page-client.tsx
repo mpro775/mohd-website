@@ -58,6 +58,8 @@ export function CategoriesPageClient() {
             : queryParams.isActive === "inactive"
             ? false
             : undefined,
+        sortBy: queryParams.sortBy || "createdAt",
+        sortOrder: queryParams.sortOrder || "desc",
       }),
   });
 
@@ -184,6 +186,10 @@ export function CategoriesPageClient() {
         onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
         onPageChange={(p) => setQueryParams({ page: p })}
         onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        sortBy={queryParams.sortBy}
+        sortOrder={queryParams.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setQueryParams({ sortBy, sortOrder, page: 1 })}
+        serverSortableColumns={["createdAt", "updatedAt", "name", "order"]}
         filtersValue={{ isActive: queryParams.isActive }}
         onFilterChange={(key, val) => setQueryParams({ isActive: val || "all", page: 1 })}
         columns={columns}

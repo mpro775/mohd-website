@@ -16,7 +16,7 @@ export function createPaginatedResponse<T>(
       limit,
       totalPages,
       hasNextPage: page < totalPages,
-      hasPrevPage: page > 1,
+      hasPreviousPage: page > 1,
     },
   };
 }

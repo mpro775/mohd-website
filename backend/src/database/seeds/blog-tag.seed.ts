@@ -22,7 +22,11 @@ export const tagsData = [
   { name: 'Startup', slug: 'startup', isActive: true },
   { name: 'MVP', slug: 'mvp', isActive: true },
   { name: 'Product Management', slug: 'product-management', isActive: true },
-  { name: 'Artificial Intelligence', slug: 'artificial-intelligence', isActive: true },
+  {
+    name: 'Artificial Intelligence',
+    slug: 'artificial-intelligence',
+    isActive: true,
+  },
   { name: 'OpenAI', slug: 'openai', isActive: true },
   { name: 'LLM', slug: 'llm', isActive: true },
   { name: 'RAG', slug: 'rag', isActive: true },
@@ -30,7 +34,11 @@ export const tagsData = [
   { name: 'Qdrant', slug: 'qdrant', isActive: true },
   { name: 'n8n', slug: 'n8n', isActive: true },
   { name: 'Automation', slug: 'automation', isActive: true },
-  { name: 'Software Engineering', slug: 'software-engineering', isActive: true },
+  {
+    name: 'Software Engineering',
+    slug: 'software-engineering',
+    isActive: true,
+  },
   { name: 'Clean Code', slug: 'clean-code', isActive: true },
   { name: 'Performance', slug: 'performance', isActive: true },
   { name: 'Scalability', slug: 'scalability', isActive: true },
@@ -38,14 +46,16 @@ export const tagsData = [
   { name: 'Learning', slug: 'learning', isActive: true },
   { name: 'Coursera', slug: 'coursera', isActive: true },
   { name: 'Freelancing', slug: 'freelancing', isActive: true },
-  { name: 'Entrepreneurship', slug: 'entrepreneurship', isActive: true }
+  { name: 'Entrepreneurship', slug: 'entrepreneurship', isActive: true },
 ];
 
 export async function seedBlogTags(tagModel: Model<Tag>) {
   for (const data of tagsData) {
     const existing = await tagModel.findOne({ slug: data.slug });
     if (existing) {
-      console.log(`Blog Tag with slug "${data.slug}" already exists, updating...`);
+      console.log(
+        `Blog Tag with slug "${data.slug}" already exists, updating...`,
+      );
       await tagModel.updateOne({ slug: data.slug }, { $set: data });
     } else {
       console.log(`Creating Blog Tag: ${data.name}`);

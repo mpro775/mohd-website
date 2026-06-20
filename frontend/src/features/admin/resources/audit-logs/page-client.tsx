@@ -30,6 +30,13 @@ export function AuditLogsPageClient() {
         page: queryParams.page,
         limit: queryParams.limit,
         search: queryParams.search || undefined,
+        action: queryParams.action || undefined,
+        resource: queryParams.resource || undefined,
+        actorId: queryParams.actorId || undefined,
+        actorEmail: queryParams.actorEmail || undefined,
+        resourceId: queryParams.resourceId || undefined,
+        dateFrom: queryParams.dateFrom || undefined,
+        dateTo: queryParams.dateTo || undefined,
         sortBy: queryParams.sortBy || "createdAt",
         sortOrder: queryParams.sortOrder || "desc",
       }),
@@ -56,14 +63,14 @@ export function AuditLogsPageClient() {
       })
     : "";
 
-  // Helper to format payload beautifully
-  const renderPayload = (payload: any) => {
-    if (!payload) return null;
+  // Helper to format JSON values beautifully
+  const renderJsonValue = (value: any) => {
+    if (!value) return null;
     try {
-      const parsed = typeof payload === "string" ? JSON.parse(payload) : payload;
+      const parsed = typeof value === "string" ? JSON.parse(value) : value;
       return JSON.stringify(parsed, null, 2);
     } catch {
-      return String(payload);
+      return String(value);
     }
   };
 
@@ -96,6 +103,10 @@ export function AuditLogsPageClient() {
         onSearchChange={(val) => setQueryParams({ search: val || undefined, page: 1 })}
         onPageChange={(p) => setQueryParams({ page: p })}
         onLimitChange={(l) => setQueryParams({ limit: l, page: 1 })}
+        sortBy={queryParams.sortBy}
+        sortOrder={queryParams.sortOrder as "asc" | "desc"}
+        onSortChange={(sortBy, sortOrder) => setQueryParams({ sortBy, sortOrder, page: 1 })}
+        serverSortableColumns={["createdAt", "updatedAt", "action", "resource", "actorEmail"]}
         columns={columns}
         data={data?.items || []}
         isLoading={isLoading}
@@ -193,7 +204,7 @@ export function AuditLogsPageClient() {
                     className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[200px] leading-relaxed whitespace-pre"
                     dir="ltr"
                   >
-                    {renderPayload(selectedLog.before)}
+                    {renderJsonValue(selectedLog.before)}
                   </pre>
                 </div>
               </div>
@@ -211,7 +222,7 @@ export function AuditLogsPageClient() {
                     className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[200px] leading-relaxed whitespace-pre"
                     dir="ltr"
                   >
-                    {renderPayload(selectedLog.after)}
+                    {renderJsonValue(selectedLog.after)}
                   </pre>
                 </div>
               </div>
@@ -229,7 +240,7 @@ export function AuditLogsPageClient() {
                     className="p-4 font-mono text-xs text-foreground overflow-auto max-h-[200px] leading-relaxed whitespace-pre"
                     dir="ltr"
                   >
-                    {renderPayload(selectedLog.metadata)}
+                    {renderJsonValue(selectedLog.metadata)}
                   </pre>
                 </div>
               </div>

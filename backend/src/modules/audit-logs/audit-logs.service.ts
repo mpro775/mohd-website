@@ -126,7 +126,8 @@ export class AuditLogsService {
 
     if (queryDto.action) query.action = queryDto.action;
     if (queryDto.resource) query.resource = queryDto.resource;
-    if (queryDto.actorId && isValidObjectId(queryDto.actorId)) query.actorId = queryDto.actorId;
+    if (queryDto.actorId && isValidObjectId(queryDto.actorId))
+      query.actorId = queryDto.actorId;
     if (queryDto.resourceId) query.resourceId = queryDto.resourceId;
 
     if (queryDto.actorEmail) {
