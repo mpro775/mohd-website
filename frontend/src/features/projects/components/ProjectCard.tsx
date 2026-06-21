@@ -16,7 +16,7 @@ function fallbackImage(project: Project) {
 }
 
 export function ProjectCard({ project }: { project: Project }) {
-  const image = project.coverImage ?? project.images?.[0] ?? fallbackImage(project);
+  const image = project.coverImage ?? project.gallery?.[0] ?? fallbackImage(project);
 
   return (
     <article className="premium-card group flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40">
@@ -62,7 +62,7 @@ export function ProjectCard({ project }: { project: Project }) {
 
         <div className="flex flex-wrap gap-2">
           {project.technologies?.slice(0, 5).map((tech) => (
-            <TechStackBadge key={`${itemId(project)}-${tech}`} name={tech} />
+            <TechStackBadge key={`${itemId(project)}-${tech.slug}`} name={tech.name} />
           ))}
         </div>
 

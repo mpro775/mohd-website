@@ -1,10 +1,19 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { ProjectCategory, ProjectStatus } from '../../../common/taxonomy/project-categories';
 
-export enum ProjectStatus {
-  COMPLETED = 'completed',
-  IN_PROGRESS = 'in-progress',
-  PAUSED = 'paused',
+export { ProjectCategory, ProjectStatus };
+
+@Schema({ _id: false })
+export class ProjectSeo {
+  @Prop()
+  metaTitle?: string;
+
+  @Prop()
+  metaDescription?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  ogImageMediaId?: Types.ObjectId;
 }
 
 @Schema({ timestamps: true })
@@ -21,17 +30,14 @@ export class Project extends Document {
   @Prop({ required: true })
   detailedDescription: string;
 
-  @Prop({ type: [String], default: [] })
-  images: string[];
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  coverImageMediaId?: Types.ObjectId;
 
-  @Prop()
-  coverImage?: string;
-
-  @Prop({ type: [String], default: [] })
-  gallery: string[];
+  @Prop({ type: [{ type: Types.ObjectId, ref: 'Media' }], default: [] })
+  galleryMediaIds: Types.ObjectId[];
 
   @Prop({ type: [String], default: [] })
-  technologies: string[];
+  technologySlugs: string[];
 
   @Prop()
   liveUrl: string;
@@ -49,8 +55,8 @@ export class Project extends Document {
   })
   status: ProjectStatus;
 
-  @Prop({ required: true, trim: true })
-  category: string;
+  @Prop({ type: String, enum: ProjectCategory, default: ProjectCategory.OTHER, required: true, trim: true })
+  category: ProjectCategory;
 
   @Prop({ type: Number, default: 0 })
   order: number;
@@ -88,12 +94,8 @@ export class Project extends Document {
   @Prop()
   endDate?: Date;
 
-  @Prop({ type: Object })
-  seo?: {
-    metaTitle?: string;
-    metaDescription?: string;
-    ogImage?: string;
-  };
+  @Prop({ type: SchemaFactory.createForClass(ProjectSeo), default: {} })
+  seo?: ProjectSeo;
 
   @Prop({ type: Number, default: 0 })
   views: number;
@@ -104,7 +106,6 @@ export class Project extends Document {
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);
 
-// Indexes for better performance
 ProjectSchema.index({ title: 'text', shortDescription: 'text' });
 ProjectSchema.index({ category: 1, status: 1, isPublished: 1 });
 ProjectSchema.index({ order: 1 });

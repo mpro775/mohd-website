@@ -5,6 +5,7 @@ export const linkFormSchema = z.object({
   slug: z.string().optional().or(z.literal("")),
   url: z.string().url("يجب إدخال رابط URL صالح ومستوفي الشروط").min(1, "رابط URL مطلوب للوصول للموقع"),
   description: z.string().optional().or(z.literal("")),
+  iconMediaId: z.string().nullable().optional(),
   icon: z.string().nullable().optional(),
   platform: z.string().optional().or(z.literal("")),
   category: z.string().optional().or(z.literal("")),

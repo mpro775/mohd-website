@@ -11,6 +11,7 @@ import {
 import { MediaField } from "@/components/admin/forms/MediaField";
 import { FormSection } from "@/components/admin/forms/FormSection";
 import type { TechnologyFormValues } from "./schema";
+import { useAdminOptions } from "../../hooks/use-options";
 
 interface TechnologyFormProps {
   form: UseFormReturn<TechnologyFormValues>;
@@ -20,6 +21,22 @@ interface TechnologyFormProps {
 export function TechnologyForm({ form }: TechnologyFormProps) {
   const { register, control, watch, formState: { errors } } = form;
   const selectedColor = watch("color") || "#4f46e5";
+  const { data: optionsData } = useAdminOptions();
+
+  const categoryOptions = (optionsData?.technologyCategories || []).map((c) => ({
+    label: c.labelAr,
+    value: c.value,
+  }));
+
+  const groupOptions = (optionsData?.technologyGroups || []).map((g) => ({
+    label: g.labelAr,
+    value: g.value,
+  }));
+
+  const proficiencyOptions = (optionsData?.proficiencyLevels || []).map((p) => ({
+    label: p.labelAr,
+    value: p.value,
+  }));
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
@@ -45,23 +62,20 @@ export function TechnologyForm({ form }: TechnologyFormProps) {
         <SelectField
           label="المجموعة الرئيسية (Category)"
           options={[
-            { label: "تطوير الواجهات الأمامية (frontend)", value: "frontend" },
-            { label: "تطوير الأنظمة الخلفية (backend)", value: "backend" },
-            { label: "قواعد البيانات (database)", value: "database" },
-            { label: "البنية التحتية والسحابية (devops)", value: "devops" },
-            { label: "أدوات التطوير (tools)", value: "tools" },
-            { label: "تصميم واجهات المستخدم (design)", value: "design" },
-            { label: "تطوير تطبيقات الهواتف (mobile)", value: "mobile" },
-            { label: "أخرى (other)", value: "other" },
+            { label: "جاري التحميل...", value: "" },
+            ...categoryOptions,
           ]}
           required
           register={register("category")}
           error={errors.category?.message}
         />
 
-        <InputField
+        <SelectField
           label="المجموعة الفرعية (Group)"
-          placeholder="مثال: Frameworks, Languages, UI Libraries"
+          options={[
+            { label: "جاري التحميل...", value: "" },
+            ...groupOptions,
+          ]}
           register={register("group")}
           error={errors.group?.message}
         />
@@ -69,10 +83,8 @@ export function TechnologyForm({ form }: TechnologyFormProps) {
         <SelectField
           label="مستوى الخبرة / Proficiency Level"
           options={[
-            { label: "مبتدئ (Beginner)", value: "beginner" },
-            { label: "متوسط (Intermediate)", value: "intermediate" },
-            { label: "متقدم (Advanced)", value: "advanced" },
-            { label: "خبير (Expert)", value: "expert" },
+            { label: "جاري التحميل...", value: "" },
+            ...proficiencyOptions,
           ]}
           required
           register={register("proficiencyLevel")}
@@ -131,13 +143,14 @@ export function TechnologyForm({ form }: TechnologyFormProps) {
         <div className="md:col-span-2">
           <Controller
             control={control}
-            name="icon"
+            name="iconMediaId"
             render={({ field }) => (
               <MediaField
                 label="شعار التقنية (Logo)"
-                value={field.value || undefined}
+                valueId={field.value}
+                valueUrl={watch("icon" as any)}
                 onChange={field.onChange}
-                error={errors.icon?.message}
+                error={errors.iconMediaId?.message}
                 allowedType="image"
                 defaultFolder="technologies"
               />

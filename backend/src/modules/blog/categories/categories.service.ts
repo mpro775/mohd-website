@@ -12,7 +12,7 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { FilterCategoryDto } from './dto/filter-category.dto';
 import { Post } from '../posts/schemas/post.schema';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
-import { generateSlug } from '../../../common/utils/slug.util';
+import { normalizeSlug } from '../../../common/utils/slug.util';
 import { buildSafeRegex } from '../../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
@@ -24,14 +24,6 @@ export class CategoriesService {
     @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly auditLogsService: AuditLogsService,
   ) {}
-
-  private normalizeSlug(name: string): string {
-    const slug = generateSlug(name);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
-  }
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.categoryModel.findOne({
@@ -47,7 +39,7 @@ export class CategoriesService {
     createCategoryDto: CreateCategoryDto,
     req?: any,
   ): Promise<Category> {
-    const slug = this.normalizeSlug(createCategoryDto.name);
+    const slug = normalizeSlug(createCategoryDto.slug || createCategoryDto.name);
     await this.assertSlugIsAvailable(slug);
 
     const category = new this.categoryModel({
@@ -188,8 +180,10 @@ export class CategoriesService {
     const before = oldCategory.toObject();
     const updateData: any = { ...updateCategoryDto };
 
-    if (updateCategoryDto.name) {
-      const slug = this.normalizeSlug(updateCategoryDto.name);
+    if (updateCategoryDto.name || updateCategoryDto.slug) {
+      const slug = normalizeSlug(
+        updateCategoryDto.slug || updateCategoryDto.name || oldCategory.slug,
+      );
       if (slug !== oldCategory.slug) {
         await this.assertSlugIsAvailable(slug, id);
         updateData.slug = slug;

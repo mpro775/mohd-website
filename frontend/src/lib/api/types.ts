@@ -29,10 +29,24 @@ export type Paginated<T> = {
   meta: PaginationMeta;
 };
 
+export type ResolvedMedia = {
+  id: string;
+  key?: string;
+  url: string;
+  alt?: string;
+  type: 'image' | 'document';
+  folder: string;
+  mimeType: string;
+  width?: number;
+  height?: number;
+};
+
 export type SeoFields = {
   metaTitle?: string;
   metaDescription?: string;
   ogImage?: string;
+  ogImageMediaId?: string;
+  ogImageMedia?: ResolvedMedia;
 };
 
 export type Profile = {
@@ -44,13 +58,16 @@ export type Profile = {
   bio: string;
   about?: string;
   profileImage?: string;
+  profileImageMediaId?: string;
+  profileImageMedia?: ResolvedMedia;
   profileImageAlt?: string;
   cvFile?: string;
+  cvMediaId?: string;
+  cvMedia?: ResolvedMedia;
   email: string;
   phone?: string;
   location?: string;
   availableForWork: boolean;
-  socialLinks: { platform: string; url: string; icon?: string; order?: number }[];
   languages: { name: string; level?: string }[];
   yearsOfExperience?: number;
   certificates: { title: string; issuer?: string; date?: string; url?: string }[];
@@ -64,10 +81,22 @@ export type Project = {
   slug: string;
   shortDescription: string;
   detailedDescription?: string;
-  images?: string[];
+  coverImageMediaId?: string;
   coverImage?: string;
+  coverImageMedia?: ResolvedMedia;
+  galleryMediaIds?: string[];
   gallery?: string[];
-  technologies?: string[];
+  galleryMedia?: ResolvedMedia[];
+  technologySlugs?: string[];
+  technologies?: Array<{
+    name: string;
+    slug: string;
+    icon?: string;
+    iconMediaId?: string;
+    category?: string;
+    group?: string;
+    color?: string;
+  }>;
   liveUrl?: string;
   githubUrl?: string;
   completionDate?: string;
@@ -106,8 +135,12 @@ export type Post = {
   summary: string;
   excerpt?: string;
   content: string;
+  featuredImageMediaId?: string;
   featuredImage?: string;
+  featuredImageMedia?: ResolvedMedia;
+  coverImageMediaId?: string;
   coverImage?: string;
+  coverImageMedia?: ResolvedMedia;
   category?: Category | string;
   tags?: Array<Tag | string>;
   publishDate?: string;
@@ -130,7 +163,10 @@ export type Service = {
   slug: string;
   shortDescription: string;
   detailedDescription?: string;
+  iconMediaId?: string;
   icon?: string;
+  iconMedia?: ResolvedMedia;
+  category?: string;
   startingPrice?: number;
   currency?: string;
   price?: string;
@@ -151,7 +187,9 @@ export type Technology = {
   name: string;
   slug: string;
   description?: string;
+  iconMediaId?: string;
   icon?: string;
+  iconMedia?: ResolvedMedia;
   proficiencyLevel?: "beginner" | "intermediate" | "advanced" | "expert";
   category?: string;
   group?: string;
@@ -170,7 +208,9 @@ export type LinkItem = {
   slug: string;
   url: string;
   description?: string;
+  iconMediaId?: string;
   icon?: string;
+  iconMedia?: ResolvedMedia;
   platform?: string;
   category?: string;
   openInNewTab?: boolean;

@@ -14,7 +14,8 @@ import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { BulkActionDto } from '../../common/dto/bulk-action.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
-import { generateSlug } from '../../common/utils/slug.util';
+import { TechnologiesService } from '../technologies/technologies.service';
+import { normalizeSlug } from '../../common/utils/slug.util';
 
 const ALLOWED_SORT_FIELDS = [
   'createdAt',
@@ -30,30 +31,26 @@ export class ProjectsService {
     @InjectModel(Project.name) private projectModel: Model<Project>,
     private readonly mediaService: MediaService,
     private readonly auditLogsService: AuditLogsService,
+    private readonly technologiesService: TechnologiesService,
   ) {}
 
   private async syncMedia(project: Project) {
-    const coverImages = project.coverImage ? [project.coverImage] : [];
-    await this.mediaService.syncUsage(
+    const coverImages = project.coverImageMediaId ? [project.coverImageMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       coverImages,
       'Project',
       project._id.toString(),
       'coverImage',
     );
-    await this.mediaService.syncUsage(
-      project.gallery || [],
+    const galleryIds = project.galleryMediaIds ? project.galleryMediaIds.map(id => id.toString()) : [];
+    await this.mediaService.syncUsageByIds(
+      galleryIds,
       'Project',
       project._id.toString(),
       'gallery',
     );
-    await this.mediaService.syncUsage(
-      project.images || [],
-      'Project',
-      project._id.toString(),
-      'images',
-    );
-    const ogImages = project.seo?.ogImage ? [project.seo.ogImage] : [];
-    await this.mediaService.syncUsage(
+    const ogImages = project.seo?.ogImageMediaId ? [project.seo.ogImageMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       ogImages,
       'Project',
       project._id.toString(),
@@ -65,10 +62,24 @@ export class ProjectsService {
     createProjectDto: CreateProjectDto,
     req?: any,
   ): Promise<Project> {
-    const slug = this.normalizeSlug(
+    const slug = normalizeSlug(
       createProjectDto.slug || createProjectDto.title,
     );
     await this.assertSlugIsAvailable(slug);
+
+    if (createProjectDto.coverImageMediaId) {
+      await this.mediaService.assertMediaExists(createProjectDto.coverImageMediaId, { type: 'image' });
+    }
+    if (createProjectDto.galleryMediaIds) {
+      await this.mediaService.assertManyMediaExist(createProjectDto.galleryMediaIds, { type: 'image' });
+    }
+    if (createProjectDto.seo?.ogImageMediaId) {
+      await this.mediaService.assertMediaExists(createProjectDto.seo.ogImageMediaId, { type: 'image' });
+    }
+    if (createProjectDto.technologySlugs) {
+      await this.technologiesService.assertSlugsExist(createProjectDto.technologySlugs);
+    }
+
     const project = new this.projectModel({
       ...createProjectDto,
       slug,
@@ -131,11 +142,24 @@ export class ProjectsService {
     }
     const before = oldProject.toObject();
 
+    if (updateProjectDto.coverImageMediaId) {
+      await this.mediaService.assertMediaExists(updateProjectDto.coverImageMediaId, { type: 'image' });
+    }
+    if (updateProjectDto.galleryMediaIds) {
+      await this.mediaService.assertManyMediaExist(updateProjectDto.galleryMediaIds, { type: 'image' });
+    }
+    if (updateProjectDto.seo?.ogImageMediaId) {
+      await this.mediaService.assertMediaExists(updateProjectDto.seo.ogImageMediaId, { type: 'image' });
+    }
+    if (updateProjectDto.technologySlugs) {
+      await this.technologiesService.assertSlugsExist(updateProjectDto.technologySlugs);
+    }
+
     const updateData: any = {
       ...updateProjectDto,
     };
     if (updateProjectDto.slug || updateProjectDto.title) {
-      const nextSlug = this.normalizeSlug(
+      const nextSlug = normalizeSlug(
         updateProjectDto.slug || updateProjectDto.title || oldProject.slug,
       );
       if (nextSlug !== oldProject.slug) {
@@ -304,7 +328,7 @@ export class ProjectsService {
     }
     if (category) query.category = category;
     if (status) query.status = status;
-    if (technology) query.technologies = technology;
+    if (technology) query.technologySlugs = technology;
     if (search) query.$text = { $search: search };
 
     const skip = (page - 1) * limit;
@@ -319,14 +343,6 @@ export class ProjectsService {
     ]);
 
     return createPaginatedResponse(data, total, page, limit);
-  }
-
-  private normalizeSlug(value: string): string {
-    const slug = generateSlug(value);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
   }
 
   private async assertSlugIsAvailable(

@@ -8,8 +8,10 @@ import { cn } from "@/lib/utils";
 
 interface MediaFieldProps {
   label: string;
-  value?: string;
-  onChange: (url: string) => void;
+  valueId?: string | null;
+  valueUrl?: string | null;
+  value?: string | null; // fallback
+  onChange: (id: string | null) => void;
   error?: string;
   required?: boolean;
   allowedType?: "image" | "document" | "all";
@@ -19,6 +21,8 @@ interface MediaFieldProps {
 
 export function MediaField({
   label,
+  valueId,
+  valueUrl,
   value,
   onChange,
   error,
@@ -28,15 +32,27 @@ export function MediaField({
   className,
 }: MediaFieldProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [localUrl, setLocalUrl] = useState<string | null>(null);
+  const [localName, setLocalName] = useState<string | null>(null);
 
-  const isImage = value && (
-    value.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) || 
-    value.includes("/misc") || 
-    value.includes("/projects") || 
-    value.includes("/blog") || 
-    value.includes("/profile") ||
-    value.includes("/services") ||
-    value.includes("/technologies")
+  // Clear local preview if the value ID becomes empty
+  React.useEffect(() => {
+    if (!valueId && !value) {
+      setLocalUrl(null);
+      setLocalName(null);
+    }
+  }, [valueId, value]);
+
+  const displayUrl = localUrl || valueUrl || (value && value.startsWith("http") ? value : null);
+
+  const isImage = displayUrl && (
+    displayUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) || 
+    displayUrl.includes("/misc") || 
+    displayUrl.includes("/projects") || 
+    displayUrl.includes("/blog") || 
+    displayUrl.includes("/profile") ||
+    displayUrl.includes("/services") ||
+    displayUrl.includes("/technologies")
   );
 
   return (
@@ -44,13 +60,13 @@ export function MediaField({
       <FieldLabel label={label} required={required} />
 
       <div className="flex flex-col gap-3 rounded-lg border border-border bg-card/35 p-3">
-        {value ? (
+        {displayUrl ? (
           // Selected Media Preview Frame
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-2.5 rounded-lg border border-border bg-card/65 select-none animate-in fade-in duration-300">
             <div className="flex items-center gap-3 min-w-0">
               <div className="h-14 w-14 rounded-md border border-border overflow-hidden bg-muted/40 flex items-center justify-center shrink-0">
                 {isImage ? (
-                  <img src={value} alt="Preview" className="h-full w-full object-cover" />
+                  <img src={displayUrl} alt="Preview" className="h-full w-full object-cover" />
                 ) : (
                   <FileText className="h-6 w-6 text-muted-foreground" />
                 )}
@@ -58,10 +74,10 @@ export function MediaField({
               
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-bold text-foreground truncate" dir="ltr">
-                  {value.split("/").pop() || "ملف محدد"}
+                  {localName || displayUrl.split("/").pop() || "ملف محدد"}
                 </p>
                 <p className="text-[10px] text-muted-foreground truncate mt-0.5" dir="ltr">
-                  {value}
+                  {displayUrl}
                 </p>
               </div>
             </div>
@@ -76,7 +92,11 @@ export function MediaField({
               </button>
               <button
                 type="button"
-                onClick={() => onChange("")}
+                onClick={() => {
+                  setLocalUrl(null);
+                  setLocalName(null);
+                  onChange(null);
+                }}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-danger/10 bg-danger/5 text-danger hover:bg-danger/10 cursor-pointer transition select-none"
                 title="إزالة الملف"
               >
@@ -104,8 +124,11 @@ export function MediaField({
       <MediaPicker
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        onSelect={(url) => {
-          onChange(url);
+        onSelect={(item) => {
+          const id = item._id || item.id || "";
+          setLocalUrl(item.url);
+          setLocalName(item.originalName || item.filename);
+          onChange(id);
           setIsPickerOpen(false);
         }}
         allowedType={allowedType}

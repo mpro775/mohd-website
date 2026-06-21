@@ -22,27 +22,39 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
+import { MediaService } from '../media/media.service';
+import { TechnologiesService } from '../technologies/technologies.service';
+import { mapProjectToPublic, mapProjectToAdmin } from './mappers/project.mapper';
 
 @Public()
 @Controller('public/projects')
 export class PublicProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly mediaService: MediaService,
+    private readonly technologiesService: TechnologiesService,
+  ) {}
 
   @Get()
   async findAll(@Query() filterDto: FilterProjectDto) {
     const result = await this.projectsService.findAllPublic(filterDto);
+    const mappedData = await Promise.all(
+      result.data.map((item) => mapProjectToPublic(item, this.mediaService, this.technologiesService)),
+    );
     return {
       message: 'Projects loaded successfully',
-      data: result.data,
+      data: mappedData,
       meta: result.meta,
     };
   }
 
   @Get(':slug')
   async findOne(@Param('slug') slug: string) {
+    const raw = await this.projectsService.findOnePublic(slug);
+    const mapped = await mapProjectToPublic(raw, this.mediaService, this.technologiesService);
     return {
       message: 'Project loaded successfully',
-      data: await this.projectsService.findOnePublic(slug),
+      data: mapped,
     };
   }
 }
@@ -51,39 +63,51 @@ export class PublicProjectsController {
 @Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/projects')
 export class AdminProjectsController {
-  constructor(private readonly projectsService: ProjectsService) {}
+  constructor(
+    private readonly projectsService: ProjectsService,
+    private readonly mediaService: MediaService,
+    private readonly technologiesService: TechnologiesService,
+  ) {}
 
   @Get()
   async findAll(@Query() filterDto: FilterProjectDto) {
     const result = await this.projectsService.findAllAdmin(filterDto);
+    const mappedData = await Promise.all(
+      result.data.map((item) => mapProjectToAdmin(item, this.mediaService, this.technologiesService)),
+    );
     return {
       message: 'Projects loaded successfully',
-      data: result.data,
+      data: mappedData,
       meta: result.meta,
     };
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.projectsService.findOneAdmin(id);
+    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
     return {
       message: 'Project loaded successfully',
-      data: await this.projectsService.findOneAdmin(id),
+      data: mapped,
     };
   }
 
   @Post()
   async create(@Request() req, @Body() createProjectDto: CreateProjectDto) {
+    const raw = await this.projectsService.create(createProjectDto, req);
+    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
     return {
       message: 'Project created successfully',
-      data: await this.projectsService.create(createProjectDto, req),
+      data: mapped,
     };
   }
 
   @Post('bulk')
   async bulk(@Request() req, @Body() dto: BulkActionDto) {
+    await this.projectsService.bulkAction(dto, req);
     return {
       message: 'Bulk action completed successfully',
-      data: await this.projectsService.bulkAction(dto, req),
+      data: null,
     };
   }
 
@@ -93,25 +117,31 @@ export class AdminProjectsController {
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
+    const raw = await this.projectsService.update(id, updateProjectDto, req);
+    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
     return {
       message: 'Project updated successfully',
-      data: await this.projectsService.update(id, updateProjectDto, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/publish')
   async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.projectsService.publish(id, true, req);
+    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
     return {
       message: 'Project published successfully',
-      data: await this.projectsService.publish(id, true, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/unpublish')
   async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.projectsService.publish(id, false, req);
+    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
     return {
       message: 'Project unpublished successfully',
-      data: await this.projectsService.publish(id, false, req),
+      data: mapped,
     };
   }
 

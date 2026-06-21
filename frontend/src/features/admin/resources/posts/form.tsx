@@ -17,7 +17,7 @@ import type { PostFormValues } from "./schema";
 import { toast } from "sonner";
 
 interface PostFormProps {
-  form: UseFormReturn<PostFormValues>;
+  form: UseFormReturn<PostFormValues, any, any>;
   onSubmit?: any;
 }
 
@@ -252,13 +252,14 @@ export function PostForm({ form }: PostFormProps) {
         {/* Featured Image */}
         <Controller
           control={control}
-          name="featuredImage"
+          name="featuredImageMediaId"
           render={({ field }) => (
             <MediaField
               label="الصورة البارزة للمقال (Thumbnail)"
-              value={field.value || undefined}
+              valueId={field.value}
+              valueUrl={watch("featuredImage" as any)}
               onChange={field.onChange}
-              error={errors.featuredImage?.message}
+              error={errors.featuredImageMediaId?.message}
               allowedType="image"
               defaultFolder="blog"
             />
@@ -268,13 +269,14 @@ export function PostForm({ form }: PostFormProps) {
         {/* Cover Image */}
         <Controller
           control={control}
-          name="coverImage"
+          name="coverImageMediaId"
           render={({ field }) => (
             <MediaField
               label="صورة الغلاف الكاملة (Cover Image)"
-              value={field.value || undefined}
+              valueId={field.value}
+              valueUrl={watch("coverImage" as any)}
               onChange={field.onChange}
-              error={errors.coverImage?.message}
+              error={errors.coverImageMediaId?.message}
               allowedType="image"
               defaultFolder="blog"
             />

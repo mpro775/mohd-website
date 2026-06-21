@@ -9,6 +9,9 @@ export class Tag extends Document {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   slug: string;
 
+  @Prop({ default: '#3b82f6', trim: true })
+  color: string;
+
   @Prop({ default: true })
   isActive: boolean;
 

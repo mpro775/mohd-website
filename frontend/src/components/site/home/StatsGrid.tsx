@@ -1,14 +1,14 @@
 "use client";
 
-import { Code2, Cpu, FileText, FolderGit2 } from "lucide-react";
+import { Code2, Rocket, Users, Sparkles } from "lucide-react";
 import { AnimatedCounter } from "./AnimatedCounter";
 import { StaggerItem, StaggerReveal } from "./ScrollReveal";
 
 const iconMap = {
-  Cpu,
-  FolderGit2,
-  FileText,
+  Rocket,
   Code2,
+  Users,
+  Sparkles,
 } as const;
 
 type IconName = keyof typeof iconMap;
@@ -16,32 +16,30 @@ type IconName = keyof typeof iconMap;
 type Stat = {
   label: string;
   value: number;
+  suffix?: string;
   iconName: IconName;
 };
 
 export function StatsGrid({ stats }: { stats: Stat[] }) {
   return (
-    <StaggerReveal className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+    <StaggerReveal className="grid gap-4 grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => {
         const Icon = iconMap[stat.iconName];
         return (
           <StaggerItem key={stat.label}>
-            <div className="premium-card group p-5 transition-all duration-300 hover:-translate-y-1">
+            <div className="premium-card group p-5 transition-all duration-300 hover:-translate-y-1 flex flex-col items-center justify-center text-center">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-px animate-shimmer bg-gradient-to-r from-transparent via-primary/50 to-transparent opacity-60" />
-              <div className="mb-4 flex items-center justify-between">
-                <Icon className="h-5 w-5 text-primary transition-transform duration-300 group-hover:scale-110" />
-                <div className="mx-3 h-px flex-1 bg-gradient-to-r from-primary/20 to-transparent" />
+              <div className="mb-3 flex justify-center">
+                <Icon className="h-6 w-6 text-primary transition-transform duration-300 group-hover:scale-110" />
               </div>
               <AnimatedCounter
                 value={stat.value}
-                className="font-mono text-3xl font-bold text-foreground"
+                suffix={stat.suffix}
+                className="font-mono text-3xl font-bold text-foreground tracking-tight"
               />
-              <p dir="ltr" className="mt-1 font-mono text-xs text-muted-foreground">
+              <p className="mt-2 font-sans text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {stat.label}
               </p>
-              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-primary to-secondary" />
-              </div>
             </div>
           </StaggerItem>
         );

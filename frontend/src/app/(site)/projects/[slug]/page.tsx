@@ -23,7 +23,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
   const project = await publicApi.project(slug).catch(() => null);
   if (!project) notFound();
 
-  const gallery = Array.from(new Set([...(project.gallery || []), ...(project.images || [])])).filter((image) => image !== project.coverImage);
+  const gallery = Array.from(new Set(project.gallery || [])).filter((image) => image !== project.coverImage);
 
   return (
     <>
@@ -82,7 +82,7 @@ export default async function ProjectDetailsPage({ params }: { params: Promise<{
             <h2 className="mb-4 text-xl font-bold text-foreground">Technologies</h2>
             <div className="flex flex-wrap gap-2">
               {project.technologies.map((tech) => (
-                <TechStackBadge key={tech} name={tech} />
+                <TechStackBadge key={tech.slug} name={tech.name} />
               ))}
             </div>
           </section>

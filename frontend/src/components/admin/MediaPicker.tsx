@@ -22,7 +22,7 @@ type MediaItem = {
 type MediaPickerProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (url: string) => void;
+  onSelect: (item: MediaItem) => void;
   allowedType?: "image" | "document" | "all";
   defaultFolder?: string;
 };
@@ -212,7 +212,7 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", de
                       <div
                         key={item._id ?? item.id}
                         className="group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition hover:border-primary/50"
-                        onClick={() => onSelect(item.url)}
+                        onClick={() => onSelect(item)}
                       >
                         <div className="aspect-square relative flex items-center justify-center bg-muted/40">
                           {isImage ? (

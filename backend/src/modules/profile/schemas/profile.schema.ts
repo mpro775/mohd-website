@@ -1,20 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-
-@Schema({ _id: false })
-export class SocialLink {
-  @Prop({ required: true })
-  platform: string;
-
-  @Prop({ required: true })
-  url: string;
-
-  @Prop()
-  icon?: string;
-
-  @Prop({ type: Number, default: 0 })
-  order?: number;
-}
+import { Document, Types } from 'mongoose';
 
 @Schema({ _id: false })
 export class Language {
@@ -48,8 +33,8 @@ export class ProfileSeo {
   @Prop()
   metaDescription?: string;
 
-  @Prop()
-  ogImage?: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  ogImageMediaId?: Types.ObjectId;
 }
 
 @Schema({ timestamps: true })
@@ -69,14 +54,14 @@ export class Profile extends Document {
   @Prop()
   about?: string;
 
-  @Prop()
-  profileImage?: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  profileImageMediaId?: Types.ObjectId;
 
   @Prop()
   profileImageAlt?: string;
 
-  @Prop()
-  cvFile?: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  cvMediaId?: Types.ObjectId;
 
   @Prop({ required: true })
   email: string;
@@ -89,9 +74,6 @@ export class Profile extends Document {
 
   @Prop({ default: true })
   availableForWork: boolean;
-
-  @Prop({ type: [SchemaFactory.createForClass(SocialLink)], default: [] })
-  socialLinks: SocialLink[];
 
   @Prop({ type: [SchemaFactory.createForClass(Language)], default: [] })
   languages: Language[];

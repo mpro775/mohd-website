@@ -8,7 +8,7 @@ import { useQueryStates } from "nuqs";
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { adminClient, clientApiRequest } from "@/lib/api/admin-client";
+import { adminClient } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { handleAdminError, setFormErrors } from "@/lib/api/admin-errors";
 import { adminSearchParamsSchema } from "@/lib/api/admin-search-params";
@@ -39,6 +39,8 @@ export function ServicesPageClient() {
       slug: "",
       shortDescription: "",
       detailedDescription: "",
+      category: "web-development",
+      iconMediaId: null,
       icon: null,
       startingPrice: "",
       currency: "USD",
@@ -53,7 +55,8 @@ export function ServicesPageClient() {
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     },
   });
@@ -82,27 +85,34 @@ export function ServicesPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("services") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+    adminClient.revalidate(["services", "home"]);
   };
 
   // 2. Mutations
   const saveMutation = useMutation({
     mutationFn: async (values: ServiceFormValues) => {
-      // Map deliverables & requirements back to string[]
       const payload = {
-        ...values,
-        startingPrice: (typeof values.startingPrice === "number" && !isNaN(values.startingPrice)) ? values.startingPrice : (values.startingPrice && !isNaN(Number(values.startingPrice))) ? Number(values.startingPrice) : undefined,
-        ctaUrl: values.ctaUrl || undefined,
+        name: values.name,
+        slug: values.slug || undefined,
+        shortDescription: values.shortDescription,
         detailedDescription: values.detailedDescription || undefined,
+        category: values.category,
+        iconMediaId: values.iconMediaId || null,
+        startingPrice: (typeof values.startingPrice === "number" && !isNaN(values.startingPrice)) ? values.startingPrice : (values.startingPrice && !isNaN(Number(values.startingPrice))) ? Number(values.startingPrice) : undefined,
+        currency: values.currency || "USD",
         price: values.price || undefined,
         duration: values.duration || undefined,
         ctaText: values.ctaText || undefined,
+        ctaUrl: values.ctaUrl || undefined,
+        isFeatured: !!values.isFeatured,
+        isPublished: !!values.isPublished,
         deliverables: (values.deliverables || []).map((x: any) => typeof x === "string" ? x : x.value).filter(Boolean),
         requirements: (values.requirements || []).map((x: any) => typeof x === "string" ? x : x.value).filter(Boolean),
         seo: values.seo
           ? {
               metaTitle: values.seo.metaTitle || undefined,
               metaDescription: values.seo.metaDescription || undefined,
-              ogImage: values.seo.ogImage || undefined,
+              ogImageMediaId: values.seo.ogImageMediaId || null,
             }
           : undefined,
       };
@@ -193,6 +203,8 @@ export function ServicesPageClient() {
       slug: "",
       shortDescription: "",
       detailedDescription: "",
+      category: "web-development",
+      iconMediaId: null,
       icon: null,
       startingPrice: "",
       currency: "USD",
@@ -207,7 +219,8 @@ export function ServicesPageClient() {
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     });
     setIsDrawerOpen(true);
@@ -216,7 +229,6 @@ export function ServicesPageClient() {
   const handleOpenEdit = (service: Service) => {
     setEditingService(service);
 
-    // Map string[] deliverables / requirements to { value: string }[] for repeaters
     const deliverablesList = (service.deliverables || []).map((x) => ({ value: x }));
     const requirementsList = (service.requirements || []).map((x) => ({ value: x }));
 
@@ -225,6 +237,8 @@ export function ServicesPageClient() {
       slug: service.slug || "",
       shortDescription: service.shortDescription || "",
       detailedDescription: service.detailedDescription || "",
+      category: service.category || "web-development",
+      iconMediaId: service.iconMediaId || null,
       icon: service.icon || null,
       startingPrice: service.startingPrice !== undefined && service.startingPrice !== null ? service.startingPrice : "",
       currency: service.currency || "USD",
@@ -239,7 +253,8 @@ export function ServicesPageClient() {
       seo: {
         metaTitle: service.seo?.metaTitle || "",
         metaDescription: service.seo?.metaDescription || "",
-        ogImage: service.seo?.ogImage || "",
+        ogImageMediaId: service.seo?.ogImageMediaId || null,
+        ogImage: service.seo?.ogImage || null,
       },
     });
     setIsDrawerOpen(true);

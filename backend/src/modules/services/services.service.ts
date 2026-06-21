@@ -12,7 +12,7 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 import { FilterServiceDto } from './dto/filter-service.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
-import { generateSlug } from '../../common/utils/slug.util';
+import { normalizeSlug } from '../../common/utils/slug.util';
 import { buildSafeRegex } from '../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -25,14 +25,6 @@ export class ServicesService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  private generateSlug(name: string): string {
-    const slug = generateSlug(name);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
-  }
-
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.serviceModel.findOne({
       slug,
@@ -44,15 +36,15 @@ export class ServicesService {
   }
 
   private async syncMedia(service: Service) {
-    const icons = service.icon ? [service.icon] : [];
-    await this.mediaService.syncUsage(
+    const icons = service.iconMediaId ? [service.iconMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       icons,
       'Service',
       service._id.toString(),
       'icon',
     );
-    const ogImages = service.seo?.ogImage ? [service.seo.ogImage] : [];
-    await this.mediaService.syncUsage(
+    const ogImages = service.seo?.ogImageMediaId ? [service.seo.ogImageMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       ogImages,
       'Service',
       service._id.toString(),
@@ -64,10 +56,18 @@ export class ServicesService {
     createServiceDto: CreateServiceDto,
     req?: any,
   ): Promise<Service> {
-    const slug = this.generateSlug(
+    const slug = normalizeSlug(
       createServiceDto.slug || createServiceDto.name,
     );
     await this.assertSlugIsAvailable(slug);
+
+    if (createServiceDto.iconMediaId) {
+      await this.mediaService.assertMediaExists(createServiceDto.iconMediaId, { type: 'image' });
+    }
+    if (createServiceDto.seo?.ogImageMediaId) {
+      await this.mediaService.assertMediaExists(createServiceDto.seo.ogImageMediaId, { type: 'image' });
+    }
+
     const service = new this.serviceModel({
       ...createServiceDto,
       slug,
@@ -87,10 +87,10 @@ export class ServicesService {
     return saved;
   }
 
-  async findAll(): Promise<Service[]> {
-    return this.serviceModel
-      .find({ isPublished: true })
-      .sort({ order: 1, name: 1 });
+  async findAll(category?: string): Promise<Service[]> {
+    const query: any = { isPublished: true };
+    if (category) query.category = category;
+    return this.serviceModel.find(query).sort({ order: 1, name: 1 });
   }
 
   async findAllAdmin(
@@ -170,11 +170,18 @@ export class ServicesService {
     if (!oldService) throw new NotFoundException('Service not found');
     const before = oldService.toObject();
 
+    if (updateServiceDto.iconMediaId) {
+      await this.mediaService.assertMediaExists(updateServiceDto.iconMediaId, { type: 'image' });
+    }
+    if (updateServiceDto.seo?.ogImageMediaId) {
+      await this.mediaService.assertMediaExists(updateServiceDto.seo.ogImageMediaId, { type: 'image' });
+    }
+
     const updateData = {
       ...updateServiceDto,
     };
     if (updateServiceDto.name || updateServiceDto.slug) {
-      const slug = this.generateSlug(
+      const slug = normalizeSlug(
         updateServiceDto.slug || updateServiceDto.name || oldService.slug,
       );
       if (slug !== oldService.slug) {

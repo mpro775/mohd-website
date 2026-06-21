@@ -13,6 +13,7 @@ import { SeoFieldsCard } from "@/components/admin/forms/SeoFieldsCard";
 import { FormSection } from "@/components/admin/forms/FormSection";
 import { RepeaterField } from "@/components/admin/forms/RepeaterField";
 import type { ServiceFormValues } from "./schema";
+import { useAdminOptions } from "../../hooks/use-options";
 
 interface ServiceFormProps {
   form: UseFormReturn<ServiceFormValues>;
@@ -20,7 +21,18 @@ interface ServiceFormProps {
 }
 
 export function ServiceForm({ form }: ServiceFormProps) {
-  const { register, control, formState: { errors } } = form;
+  const { register, control, watch, formState: { errors } } = form;
+  const { data: optionsData } = useAdminOptions();
+
+  const categoryOptions = (optionsData?.serviceCategories || []).map((c) => ({
+    label: c.labelAr,
+    value: c.value,
+  }));
+
+  const currencyOptions = (optionsData?.currencies || []).map((cur) => ({
+    label: cur.label,
+    value: cur.value,
+  }));
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
@@ -49,6 +61,19 @@ export function ServiceForm({ form }: ServiceFormProps) {
           register={register("duration")}
           error={errors.duration?.message}
         />
+
+        <div className="md:col-span-2">
+          <SelectField
+            label="تصنيف الخدمة"
+            required
+            options={[
+              { label: "جاري التحميل...", value: "" },
+              ...categoryOptions,
+            ]}
+            register={register("category")}
+            error={errors.category?.message}
+          />
+        </div>
 
         <div className="md:col-span-2">
           <TextAreaField
@@ -85,10 +110,8 @@ export function ServiceForm({ form }: ServiceFormProps) {
         <SelectField
           label="العملة"
           options={[
-            { label: "دولار أمريكي (USD)", value: "USD" },
-            { label: "ريال سعودي (SAR)", value: "SAR" },
-            { label: "درهم إماراتي (AED)", value: "AED" },
-            { label: "دينار كويتي (KWD)", value: "KWD" },
+            { label: "جاري التحميل...", value: "" },
+            ...currencyOptions,
           ]}
           register={register("currency")}
           error={errors.currency?.message}
@@ -172,13 +195,14 @@ export function ServiceForm({ form }: ServiceFormProps) {
         <div className="md:col-span-2">
           <Controller
             control={control}
-            name="icon"
+            name="iconMediaId"
             render={({ field }) => (
               <MediaField
                 label="أيقونة الخدمة / الشعار"
-                value={field.value || undefined}
+                valueId={field.value}
+                valueUrl={watch("icon" as any)}
                 onChange={field.onChange}
-                error={errors.icon?.message}
+                error={errors.iconMediaId?.message}
                 allowedType="image"
                 defaultFolder="services"
               />

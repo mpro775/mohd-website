@@ -21,25 +21,36 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
+import { MediaService } from '../media/media.service';
+import { mapServiceToPublic, mapServiceToAdmin } from './mappers/service.mapper';
 
 @Public()
 @Controller('public/services')
 export class PublicServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(
+    private readonly servicesService: ServicesService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Get()
-  async findAll() {
+  async findAll(@Query('category') category?: string) {
+    const rawList = await this.servicesService.findAll(category);
+    const mappedList = await Promise.all(
+      rawList.map((item) => mapServiceToPublic(item, this.mediaService)),
+    );
     return {
       message: 'Services loaded successfully',
-      data: await this.servicesService.findAll(),
+      data: mappedList,
     };
   }
 
   @Get(':slug')
   async findOne(@Param('slug') slug: string) {
+    const raw = await this.servicesService.findOne(slug);
+    const mapped = await mapServiceToPublic(raw, this.mediaService);
     return {
       message: 'Service loaded successfully',
-      data: await this.servicesService.findOne(slug),
+      data: mapped,
     };
   }
 }
@@ -48,31 +59,41 @@ export class PublicServicesController {
 @Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/services')
 export class AdminServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(
+    private readonly servicesService: ServicesService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Get()
   async findAll(@Query() query: FilterServiceDto) {
     const result = await this.servicesService.findAllAdmin(query);
+    const mappedData = await Promise.all(
+      result.data.map((item) => mapServiceToAdmin(item, this.mediaService)),
+    );
     return {
       message: 'Services loaded successfully',
-      data: result.data,
+      data: mappedData,
       meta: result.meta,
     };
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.servicesService.findOneAdmin(id);
+    const mapped = await mapServiceToAdmin(raw, this.mediaService);
     return {
       message: 'Service loaded successfully',
-      data: await this.servicesService.findOneAdmin(id),
+      data: mapped,
     };
   }
 
   @Post()
   async create(@Request() req, @Body() createServiceDto: CreateServiceDto) {
+    const raw = await this.servicesService.create(createServiceDto, req);
+    const mapped = await mapServiceToAdmin(raw, this.mediaService);
     return {
       message: 'Service created successfully',
-      data: await this.servicesService.create(createServiceDto, req),
+      data: mapped,
     };
   }
 
@@ -82,25 +103,31 @@ export class AdminServicesController {
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updateServiceDto: UpdateServiceDto,
   ) {
+    const raw = await this.servicesService.update(id, updateServiceDto, req);
+    const mapped = await mapServiceToAdmin(raw, this.mediaService);
     return {
       message: 'Service updated successfully',
-      data: await this.servicesService.update(id, updateServiceDto, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/publish')
   async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.servicesService.publish(id, true, req);
+    const mapped = await mapServiceToAdmin(raw, this.mediaService);
     return {
       message: 'Service published successfully',
-      data: await this.servicesService.publish(id, true, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/unpublish')
   async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.servicesService.publish(id, false, req);
+    const mapped = await mapServiceToAdmin(raw, this.mediaService);
     return {
       message: 'Service unpublished successfully',
-      data: await this.servicesService.publish(id, false, req),
+      data: mapped,
     };
   }
 

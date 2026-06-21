@@ -16,7 +16,7 @@ import { MediaService } from '../../media/media.service';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
 import { Category } from '../categories/schemas/category.schema';
 import { Tag } from '../tags/schemas/tag.schema';
-import { generateSlug } from '../../../common/utils/slug.util';
+import { normalizeSlug } from '../../../common/utils/slug.util';
 import {
   sanitizePlainText,
   sanitizePostContent,
@@ -42,22 +42,22 @@ export class PostsService {
   ) {}
 
   private async syncMedia(post: Post) {
-    const featuredImages = post.featuredImage ? [post.featuredImage] : [];
-    await this.mediaService.syncUsage(
+    const featuredImages = post.featuredImageMediaId ? [post.featuredImageMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       featuredImages,
       'Post',
       post._id.toString(),
       'featuredImage',
     );
-    const coverImages = post.coverImage ? [post.coverImage] : [];
-    await this.mediaService.syncUsage(
+    const coverImages = post.coverImageMediaId ? [post.coverImageMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       coverImages,
       'Post',
       post._id.toString(),
       'coverImage',
     );
-    const ogImages = post.seo?.ogImage ? [post.seo.ogImage] : [];
-    await this.mediaService.syncUsage(
+    const ogImages = post.seo?.ogImageMediaId ? [post.seo.ogImageMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       ogImages,
       'Post',
       post._id.toString(),
@@ -76,9 +76,20 @@ export class PostsService {
     authorId: string,
     req?: any,
   ): Promise<Post> {
-    const slug = this.normalizeSlug(createPostDto.title);
+    const slug = normalizeSlug(createPostDto.slug || createPostDto.title);
     await this.assertSlugIsAvailable(slug);
     await this.validateRelations(createPostDto.category, createPostDto.tags);
+
+    if (createPostDto.featuredImageMediaId) {
+      await this.mediaService.assertMediaExists(createPostDto.featuredImageMediaId, { type: 'image' });
+    }
+    if (createPostDto.coverImageMediaId) {
+      await this.mediaService.assertMediaExists(createPostDto.coverImageMediaId, { type: 'image' });
+    }
+    if (createPostDto.seo?.ogImageMediaId) {
+      await this.mediaService.assertMediaExists(createPostDto.seo.ogImageMediaId, { type: 'image' });
+    }
+
     const sanitizedContent = sanitizePostContent(createPostDto.content);
     const post = new this.postModel({
       ...createPostDto,
@@ -156,6 +167,16 @@ export class PostsService {
     }
     const before = oldPost.toObject();
 
+    if (updatePostDto.featuredImageMediaId) {
+      await this.mediaService.assertMediaExists(updatePostDto.featuredImageMediaId, { type: 'image' });
+    }
+    if (updatePostDto.coverImageMediaId) {
+      await this.mediaService.assertMediaExists(updatePostDto.coverImageMediaId, { type: 'image' });
+    }
+    if (updatePostDto.seo?.ogImageMediaId) {
+      await this.mediaService.assertMediaExists(updatePostDto.seo.ogImageMediaId, { type: 'image' });
+    }
+
     const updateData: Partial<UpdatePostDto> & {
       slug?: string;
       updatedDate?: Date;
@@ -164,8 +185,10 @@ export class PostsService {
       excerpt?: string;
     } = { ...updatePostDto };
     delete updateData.content;
-    if (updatePostDto.title) {
-      const slug = this.normalizeSlug(updatePostDto.title);
+    if (updatePostDto.title || updatePostDto.slug) {
+      const slug = normalizeSlug(
+        updatePostDto.slug || updatePostDto.title || oldPost.slug,
+      );
       if (slug !== oldPost.slug) {
         await this.assertSlugIsAvailable(slug, id);
         updateData.slug = slug;
@@ -437,7 +460,7 @@ export class PostsService {
       const tagFilter = tagSlug || tag;
       if (categoryFilter) {
         const categoryDoc = await this.categoryModel.findOne({
-          slug: generateSlug(categoryFilter),
+          slug: normalizeSlug(categoryFilter),
           isActive: true,
         });
         if (!categoryDoc) {
@@ -447,7 +470,7 @@ export class PostsService {
       }
       if (tagFilter) {
         const tagDoc = await this.tagModel.findOne({
-          slug: generateSlug(tagFilter),
+          slug: normalizeSlug(tagFilter),
           isActive: true,
         });
         if (!tagDoc) {
@@ -500,14 +523,6 @@ export class PostsService {
       .populate('tags', 'name slug')
       .populate('author', 'name email')
       .exec();
-  }
-
-  private normalizeSlug(value: string): string {
-    const slug = generateSlug(value);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
   }
 
   private async assertSlugIsAvailable(

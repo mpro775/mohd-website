@@ -7,11 +7,13 @@ import {
 } from './projects.controller';
 import { Project, ProjectSchema } from './schemas/project.schema';
 import { MediaModule } from '../media/media.module';
+import { TechnologiesModule } from '../technologies/technologies.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Project.name, schema: ProjectSchema }]),
     MediaModule,
+    TechnologiesModule,
   ],
   controllers: [PublicProjectsController, AdminProjectsController],
   providers: [ProjectsService],

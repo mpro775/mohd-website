@@ -8,8 +8,10 @@ import {
   IsArray,
   IsUrl,
   ValidateNested,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ServiceCategory } from '../../../common/taxonomy/service-categories';
 
 class ServiceSEODto {
   @IsOptional()
@@ -22,7 +24,7 @@ class ServiceSEODto {
 
   @IsOptional()
   @IsString()
-  ogImage?: string;
+  ogImageMediaId?: string;
 }
 
 export class CreateServiceDto {
@@ -44,7 +46,10 @@ export class CreateServiceDto {
 
   @IsOptional()
   @IsString()
-  icon?: string;
+  iconMediaId?: string;
+
+  @IsEnum(ServiceCategory, { message: 'تصنيف الخدمة غير صالح' })
+  category: ServiceCategory;
 
   @IsOptional()
   @IsNumber()

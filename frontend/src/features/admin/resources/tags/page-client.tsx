@@ -66,12 +66,19 @@ export function TagsPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("blog/tags") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("posts") });
+    adminClient.revalidate(["blog"]);
   };
 
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: TagFormValues) => {
-      const { slug, color, ...payload } = values;
+      const payload = {
+        name: values.name,
+        slug: values.slug || undefined,
+        color: values.color || undefined,
+        isActive: !!values.isActive,
+      };
+
       if (editingTag) {
         const id = editingTag.id ?? editingTag._id ?? "";
         return adminClient.updateResource<Tag>("blog/tags", id, payload);

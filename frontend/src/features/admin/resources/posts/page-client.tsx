@@ -43,7 +43,9 @@ export function PostsPageClient() {
       category: "",
       tags: [],
       status: "draft",
+      featuredImageMediaId: null,
       featuredImage: null,
+      coverImageMediaId: null,
       coverImage: null,
       publishDate: null,
       scheduledAt: null,
@@ -54,7 +56,8 @@ export function PostsPageClient() {
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     },
   });
@@ -79,27 +82,34 @@ export function PostsPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("blog/posts") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+    adminClient.revalidate(["blog"]);
   };
 
   // Create or Update
   const saveMutation = useMutation({
     mutationFn: async (values: PostFormValues) => {
-      const { slug, ...cleanValues } = values;
       const payload = {
-        ...cleanValues,
-        category: cleanValues.category || undefined,
-        tags: cleanValues.tags || [],
-        canonicalUrl: cleanValues.canonicalUrl || undefined,
-        publishDate: cleanValues.publishDate || undefined,
-        scheduledAt: cleanValues.scheduledAt || undefined,
-        featuredImage: cleanValues.featuredImage || undefined,
-        coverImage: cleanValues.coverImage || undefined,
-        readTime: cleanValues.readTime === "" ? undefined : cleanValues.readTime ?? undefined,
-        seo: cleanValues.seo
+        title: values.title,
+        slug: values.slug || undefined,
+        summary: values.summary,
+        excerpt: values.excerpt || undefined,
+        content: values.content,
+        category: values.category || undefined,
+        tags: values.tags || [],
+        status: values.status,
+        featuredImageMediaId: values.featuredImageMediaId || null,
+        coverImageMediaId: values.coverImageMediaId || null,
+        publishDate: values.publishDate || undefined,
+        scheduledAt: values.scheduledAt || undefined,
+        readTime: values.readTime === "" ? undefined : values.readTime ?? undefined,
+        isFeatured: !!values.isFeatured,
+        allowIndexing: !!values.allowIndexing,
+        canonicalUrl: values.canonicalUrl || undefined,
+        seo: values.seo
           ? {
-              metaTitle: cleanValues.seo.metaTitle || undefined,
-              metaDescription: cleanValues.seo.metaDescription || undefined,
-              ogImage: cleanValues.seo.ogImage || undefined,
+              metaTitle: values.seo.metaTitle || undefined,
+              metaDescription: values.seo.metaDescription || undefined,
+              ogImageMediaId: values.seo.ogImageMediaId || null,
             }
           : undefined,
       };
@@ -182,7 +192,9 @@ export function PostsPageClient() {
       category: "",
       tags: [],
       status: "draft",
+      featuredImageMediaId: null,
       featuredImage: null,
+      coverImageMediaId: null,
       coverImage: null,
       publishDate: null,
       scheduledAt: null,
@@ -193,7 +205,8 @@ export function PostsPageClient() {
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     });
     setIsDrawerOpen(true);
@@ -223,7 +236,9 @@ export function PostsPageClient() {
       category: categoryId,
       tags: tagsIds,
       status: post.status || "draft",
+      featuredImageMediaId: post.featuredImageMediaId || null,
       featuredImage: post.featuredImage || null,
+      coverImageMediaId: post.coverImageMediaId || null,
       coverImage: post.coverImage || null,
       publishDate: post.publishDate ? post.publishDate.slice(0, 16) : null,
       scheduledAt: post.scheduledAt ? post.scheduledAt.slice(0, 16) : null,
@@ -234,7 +249,8 @@ export function PostsPageClient() {
       seo: {
         metaTitle: post.seo?.metaTitle || "",
         metaDescription: post.seo?.metaDescription || "",
-        ogImage: post.seo?.ogImage || "",
+        ogImageMediaId: post.seo?.ogImageMediaId || null,
+        ogImage: post.seo?.ogImage || null,
       },
     });
     setIsDrawerOpen(true);

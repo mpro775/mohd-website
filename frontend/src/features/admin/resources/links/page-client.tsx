@@ -8,7 +8,7 @@ import { useQueryStates } from "nuqs";
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { adminClient, clientApiRequest } from "@/lib/api/admin-client";
+import { adminClient } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { handleAdminError, setFormErrors } from "@/lib/api/admin-errors";
 import { adminSearchParamsSchema } from "@/lib/api/admin-search-params";
@@ -39,6 +39,7 @@ export function LinksPageClient() {
       slug: "",
       url: "https://",
       description: "",
+      iconMediaId: null,
       icon: null,
       platform: "",
       category: "social",
@@ -72,16 +73,23 @@ export function LinksPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("links") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+    adminClient.revalidate(["links", "profile", "home"]);
   };
 
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: LinkFormValues) => {
       const payload = {
-        ...values,
-        icon: values.icon || undefined,
-        platform: values.platform || undefined,
+        title: values.title,
+        slug: values.slug || undefined,
+        url: values.url,
         description: values.description || undefined,
+        iconMediaId: values.iconMediaId || null,
+        platform: values.platform || undefined,
+        category: values.category || "social",
+        openInNewTab: !!values.openInNewTab,
+        isFeatured: !!values.isFeatured,
+        isPublished: !!values.isPublished,
       };
 
       if (editingLink) {
@@ -171,6 +179,7 @@ export function LinksPageClient() {
       slug: "",
       url: "https://",
       description: "",
+      iconMediaId: null,
       icon: null,
       platform: "",
       category: "social",
@@ -188,6 +197,7 @@ export function LinksPageClient() {
       slug: link.slug || "",
       url: link.url || "https://",
       description: link.description || "",
+      iconMediaId: link.iconMediaId || null,
       icon: link.icon || null,
       platform: link.platform || "",
       category: link.category || "social",

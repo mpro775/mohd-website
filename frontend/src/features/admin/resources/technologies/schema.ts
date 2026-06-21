@@ -4,7 +4,7 @@ export const technologyFormSchema = z.object({
   name: z.string().min(2, "اسم التقنية يجب أن يكون حرفين على الأقل"),
   slug: z.string().optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
-  icon: z.string().nullable().optional(),
+  iconMediaId: z.string().nullable().optional(),
   category: z.string().min(1, "المجموعة الرئيسية مطلوبة"),
   group: z.string().optional().or(z.literal("")),
   proficiencyLevel: z.enum(["beginner", "intermediate", "advanced", "expert"]),

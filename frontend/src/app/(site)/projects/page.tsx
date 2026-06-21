@@ -12,7 +12,14 @@ export default async function ProjectsPage() {
 
   const categories = Array.from(new Set(projects.items.map((project) => project.category).filter(Boolean)));
   const statuses = Array.from(new Set(projects.items.map((project) => project.status).filter(Boolean)));
-  const technologies = Array.from(new Set(projects.items.flatMap((project) => project.technologies ?? []))).slice(0, 12);
+  
+  const techMap = new Map<string, any>();
+  for (const project of projects.items) {
+    for (const tech of project.technologies ?? []) {
+      techMap.set(tech.slug, tech);
+    }
+  }
+  const technologies = Array.from(techMap.values()).slice(0, 12);
 
   return (
     <>
@@ -44,8 +51,8 @@ export default async function ProjectsPage() {
             {technologies.length ? (
               <div className="flex flex-wrap gap-2 text-xs">
                 <span dir="ltr" className="font-mono text-primary">{"// stack"}</span>
-                {technologies.map((technology) => (
-                  <span key={technology} dir="ltr" className="rounded-full border border-border px-3 py-1 text-muted-foreground">{technology}</span>
+                {technologies.map((tech) => (
+                  <span key={tech.slug} dir="ltr" className="rounded-full border border-border px-3 py-1 text-muted-foreground">{tech.name}</span>
                 ))}
               </div>
             ) : null}

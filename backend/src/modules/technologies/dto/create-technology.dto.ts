@@ -7,7 +7,7 @@ import {
   MinLength,
   IsUrl,
 } from 'class-validator';
-import { ProficiencyLevel } from '../schemas/technology.schema';
+import { TechnologyCategory, TechnologyGroup, ProficiencyLevel } from '../../../common/taxonomy/technology-taxonomy';
 
 export class CreateTechnologyDto {
   @IsString()
@@ -24,19 +24,19 @@ export class CreateTechnologyDto {
 
   @IsOptional()
   @IsString()
-  icon?: string;
+  iconMediaId?: string;
 
   @IsOptional()
-  @IsEnum(ProficiencyLevel)
+  @IsEnum(ProficiencyLevel, { message: 'مستوى الخبرة غير صالح' })
   proficiencyLevel?: ProficiencyLevel;
 
   @IsOptional()
-  @IsString()
-  category?: string;
+  @IsEnum(TechnologyCategory, { message: 'تصنيف التقنية غير صالح' })
+  category?: TechnologyCategory;
 
   @IsOptional()
-  @IsString()
-  group?: string;
+  @IsEnum(TechnologyGroup, { message: 'مجموعة التقنية غير صالحة' })
+  group?: TechnologyGroup;
 
   @IsOptional()
   @IsUrl({}, { message: 'الرابط الرسمي officialUrl يجب أن يكون رابطاً صالحاً' })

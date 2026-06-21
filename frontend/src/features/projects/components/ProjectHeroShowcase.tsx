@@ -5,7 +5,7 @@ import { StatusBadge } from "@/components/common/StatusBadge";
 import type { Project } from "@/lib/api/types";
 
 function heroImage(project: Project) {
-  return project.coverImage ?? project.images?.[0] ?? "/projects/fallback-web.svg";
+  return project.coverImage ?? project.gallery?.[0] ?? "/projects/fallback-web.svg";
 }
 
 export function ProjectHeroShowcase({ project }: { project: Project }) {

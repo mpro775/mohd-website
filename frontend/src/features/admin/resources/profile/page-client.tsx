@@ -15,7 +15,7 @@ import {
   RefreshCw
 } from "lucide-react";
 
-import { clientApiRequest } from "@/lib/api/admin-client";
+import { clientApiRequest, adminClient } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { handleAdminError, setFormErrors } from "@/lib/api/admin-errors";
 import type { Profile } from "@/lib/api/types";
@@ -45,23 +45,25 @@ export function ProfilePageClient() {
       email: "",
       phone: "",
       location: "",
+      profileImageMediaId: null,
       profileImage: null,
       profileImageAlt: "",
+      cvMediaId: null,
       cvFile: null,
       yearsOfExperience: 0,
       availableForWork: false,
-      socialLinks: [],
       languages: [],
       certificates: [],
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     },
   });
 
-  const { register, control, handleSubmit, reset, setError, formState: { errors } } = form;
+  const { register, control, watch, handleSubmit, reset, setError, formState: { errors } } = form;
 
   // 1. Fetch Profile Data
   const { data: profile, isLoading, isRefetching, refetch } = useQuery<Profile>({
@@ -88,23 +90,20 @@ export function ProfilePageClient() {
         email: profile.email || "",
         phone: profile.phone || "",
         location: profile.location || "",
+        profileImageMediaId: profile.profileImageMediaId || null,
         profileImage: profile.profileImage || null,
         profileImageAlt: (profile as any).profileImageAlt || "",
+        cvMediaId: profile.cvMediaId || null,
         cvFile: profile.cvFile || null,
         yearsOfExperience: profile.yearsOfExperience || 0,
         availableForWork: !!profile.availableForWork,
-        socialLinks: (profile.socialLinks || []).map((link: any) => ({
-          platform: link.platform || "",
-          url: link.url || "",
-          icon: link.icon || "",
-          order: link.order || 0,
-        })),
         languages: profile.languages || [],
         certificates: profile.certificates || [],
         seo: {
           metaTitle: profile.seo?.metaTitle || "",
           metaDescription: profile.seo?.metaDescription || "",
-          ogImage: profile.seo?.ogImage || "",
+          ogImageMediaId: profile.seo?.ogImageMediaId || null,
+          ogImage: profile.seo?.ogImage || null,
         },
       });
     }
@@ -115,21 +114,19 @@ export function ProfilePageClient() {
     mutationFn: async (values: ProfileFormValues) => {
       // Clean up values before saving
       const payload = {
-        ...values,
-        yearsOfExperience: values.yearsOfExperience !== "" && values.yearsOfExperience !== null && values.yearsOfExperience !== undefined ? Number(values.yearsOfExperience) : undefined,
+        fullName: values.fullName,
+        title: values.title,
         headline: values.headline || undefined,
+        bio: values.bio,
         about: values.about || undefined,
+        email: values.email,
         phone: values.phone || undefined,
         location: values.location || undefined,
-        profileImage: values.profileImage || undefined,
+        profileImageMediaId: values.profileImageMediaId || null,
         profileImageAlt: values.profileImageAlt || undefined,
-        cvFile: values.cvFile || undefined,
-        socialLinks: (values.socialLinks || []).map((link: any) => ({
-          platform: link.platform,
-          url: link.url,
-          icon: link.icon || undefined,
-          order: link.order !== undefined && link.order !== null && link.order !== "" ? Number(link.order) : undefined,
-        })),
+        cvMediaId: values.cvMediaId || null,
+        yearsOfExperience: values.yearsOfExperience !== "" && values.yearsOfExperience !== null && values.yearsOfExperience !== undefined ? Number(values.yearsOfExperience) : undefined,
+        availableForWork: !!values.availableForWork,
         languages: (values.languages || []).map((lang: any) => ({
           name: lang.name,
           level: lang.level || undefined,
@@ -144,7 +141,7 @@ export function ProfilePageClient() {
           ? {
               metaTitle: values.seo.metaTitle || undefined,
               metaDescription: values.seo.metaDescription || undefined,
-              ogImage: values.seo.ogImage || undefined,
+              ogImageMediaId: values.seo.ogImageMediaId || null,
             }
           : undefined,
       };
@@ -158,6 +155,7 @@ export function ProfilePageClient() {
       toast.success(res?.message || "تم حفظ ملفك الشخصي بنظام بنجاح!");
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("profile") });
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+      adminClient.revalidate(["profile", "links", "home"]);
     },
     onError: (err) => {
       const isValidationMapped = setFormErrors(err, setError);
@@ -281,13 +279,14 @@ export function ProfilePageClient() {
                   <FormSection title="الوسائط الشخصية والسيرة الذاتية" columns={2}>
                     <Controller
                       control={control as any}
-                      name="profileImage"
+                      name="profileImageMediaId"
                       render={({ field }) => (
                         <MediaField
                           label="الصورة الشخصية"
-                          value={field.value || undefined}
+                          valueId={field.value}
+                          valueUrl={watch("profileImage" as any)}
                           onChange={field.onChange}
-                          error={errors.profileImage?.message}
+                          error={errors.profileImageMediaId?.message}
                           defaultFolder="profile"
                           allowedType="image"
                         />
@@ -295,13 +294,14 @@ export function ProfilePageClient() {
                     />
                     <Controller
                       control={control as any}
-                      name="cvFile"
+                      name="cvMediaId"
                       render={({ field }) => (
                         <MediaField
                           label="ملف السيرة الذاتية (CV)"
-                          value={field.value || undefined}
+                          valueId={field.value}
+                          valueUrl={watch("cvFile" as any)}
                           onChange={field.onChange}
-                          error={errors.cvFile?.message}
+                          error={errors.cvMediaId?.message}
                           defaultFolder="cv"
                           allowedType="document"
                         />
@@ -405,45 +405,25 @@ export function ProfilePageClient() {
 
                   <div className="border-t border-border/40 my-6 pt-5" />
 
-                  {/* Social links repeater */}
-                  <RepeaterField
-                    control={control as any}
-                    name="socialLinks"
-                    label="روابط الشبكات المهنية والاجتماعية"
-                    description="أضف قنوات تواصل إضافية مثل GitHub, LinkedIn, Twitter وغيرها لتعرض للمستخدمين."
-                    addButtonLabel="إضافة رابط شبكة جديد"
-                    emptyItem={{ platform: "", url: "" }}
-                  >
-                    {({ index }) => (
-                      <div className="grid gap-4 md:grid-cols-2 flex-1 text-right">
-                        <SelectField
-                          label="منصة التواصل"
-                          register={register(`socialLinks.${index}.platform`)}
-                          error={errors.socialLinks?.[index]?.platform?.message}
-                          required
-                          options={[
-                            { label: "اختر منصة", value: "" },
-                            { label: "GitHub", value: "github" },
-                            { label: "LinkedIn", value: "linkedin" },
-                            { label: "Twitter / X", value: "twitter" },
-                            { label: "Facebook", value: "facebook" },
-                            { label: "Instagram", value: "instagram" },
-                            { label: "YouTube", value: "youtube" },
-                            { label: "Dribbble", value: "dribbble" },
-                            { label: "Behance", value: "behance" },
-                            { label: "Website", value: "website" },
-                          ]}
-                        />
-                        <InputField
-                          label="رابط الحساب الكامل (URL)"
-                          register={register(`socialLinks.${index}.url`)}
-                          error={errors.socialLinks?.[index]?.url?.message}
-                          required
-                          placeholder="https://..."
-                        />
-                      </div>
-                    )}
-                  </RepeaterField>
+                  {/* Redirect to Links module card */}
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-right">
+                    <h4 className="text-sm font-black text-primary flex items-center gap-2">
+                      <Share2 className="h-4.5 w-4.5" />
+                      <span>إدارة روابط شبكات التواصل الاجتماعي</span>
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                      تم توحيد وسائل التواصل والروابط الخارجية بالكامل داخل قسم "الروابط" (Links).
+                      يسمح لك ذلك برفع أيقونات مخصصة لكل رابط، تحديد تصنيفات متعددة، وتتبع النقرات بشكل ديناميكي.
+                    </p>
+                    <div className="mt-4">
+                      <a
+                        href="/admin/links"
+                        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary/95 transition select-none shadow-sm"
+                      >
+                        <span>انتقل إلى صفحة إدارة الروابط الآن</span>
+                      </a>
+                    </div>
+                  </div>
                 </div>
               )}
 

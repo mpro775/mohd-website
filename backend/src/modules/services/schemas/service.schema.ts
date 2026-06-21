@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { ServiceCategory } from '../../../common/taxonomy/service-categories';
 
 export interface IServiceSEO {
   metaTitle?: string;
   metaDescription?: string;
-  ogImage?: string;
+  ogImageMediaId?: Types.ObjectId;
 }
 
 @Schema({ timestamps: true })
@@ -21,8 +22,11 @@ export class Service extends Document {
   @Prop()
   detailedDescription: string;
 
-  @Prop()
-  icon: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  iconMediaId?: Types.ObjectId;
+
+  @Prop({ type: String, enum: ServiceCategory, default: ServiceCategory.OTHER, required: true, trim: true })
+  category: ServiceCategory;
 
   @Prop({ type: Number })
   startingPrice: number;

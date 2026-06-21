@@ -66,12 +66,19 @@ export function CategoriesPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("blog/categories") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("posts") });
+    adminClient.revalidate(["blog"]);
   };
 
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: CategoryFormValues) => {
-      const { slug, ...payload } = values;
+      const payload = {
+        name: values.name,
+        slug: values.slug || undefined,
+        description: values.description || undefined,
+        isActive: !!values.isActive,
+      };
+
       if (editingCategory) {
         const id = editingCategory.id ?? editingCategory._id ?? "";
         return adminClient.updateResource<Category>("blog/categories", id, payload);

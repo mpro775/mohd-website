@@ -12,7 +12,7 @@ import { UpdateLinkDto } from './dto/update-link.dto';
 import { FilterLinkDto } from './dto/filter-link.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
-import { generateSlug } from '../../common/utils/slug.util';
+import { normalizeSlug } from '../../common/utils/slug.util';
 import { buildSafeRegex } from '../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -25,14 +25,6 @@ export class LinksService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  private generateSlug(title: string): string {
-    const slug = generateSlug(title);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
-  }
-
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.linkModel.findOne({
       slug,
@@ -44,8 +36,8 @@ export class LinksService {
   }
 
   private async syncMedia(link: Link) {
-    const icons = link.icon ? [link.icon] : [];
-    await this.mediaService.syncUsage(
+    const icons = link.iconMediaId ? [link.iconMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       icons,
       'Link',
       link._id.toString(),
@@ -54,8 +46,13 @@ export class LinksService {
   }
 
   async create(createLinkDto: CreateLinkDto, req?: any): Promise<Link> {
-    const slug = this.generateSlug(createLinkDto.slug || createLinkDto.title);
+    const slug = normalizeSlug(createLinkDto.slug || createLinkDto.title);
     await this.assertSlugIsAvailable(slug);
+
+    if (createLinkDto.iconMediaId) {
+      await this.mediaService.assertMediaExists(createLinkDto.iconMediaId, { type: 'image' });
+    }
+
     const link = new this.linkModel({
       ...createLinkDto,
       slug,
@@ -167,11 +164,15 @@ export class LinksService {
     if (!oldLink) throw new NotFoundException('Link not found');
     const before = oldLink.toObject();
 
+    if (updateLinkDto.iconMediaId) {
+      await this.mediaService.assertMediaExists(updateLinkDto.iconMediaId, { type: 'image' });
+    }
+
     const updateData = {
       ...updateLinkDto,
     };
     if (updateLinkDto.title || updateLinkDto.slug) {
-      const slug = this.generateSlug(
+      const slug = normalizeSlug(
         updateLinkDto.slug || updateLinkDto.title || oldLink.slug,
       );
       if (slug !== oldLink.slug) {

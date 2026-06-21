@@ -1,12 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { TechnologyCategory, TechnologyGroup, ProficiencyLevel } from '../../../common/taxonomy/technology-taxonomy';
 
-export enum ProficiencyLevel {
-  BEGINNER = 'beginner',
-  INTERMEDIATE = 'intermediate',
-  ADVANCED = 'advanced',
-  EXPERT = 'expert',
-}
+export { TechnologyCategory, TechnologyGroup, ProficiencyLevel };
 
 @Schema({ timestamps: true })
 export class Technology extends Document {
@@ -19,8 +15,8 @@ export class Technology extends Document {
   @Prop()
   description: string;
 
-  @Prop()
-  icon: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  iconMediaId?: Types.ObjectId;
 
   @Prop({
     type: String,
@@ -29,11 +25,11 @@ export class Technology extends Document {
   })
   proficiencyLevel: ProficiencyLevel;
 
-  @Prop({ trim: true })
-  category: string;
+  @Prop({ type: String, enum: TechnologyCategory, default: TechnologyCategory.OTHER, trim: true })
+  category: TechnologyCategory;
 
-  @Prop({ trim: true })
-  group: string;
+  @Prop({ type: String, enum: TechnologyGroup, default: TechnologyGroup.OTHER, trim: true })
+  group: TechnologyGroup;
 
   @Prop()
   officialUrl: string;

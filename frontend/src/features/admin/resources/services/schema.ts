@@ -5,7 +5,8 @@ export const serviceFormSchema = z.object({
   slug: z.string().optional().or(z.literal("")),
   shortDescription: z.string().min(10, "وصف الخدمة القصير يجب أن يكون 10 أحرف على الأقل"),
   detailedDescription: z.string().optional().or(z.literal("")),
-  icon: z.string().nullable().optional(),
+  category: z.string().min(1, "التصنيف مطلوب"),
+  iconMediaId: z.string().nullable().optional(),
   startingPrice: z.preprocess(
     (val) => {
       if (val === "" || val === null || val === undefined) return undefined;
@@ -26,7 +27,7 @@ export const serviceFormSchema = z.object({
   seo: z.object({
     metaTitle: z.string().optional().or(z.literal("")),
     metaDescription: z.string().optional().or(z.literal("")),
-    ogImage: z.string().optional().or(z.literal("")),
+    ogImageMediaId: z.string().optional().nullable().or(z.literal("")),
   }).optional(),
 });
 

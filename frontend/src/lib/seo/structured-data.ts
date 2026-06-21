@@ -1,7 +1,7 @@
 import type { Post, Profile, Project } from "@/lib/api/types";
 import { absoluteUrl } from "@/lib/utils";
 
-export function personJsonLd(profile?: Profile) {
+export function personJsonLd(profile?: Profile, socialUrls: string[] = []) {
   if (!profile) return undefined;
   return {
     "@context": "https://schema.org",
@@ -10,7 +10,7 @@ export function personJsonLd(profile?: Profile) {
     jobTitle: profile.title,
     url: absoluteUrl("/"),
     email: profile.email,
-    sameAs: profile.socialLinks?.map((link) => link.url),
+    sameAs: socialUrls,
   };
 }
 

@@ -12,7 +12,7 @@ import { UpdateTechnologyDto } from './dto/update-technology.dto';
 import { FilterTechnologyDto } from './dto/filter-technology.dto';
 import { MediaService } from '../media/media.service';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
-import { generateSlug } from '../../common/utils/slug.util';
+import { normalizeSlug } from '../../common/utils/slug.util';
 import { buildSafeRegex } from '../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../common/dto/pagination.dto';
@@ -25,14 +25,6 @@ export class TechnologiesService {
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  private generateSlug(name: string): string {
-    const slug = generateSlug(name);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
-  }
-
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.technologyModel.findOne({
       slug,
@@ -44,8 +36,8 @@ export class TechnologiesService {
   }
 
   private async syncMedia(technology: Technology) {
-    const icons = technology.icon ? [technology.icon] : [];
-    await this.mediaService.syncUsage(
+    const icons = technology.iconMediaId ? [technology.iconMediaId.toString()] : [];
+    await this.mediaService.syncUsageByIds(
       icons,
       'Technology',
       technology._id.toString(),
@@ -53,14 +45,54 @@ export class TechnologiesService {
     );
   }
 
+  async assertSlugsExist(slugs: string[]): Promise<Technology[]> {
+    if (!slugs || slugs.length === 0) {
+      return [];
+    }
+    const cleanSlugs = [...new Set(slugs.map(s => s.toLowerCase().trim()))];
+    const found = await this.technologyModel.find({ slug: { $in: cleanSlugs } });
+    if (found.length !== cleanSlugs.length) {
+      const foundSlugs = found.map(t => t.slug);
+      const missingSlugs = cleanSlugs.filter(s => !foundSlugs.includes(s));
+      throw new BadRequestException(`التقنيات التالية غير موجودة: ${missingSlugs.join(', ')}`);
+    }
+    return found;
+  }
+
+  async findSummariesBySlugs(slugs: string[]): Promise<any[]> {
+    if (!slugs || slugs.length === 0) {
+      return [];
+    }
+    const found = await this.technologyModel.find({ slug: { $in: slugs } });
+    return Promise.all(
+      found.map(async (tech) => {
+        const icon = await this.mediaService.resolveMediaUrl(tech.iconMediaId);
+        return {
+          name: tech.name,
+          slug: tech.slug,
+          icon,
+          iconMediaId: tech.iconMediaId?.toString(),
+          category: tech.category,
+          group: tech.group,
+          color: tech.color,
+        };
+      })
+    );
+  }
+
   async create(
     createTechnologyDto: CreateTechnologyDto,
     req?: any,
   ): Promise<Technology> {
-    const slug = this.generateSlug(
+    const slug = normalizeSlug(
       createTechnologyDto.slug || createTechnologyDto.name,
     );
     await this.assertSlugIsAvailable(slug);
+
+    if (createTechnologyDto.iconMediaId) {
+      await this.mediaService.assertMediaExists(createTechnologyDto.iconMediaId, { type: 'image' });
+    }
+
     const technology = new this.technologyModel({
       ...createTechnologyDto,
       slug,
@@ -162,11 +194,15 @@ export class TechnologiesService {
     if (!oldTech) throw new NotFoundException('Technology not found');
     const before = oldTech.toObject();
 
+    if (updateTechnologyDto.iconMediaId) {
+      await this.mediaService.assertMediaExists(updateTechnologyDto.iconMediaId, { type: 'image' });
+    }
+
     const updateData = {
       ...updateTechnologyDto,
     };
     if (updateTechnologyDto.name || updateTechnologyDto.slug) {
-      const slug = this.generateSlug(
+      const slug = normalizeSlug(
         updateTechnologyDto.slug || updateTechnologyDto.name || oldTech.slug,
       );
       if (slug !== oldTech.slug) {

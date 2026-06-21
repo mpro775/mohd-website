@@ -5,7 +5,9 @@ import {
   IsNumber,
   MinLength,
   IsUrl,
+  IsEnum,
 } from 'class-validator';
+import { LinkCategory, LinkPlatform } from '../../../common/taxonomy/link-taxonomy';
 
 export class CreateLinkDto {
   @IsString()
@@ -25,15 +27,15 @@ export class CreateLinkDto {
 
   @IsOptional()
   @IsString()
-  icon?: string;
+  iconMediaId?: string;
 
   @IsOptional()
-  @IsString()
-  platform?: string;
+  @IsEnum(LinkPlatform, { message: 'منصة الرابط غير صالحة' })
+  platform?: LinkPlatform;
 
   @IsOptional()
-  @IsString()
-  category?: string;
+  @IsEnum(LinkCategory, { message: 'تصنيف الرابط غير صالح' })
+  category?: LinkCategory;
 
   @IsOptional()
   @IsBoolean()

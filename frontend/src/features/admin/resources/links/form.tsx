@@ -12,13 +12,26 @@ import { MediaField } from "@/components/admin/forms/MediaField";
 import { FormSection } from "@/components/admin/forms/FormSection";
 import type { LinkFormValues } from "./schema";
 
+import { useAdminOptions } from "../../hooks/use-options";
+
 interface LinkFormProps {
-  form: UseFormReturn<LinkFormValues>;
+  form: UseFormReturn<LinkFormValues, any, any>;
   onSubmit?: any;
 }
 
 export function LinkForm({ form }: LinkFormProps) {
-  const { register, control, formState: { errors } } = form;
+  const { register, control, watch, formState: { errors } } = form;
+  const { data: optionsData } = useAdminOptions();
+
+  const categoryOptions = (optionsData?.linkCategories || []).map((c) => ({
+    label: c.labelAr,
+    value: c.value,
+  }));
+
+  const platformOptions = (optionsData?.linkPlatforms || []).map((p) => ({
+    label: p.labelAr,
+    value: p.value,
+  }));
 
   return (
     <div className="space-y-6 text-right" dir="rtl">
@@ -55,11 +68,8 @@ export function LinkForm({ form }: LinkFormProps) {
         <SelectField
           label="تصنيف الرابط (Category)"
           options={[
-            { label: "حسابات التواصل الاجتماعي (social)", value: "social" },
-            { label: "مصادر ومستندات مفيدة (resource)", value: "resource" },
-            { label: "معرض الأعمال الفني (portfolio)", value: "portfolio" },
-            { label: "خدمات ومنتجات رقمية (services)", value: "services" },
-            { label: "روابط عامة أخرى (other)", value: "other" },
+            { label: "جاري التحميل...", value: "" },
+            ...categoryOptions,
           ]}
           register={register("category")}
           error={errors.category?.message}
@@ -78,9 +88,12 @@ export function LinkForm({ form }: LinkFormProps) {
 
       {/* 2. Platform Branding */}
       <FormSection title="هوية المنصة وشعارها" description="اختر أيقونة وشعار المنصة لتسهيل التعرف عليها بصرياً." columns={2}>
-        <InputField
+        <SelectField
           label="المنصة (Platform)"
-          placeholder="مثال: github, twitter, linkedin, youtube, behance"
+          options={[
+            { label: "جاري التحميل...", value: "" },
+            ...platformOptions,
+          ]}
           register={register("platform")}
           error={errors.platform?.message}
         />
@@ -88,13 +101,14 @@ export function LinkForm({ form }: LinkFormProps) {
         <div className="md:col-span-2">
           <Controller
             control={control}
-            name="icon"
+            name="iconMediaId"
             render={({ field }) => (
               <MediaField
                 label="أيقونة أو شعار مخصص للرابط"
-                value={field.value || undefined}
+                valueId={field.value}
+                valueUrl={watch("icon" as any)}
                 onChange={field.onChange}
-                error={errors.icon?.message}
+                error={errors.iconMediaId?.message}
                 allowedType="image"
                 defaultFolder="links"
               />

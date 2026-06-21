@@ -7,17 +7,20 @@ import { InputField, TextAreaField } from "./FieldComponents";
 import { MediaField } from "./MediaField";
 import { cn } from "@/lib/utils";
 
+import { useWatch } from "react-hook-form";
+
 export interface HasSeoFields {
   seo?: {
-    metaTitle?: string;
-    metaDescription?: string;
-    ogImage?: string;
+    metaTitle?: string | null;
+    metaDescription?: string | null;
+    ogImage?: string | null;
+    ogImageMediaId?: string | null;
   };
 }
 
 interface SeoFieldsCardProps<TFieldValues extends HasSeoFields> {
   register: UseFormRegister<TFieldValues>;
-  control: Control<TFieldValues>;
+  control: Control<TFieldValues, any, any>;
   errors: FieldErrors<TFieldValues>;
   defaultFolder?: string;
   className?: string;
@@ -84,20 +87,31 @@ export function SeoFieldsCard<TFieldValues extends HasSeoFields>({
           />
 
           {/* ogImage controller binding */}
-          <Controller
-            control={control}
-            name={"seo.ogImage" as Path<TFieldValues>}
-            render={({ field }) => (
-              <MediaField
-                label="صورة المشاركة (og:image)"
-                value={field.value as string | undefined}
-                onChange={field.onChange}
-                error={seoErrors?.ogImage?.message}
-                allowedType="image"
-                defaultFolder={defaultFolder}
+          {(() => {
+            // eslint-disable-next-line react-hooks/rules-of-hooks
+            const ogImageUrl = useWatch({
+              control,
+              name: "seo.ogImage" as Path<TFieldValues>,
+            }) as string | undefined;
+
+            return (
+              <Controller
+                control={control}
+                name={"seo.ogImageMediaId" as Path<TFieldValues>}
+                render={({ field }) => (
+                  <MediaField
+                    label="صورة المشاركة (og:image)"
+                    valueId={field.value as string | undefined}
+                    valueUrl={ogImageUrl}
+                    onChange={field.onChange}
+                    error={seoErrors?.ogImageMediaId?.message}
+                    allowedType="image"
+                    defaultFolder={defaultFolder}
+                  />
+                )}
               />
-            )}
-          />
+            );
+          })()}
         </div>
       )}
     </div>

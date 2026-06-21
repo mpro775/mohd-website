@@ -11,7 +11,7 @@ import { CreateTagDto } from './dto/create-tag.dto';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import { FilterTagDto } from './dto/filter-tag.dto';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
-import { generateSlug } from '../../../common/utils/slug.util';
+import { normalizeSlug } from '../../../common/utils/slug.util';
 import { buildSafeRegex } from '../../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
@@ -22,14 +22,6 @@ export class TagsService {
     @InjectModel(Tag.name) private tagModel: Model<Tag>,
     private readonly auditLogsService: AuditLogsService,
   ) {}
-
-  private normalizeSlug(name: string): string {
-    const slug = generateSlug(name);
-    if (!slug) {
-      throw new BadRequestException('Slug cannot be empty');
-    }
-    return slug;
-  }
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.tagModel.findOne({
@@ -42,7 +34,7 @@ export class TagsService {
   }
 
   async create(createTagDto: CreateTagDto, req?: any): Promise<Tag> {
-    const slug = this.normalizeSlug(createTagDto.name);
+    const slug = normalizeSlug(createTagDto.slug || createTagDto.name);
     await this.assertSlugIsAvailable(slug);
 
     const tag = new this.tagModel({
@@ -181,8 +173,10 @@ export class TagsService {
     const before = oldTag.toObject();
     const updateData: any = { ...updateTagDto };
 
-    if (updateTagDto.name) {
-      const slug = this.normalizeSlug(updateTagDto.name);
+    if (updateTagDto.name || updateTagDto.slug) {
+      const slug = normalizeSlug(
+        updateTagDto.slug || updateTagDto.name || oldTag.slug,
+      );
       if (slug !== oldTag.slug) {
         await this.assertSlugIsAvailable(slug, id);
         updateData.slug = slug;

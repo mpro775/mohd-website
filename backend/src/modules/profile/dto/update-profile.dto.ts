@@ -10,22 +10,6 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-class SocialLinkDto {
-  @IsString()
-  platform: string;
-
-  @IsString()
-  url: string;
-
-  @IsOptional()
-  @IsString()
-  icon?: string;
-
-  @IsOptional()
-  @IsNumber()
-  order?: number;
-}
-
 class LanguageDto {
   @IsString()
   name: string;
@@ -63,7 +47,7 @@ class ProfileSeoDto {
 
   @IsOptional()
   @IsString()
-  ogImage?: string;
+  ogImageMediaId?: string;
 }
 
 export class UpdateProfileDto {
@@ -89,7 +73,7 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  profileImage?: string;
+  profileImageMediaId?: string;
 
   @IsOptional()
   @IsString()
@@ -97,7 +81,7 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
-  cvFile?: string;
+  cvMediaId?: string;
 
   @IsOptional()
   @IsEmail()
@@ -114,12 +98,6 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   availableForWork?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SocialLinkDto)
-  socialLinks?: SocialLinkDto[];
 
   @IsOptional()
   @IsNumber()

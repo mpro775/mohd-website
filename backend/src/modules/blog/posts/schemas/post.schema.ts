@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema } from 'mongoose';
+import { Document, Schema as MongooseSchema, Types } from 'mongoose';
 
 export enum PostStatus {
   PUBLISHED = 'published',
@@ -11,7 +11,7 @@ export enum PostStatus {
 export interface ISEO {
   metaTitle?: string;
   metaDescription?: string;
-  ogImage?: string;
+  ogImageMediaId?: Types.ObjectId;
 }
 
 @Schema({ timestamps: true })
@@ -31,11 +31,11 @@ export class Post extends Document {
   @Prop({ required: true })
   content: string;
 
-  @Prop()
-  featuredImage: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  featuredImageMediaId?: Types.ObjectId;
 
-  @Prop()
-  coverImage: string;
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  coverImageMediaId?: Types.ObjectId;
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Category' })
   category: MongooseSchema.Types.ObjectId;
@@ -92,7 +92,6 @@ export class Post extends Document {
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 
-// Indexes for better performance
 PostSchema.index({ title: 'text', summary: 'text', content: 'text' });
 PostSchema.index({ category: 1, status: 1, publishDate: -1 });
 PostSchema.index({ tags: 1 });

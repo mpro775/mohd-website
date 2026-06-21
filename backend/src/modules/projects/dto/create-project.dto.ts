@@ -10,7 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProjectStatus } from '../schemas/project.schema';
+import { ProjectCategory, ProjectStatus } from '../../../common/taxonomy/project-categories';
 
 class SeoDto {
   @IsOptional()
@@ -23,7 +23,7 @@ class SeoDto {
 
   @IsOptional()
   @IsString()
-  ogImage?: string;
+  ogImageMediaId?: string;
 }
 
 export class CreateProjectDto {
@@ -44,23 +44,18 @@ export class CreateProjectDto {
   detailedDescription: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  images?: string[];
-
-  @IsOptional()
   @IsString()
-  coverImage?: string;
+  coverImageMediaId?: string;
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  gallery?: string[];
+  galleryMediaIds?: string[];
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  technologies?: string[];
+  technologySlugs?: string[];
 
   @IsOptional()
   @IsString()
@@ -75,12 +70,11 @@ export class CreateProjectDto {
   completionDate?: string;
 
   @IsOptional()
-  @IsEnum(ProjectStatus)
+  @IsEnum(ProjectStatus, { message: 'حالة المشروع غير صالحة' })
   status?: ProjectStatus;
 
-  @IsString()
-  @MinLength(2)
-  category: string;
+  @IsEnum(ProjectCategory, { message: 'تصنيف المشروع غير صالح' })
+  category: ProjectCategory;
 
   @IsOptional()
   @IsNumber()

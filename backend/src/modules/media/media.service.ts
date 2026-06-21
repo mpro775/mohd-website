@@ -36,6 +36,18 @@ export interface RequestWithOptionalUser {
   };
 }
 
+export type ResolvedMedia = {
+  id: string;
+  key: string;
+  url: string;
+  alt?: string;
+  type: 'image' | 'document';
+  folder: string;
+  mimeType: string;
+  width?: number;
+  height?: number;
+};
+
 @Injectable()
 export class MediaService {
   private readonly logger = new Logger(MediaService.name);
@@ -541,6 +553,172 @@ export class MediaService {
       media.isUsed = media.usedIn.length > 0;
       await media.save();
     }
+  }
+
+  async assertMediaExists(
+    mediaId: string | Types.ObjectId,
+    options?: { type?: 'image' | 'document'; folder?: string | string[] },
+  ): Promise<Media> {
+    if (!mediaId) {
+      throw new BadRequestException('يجب توفير معرّف الملف');
+    }
+    if (!isValidObjectId(mediaId)) {
+      throw new BadRequestException('معرّف الملف غير صالح');
+    }
+    const media = await this.mediaModel.findById(mediaId);
+    if (!media) {
+      throw new NotFoundException(`الملف ذو المعرّف ${mediaId} غير موجود`);
+    }
+    if (options?.type && media.type !== options.type) {
+      throw new BadRequestException(
+        `نوع الملف غير مطابق للمطلوب. المطلوب: ${options.type}، الحالي: ${media.type}`,
+      );
+    }
+    if (options?.folder) {
+      const allowedFolders = Array.isArray(options.folder) ? options.folder : [options.folder];
+      if (!allowedFolders.includes(media.folder)) {
+        throw new BadRequestException(
+          `المجلد الخاص بالملف غير مطابق. المجلد الحالي: ${media.folder}`,
+        );
+      }
+    }
+    return media;
+  }
+
+  async assertManyMediaExist(
+    mediaIds: Array<string | Types.ObjectId>,
+    options?: { type?: 'image' | 'document'; folder?: string | string[] },
+  ): Promise<Media[]> {
+    if (!mediaIds || !Array.isArray(mediaIds)) {
+      return [];
+    }
+    const uniqueIds = [...new Set(mediaIds.map((id) => id.toString()))];
+    const mediaList = await Promise.all(
+      uniqueIds.map((id) => this.assertMediaExists(id, options)),
+    );
+    return mediaList;
+  }
+
+  async syncUsageByIds(
+    mediaIds: Array<string | Types.ObjectId>,
+    resourceType: string,
+    resourceId: string,
+    field: string,
+  ): Promise<void> {
+    const cleanIds = [
+      ...new Set(
+        (mediaIds ?? [])
+          .map((val) => val?.toString().trim())
+          .filter((val): val is string => isValidObjectId(val)),
+      ),
+    ];
+
+    // Fetch current associations for this specific resource-field
+    const currentMedia = await this.mediaModel.find({
+      'usedIn.resourceType': resourceType,
+      'usedIn.resourceId': resourceId,
+      'usedIn.field': field,
+    });
+
+    // Remove association from media that are no longer referenced
+    for (const media of currentMedia) {
+      if (!cleanIds.includes(media._id.toString())) {
+        media.usedIn = media.usedIn.filter(
+          (assoc) =>
+            !(
+              assoc.resourceType === resourceType &&
+              assoc.resourceId === resourceId &&
+              assoc.field === field
+            ),
+        );
+        media.isUsed = media.usedIn.length > 0;
+        await media.save();
+      }
+    }
+
+    // Add association to newly referenced media
+    for (const id of cleanIds) {
+      const media = await this.mediaModel.findById(id);
+      if (media) {
+        const alreadyLinked = media.usedIn.some(
+          (assoc) =>
+            assoc.resourceType === resourceType &&
+            assoc.resourceId === resourceId &&
+            assoc.field === field,
+        );
+
+        if (!alreadyLinked) {
+          media.usedIn.push({
+            resourceType,
+            resourceId,
+            field,
+          });
+          media.isUsed = true;
+          await media.save();
+        }
+      } else {
+        this.logger.warn(
+          `Media reference ${id} not found when syncing usage for ${resourceType}/${resourceId}/${field}`,
+        );
+      }
+    }
+  }
+
+  async resolveMediaUrl(mediaId?: string | Types.ObjectId): Promise<string | undefined> {
+    if (!mediaId || !isValidObjectId(mediaId)) {
+      return undefined;
+    }
+    const media = await this.mediaModel.findById(mediaId);
+    return media?.url;
+  }
+
+  async resolveManyMediaUrls(mediaIds?: Array<string | Types.ObjectId>): Promise<string[]> {
+    if (!mediaIds || !Array.isArray(mediaIds)) {
+      return [];
+    }
+    const urls: string[] = [];
+    for (const id of mediaIds) {
+      const url = await this.resolveMediaUrl(id);
+      if (url) {
+        urls.push(url);
+      }
+    }
+    return urls;
+  }
+
+  async resolveMediaObject(mediaId?: string | Types.ObjectId): Promise<ResolvedMedia | undefined> {
+    if (!mediaId || !isValidObjectId(mediaId)) {
+      return undefined;
+    }
+    const media = await this.mediaModel.findById(mediaId);
+    if (!media) {
+      return undefined;
+    }
+    return {
+      id: media._id.toString(),
+      key: media.key,
+      url: media.url,
+      alt: media.alt || '',
+      type: media.type,
+      folder: media.folder,
+      mimeType: media.mimeType,
+      width: media.width,
+      height: media.height,
+    };
+  }
+
+  async resolveManyMediaObjects(mediaIds?: Array<string | Types.ObjectId>): Promise<ResolvedMedia[]> {
+    if (!mediaIds || !Array.isArray(mediaIds)) {
+      return [];
+    }
+    const objects: ResolvedMedia[] = [];
+    for (const id of mediaIds) {
+      const obj = await this.resolveMediaObject(id);
+      if (obj) {
+        objects.push(obj);
+      }
+    }
+    return objects;
   }
 
   extractMediaUrlsFromContent(content: string): string[] {

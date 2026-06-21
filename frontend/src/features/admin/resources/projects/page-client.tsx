@@ -37,11 +37,12 @@ export function ProjectsPageClient() {
     defaultValues: {
       title: "",
       slug: "",
-      category: "web",
+      category: "web-app",
       status: "completed",
       shortDescription: "",
       detailedDescription: "",
-      technologies: [],
+      technologySlugs: [],
+      coverImageMediaId: null,
       coverImage: null,
       liveUrl: "",
       githubUrl: "",
@@ -51,8 +52,8 @@ export function ProjectsPageClient() {
       startDate: "",
       endDate: "",
       completionDate: "",
+      galleryMediaIds: [],
       gallery: [],
-      images: [],
       caseStudy: "",
       problem: "",
       solution: "",
@@ -61,7 +62,8 @@ export function ProjectsPageClient() {
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     },
   });
@@ -87,31 +89,40 @@ export function ProjectsPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("projects") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+    adminClient.revalidate(["projects", "home"]);
   };
 
   // Create or Update
   const saveMutation = useMutation({
     mutationFn: async (values: ProjectFormValues) => {
       const payload = {
-        ...values,
+        title: values.title,
+        slug: values.slug || undefined,
+        category: values.category,
+        status: values.status,
+        shortDescription: values.shortDescription,
+        detailedDescription: values.detailedDescription,
+        technologySlugs: values.technologySlugs || [],
+        coverImageMediaId: values.coverImageMediaId || null,
         liveUrl: values.liveUrl || undefined,
         githubUrl: values.githubUrl || undefined,
+        isPublished: !!values.isPublished,
+        featured: !!values.featured,
         clientName: values.clientName || undefined,
         startDate: values.startDate || undefined,
         endDate: values.endDate || undefined,
         completionDate: values.completionDate || undefined,
-        coverImage: values.coverImage || undefined,
+        galleryMediaIds: values.galleryMediaIds || [],
         caseStudy: values.caseStudy || undefined,
         problem: values.problem || undefined,
         solution: values.solution || undefined,
         results: values.results || undefined,
         role: values.role || undefined,
-        slug: values.slug || undefined,
         seo: values.seo
           ? {
               metaTitle: values.seo.metaTitle || undefined,
               metaDescription: values.seo.metaDescription || undefined,
-              ogImage: values.seo.ogImage || undefined,
+              ogImageMediaId: values.seo.ogImageMediaId || null,
             }
           : undefined,
       };
@@ -188,11 +199,12 @@ export function ProjectsPageClient() {
     reset({
       title: "",
       slug: "",
-      category: "web",
+      category: "web-app",
       status: "completed",
       shortDescription: "",
       detailedDescription: "",
-      technologies: [],
+      technologySlugs: [],
+      coverImageMediaId: null,
       coverImage: null,
       liveUrl: "",
       githubUrl: "",
@@ -202,8 +214,8 @@ export function ProjectsPageClient() {
       startDate: "",
       endDate: "",
       completionDate: "",
+      galleryMediaIds: [],
       gallery: [],
-      images: [],
       caseStudy: "",
       problem: "",
       solution: "",
@@ -212,33 +224,35 @@ export function ProjectsPageClient() {
       seo: {
         metaTitle: "",
         metaDescription: "",
-        ogImage: "",
+        ogImageMediaId: null,
+        ogImage: null,
       },
     });
     setIsDrawerOpen(true);
   };
 
-  const handleOpenEdit = (project: Project & { clientName?: string; startDate?: string; endDate?: string; completionDate?: string; gallery?: string[]; images?: string[] }) => {
+  const handleOpenEdit = (project: Project) => {
     setEditingProject(project);
     reset({
       title: project.title || "",
       slug: project.slug || "",
-      category: project.category || "web",
+      category: project.category || "web-app",
       status: project.status || "completed",
       shortDescription: project.shortDescription || "",
       detailedDescription: project.detailedDescription || "",
-      technologies: project.technologies || [],
+      technologySlugs: project.technologySlugs || [],
+      coverImageMediaId: project.coverImageMediaId || null,
       coverImage: project.coverImage || null,
       liveUrl: project.liveUrl || "",
       githubUrl: project.githubUrl || "",
       isPublished: project.isPublished !== false,
       featured: project.featured === true,
-      clientName: project.clientName || "",
-      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : "",
-      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : "",
+      clientName: (project as any).clientName || "",
+      startDate: (project as any).startDate ? new Date((project as any).startDate).toISOString().split('T')[0] : "",
+      endDate: (project as any).endDate ? new Date((project as any).endDate).toISOString().split('T')[0] : "",
       completionDate: project.completionDate ? new Date(project.completionDate).toISOString().split('T')[0] : "",
+      galleryMediaIds: project.galleryMediaIds || [],
       gallery: project.gallery || [],
-      images: project.images || [],
       caseStudy: project.caseStudy || "",
       problem: project.problem || "",
       solution: project.solution || "",
@@ -247,7 +261,8 @@ export function ProjectsPageClient() {
       seo: {
         metaTitle: project.seo?.metaTitle || "",
         metaDescription: project.seo?.metaDescription || "",
-        ogImage: project.seo?.ogImage || "",
+        ogImageMediaId: project.seo?.ogImageMediaId || null,
+        ogImage: project.seo?.ogImage || null,
       },
     });
     setIsDrawerOpen(true);
@@ -331,9 +346,12 @@ export function ProjectsPageClient() {
             key: "category",
             label: "التصنيفات",
             options: [
-              { label: "الويب (web)", value: "web" },
-              { label: "الموبايل (mobile)", value: "mobile" },
-              { label: "واجهات وتصميم (ui-ux)", value: "ui-ux" },
+              { label: "تطوير تطبيقات الويب (web-app)", value: "web-app" },
+              { label: "تطبيقات الهواتف (mobile-app)", value: "mobile-app" },
+              { label: "تصميم واجهات المستخدم (ui-ux)", value: "ui-ux" },
+              { label: "منصات البرمجيات SaaS (saas)", value: "saas" },
+              { label: "الذكاء الاصطناعي (ai)", value: "ai" },
+              { label: "أتمتة العمليات (automation)", value: "automation" },
               { label: "أخرى (other)", value: "other" },
             ],
           },

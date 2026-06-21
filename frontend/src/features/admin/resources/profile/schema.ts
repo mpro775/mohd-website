@@ -1,12 +1,5 @@
 import { z } from "zod";
 
-export const socialLinkSchema = z.object({
-  platform: z.string().min(1, "منصة التواصل الاجتماعي مطلوبة"),
-  url: z.string().url("يجب إدخال رابط صحيح"),
-  icon: z.string().optional().nullable().or(z.literal("")),
-  order: z.number().optional().nullable(),
-});
-
 export const languageSchema = z.object({
   name: z.string().min(1, "اسم اللغة مطلوب"),
   level: z.string().optional(),
@@ -22,7 +15,8 @@ export const certificateSchema = z.object({
 export const seoSchema = z.object({
   metaTitle: z.string().max(80, "العنوان يجب ألا يتجاوز 80 حرفاً").optional().or(z.literal("")),
   metaDescription: z.string().max(200, "الوصف يجب ألا يتجاوز 200 حرفاً").optional().or(z.literal("")),
-  ogImage: z.string().optional().or(z.literal("")),
+  ogImageMediaId: z.string().nullable().optional(),
+  ogImage: z.string().nullable().optional(),
 });
 
 export const profileFormSchema = z.object({
@@ -34,12 +28,13 @@ export const profileFormSchema = z.object({
   email: z.string().email("يجب إدخال بريد إلكتروني صحيح"),
   phone: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
+  profileImageMediaId: z.string().nullable().optional(),
   profileImage: z.string().nullable().optional(),
   profileImageAlt: z.string().optional().nullable().or(z.literal("")),
+  cvMediaId: z.string().nullable().optional(),
   cvFile: z.string().nullable().optional(),
   yearsOfExperience: z.union([z.number(), z.string(), z.null(), z.undefined()]).optional(),
   availableForWork: z.boolean(),
-  socialLinks: z.array(socialLinkSchema),
   languages: z.array(languageSchema),
   certificates: z.array(certificateSchema),
   seo: seoSchema.optional(),

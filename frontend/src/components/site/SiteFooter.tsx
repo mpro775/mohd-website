@@ -6,7 +6,11 @@ import { siteNav } from "@/config/nav";
 import { publicApi } from "@/lib/api/public";
 
 export async function SiteFooter() {
-  const profile = await publicApi.profile().catch(() => null);
+  const [profile, links] = await Promise.all([
+    publicApi.profile().catch(() => null),
+    publicApi.links().catch(() => []),
+  ]);
+  const socialLinks = links.filter((link) => link.category === "social");
   const currentYear = new Date().getFullYear();
 
   return (
@@ -48,17 +52,17 @@ export async function SiteFooter() {
             <span className="h-2 w-2 rounded-full bg-primary" />
             {profile?.availableForWork ? brand.availabilityLabels.available : brand.availabilityLabels.building}
           </p>
-          {profile?.socialLinks?.length ? (
+          {socialLinks?.length ? (
             <div className="flex flex-wrap gap-2">
-              {profile.socialLinks.map((link) => (
+              {socialLinks.map((link) => (
                 <a
-                  key={`${link.platform}-${link.url}`}
+                  key={`${link.platform || link.title}-${link.url}`}
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
                   className="rounded-md border border-border px-3 py-1.5 text-xs text-muted-foreground transition hover:border-primary/40 hover:text-primary"
                 >
-                  {link.platform}
+                  {link.title}
                 </a>
               ))}
             </div>

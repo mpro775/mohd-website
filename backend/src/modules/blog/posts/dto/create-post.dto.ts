@@ -25,13 +25,17 @@ class SEODto {
 
   @IsOptional()
   @IsString()
-  ogImage?: string;
+  ogImageMediaId?: string;
 }
 
 export class CreatePostDto {
   @IsString()
   @MinLength(3, { message: 'العنوان يجب أن يكون 3 أحرف على الأقل' })
   title: string;
+
+  @IsOptional()
+  @IsString()
+  slug?: string;
 
   @IsString()
   @MinLength(20, { message: 'الملخص يجب أن يكون 20 حرف على الأقل' })
@@ -47,11 +51,11 @@ export class CreatePostDto {
 
   @IsOptional()
   @IsString()
-  featuredImage?: string;
+  featuredImageMediaId?: string;
 
   @IsOptional()
   @IsString()
-  coverImage?: string;
+  coverImageMediaId?: string;
 
   @IsOptional()
   @IsMongoId()

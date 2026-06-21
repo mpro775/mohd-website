@@ -30,6 +30,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { DeprecatedController } from './common/controllers/deprecated.controller';
 import { FaqsModule } from './modules/faqs/faqs.module';
 import { SeoModule } from './modules/seo/seo.module';
+import { OptionsModule } from './modules/options/options.module';
 
 @Module({
   imports: [
@@ -104,6 +105,7 @@ import { SeoModule } from './modules/seo/seo.module';
     AuditLogsModule,
     FaqsModule,
     SeoModule,
+    OptionsModule,
   ],
   controllers: [AppController, DeprecatedController],
   providers: [

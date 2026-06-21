@@ -14,3 +14,11 @@ export function assertSlugIsNotEmpty(slug: string): string {
   }
   return normalized;
 }
+
+export function normalizeSlug(input: string): string {
+  if (!input) {
+    throw new Error('Input for slug cannot be empty');
+  }
+  return assertSlugIsNotEmpty(input);
+}
+

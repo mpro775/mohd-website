@@ -8,7 +8,7 @@ import { useQueryStates } from "nuqs";
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { adminClient, clientApiRequest } from "@/lib/api/admin-client";
+import { adminClient } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { handleAdminError, setFormErrors } from "@/lib/api/admin-errors";
 import { adminSearchParamsSchema } from "@/lib/api/admin-search-params";
@@ -38,6 +38,7 @@ export function TechnologiesPageClient() {
       name: "",
       slug: "",
       description: "",
+      iconMediaId: null,
       icon: null,
       category: "frontend",
       group: "",
@@ -74,17 +75,25 @@ export function TechnologiesPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("technologies") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
+    adminClient.revalidate(["technologies", "projects", "home"]);
   };
 
   // 2. Save Mutation (Create/Update)
   const saveMutation = useMutation({
     mutationFn: async (values: TechnologyFormValues) => {
       const payload = {
-        ...values,
-        yearsOfExperience: values.yearsOfExperience !== "" && values.yearsOfExperience !== null && values.yearsOfExperience !== undefined ? Number(values.yearsOfExperience) : undefined,
-        officialUrl: values.officialUrl || undefined,
+        name: values.name,
+        slug: values.slug || undefined,
         description: values.description || undefined,
+        iconMediaId: values.iconMediaId || null,
+        category: values.category,
         group: values.group || undefined,
+        proficiencyLevel: values.proficiencyLevel,
+        officialUrl: values.officialUrl || undefined,
+        yearsOfExperience: values.yearsOfExperience !== "" && values.yearsOfExperience !== null && values.yearsOfExperience !== undefined ? Number(values.yearsOfExperience) : undefined,
+        color: values.color || undefined,
+        highlighted: !!values.highlighted,
+        isPublished: !!values.isPublished,
       };
 
       if (editingTech) {
@@ -173,6 +182,7 @@ export function TechnologiesPageClient() {
       name: "",
       slug: "",
       description: "",
+      iconMediaId: null,
       icon: null,
       category: "frontend",
       group: "",
@@ -192,6 +202,7 @@ export function TechnologiesPageClient() {
       name: tech.name || "",
       slug: tech.slug || "",
       description: tech.description || "",
+      iconMediaId: tech.iconMediaId || null,
       icon: tech.icon || null,
       category: tech.category || "frontend",
       group: tech.group || "",

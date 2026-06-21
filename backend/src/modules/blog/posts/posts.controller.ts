@@ -23,27 +23,37 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
+import { MediaService } from '../../media/media.service';
+import { mapPostToPublic, mapPostToAdmin } from './mappers/post.mapper';
 
 @Public()
 @Controller('public/blog/posts')
 export class PublicPostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Get()
   async findAll(@Query() filterDto: FilterPostDto) {
     const result = await this.postsService.findAllPublic(filterDto);
+    const mappedData = await Promise.all(
+      result.data.map((item) => mapPostToPublic(item, this.mediaService)),
+    );
     return {
       message: 'Posts loaded successfully',
-      data: result.data,
+      data: mappedData,
       meta: result.meta,
     };
   }
 
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
+    const raw = await this.postsService.findBySlugPublic(slug);
+    const mapped = await mapPostToPublic(raw, this.mediaService);
     return {
       message: 'Post loaded successfully',
-      data: await this.postsService.findBySlugPublic(slug),
+      data: mapped,
     };
   }
 }
@@ -52,39 +62,50 @@ export class PublicPostsController {
 @Roles(UserRole.ADMIN, UserRole.EDITOR)
 @Controller('admin/blog/posts')
 export class AdminPostsController {
-  constructor(private readonly postsService: PostsService) {}
+  constructor(
+    private readonly postsService: PostsService,
+    private readonly mediaService: MediaService,
+  ) {}
 
   @Get()
   async findAll(@Query() filterDto: FilterPostDto) {
     const result = await this.postsService.findAllAdmin(filterDto);
+    const mappedData = await Promise.all(
+      result.data.map((item) => mapPostToAdmin(item, this.mediaService)),
+    );
     return {
       message: 'Posts loaded successfully',
-      data: result.data,
+      data: mappedData,
       meta: result.meta,
     };
   }
 
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.postsService.findOneAdmin(id);
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post loaded successfully',
-      data: await this.postsService.findOneAdmin(id),
+      data: mapped,
     };
   }
 
   @Post()
   async create(@Request() req, @Body() createPostDto: CreatePostDto) {
+    const raw = await this.postsService.create(createPostDto, req.user.userId, req);
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post created successfully',
-      data: await this.postsService.create(createPostDto, req.user.userId, req),
+      data: mapped,
     };
   }
 
   @Post('bulk')
   async bulk(@Request() req, @Body() dto: BulkActionDto) {
+    await this.postsService.bulkAction(dto, req);
     return {
       message: 'Bulk action completed successfully',
-      data: await this.postsService.bulkAction(dto, req),
+      data: null,
     };
   }
 
@@ -102,33 +123,41 @@ export class AdminPostsController {
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updatePostDto: UpdatePostDto,
   ) {
+    const raw = await this.postsService.update(id, updatePostDto, req);
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post updated successfully',
-      data: await this.postsService.update(id, updatePostDto, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/publish')
   async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.postsService.setStatus(id, PostStatus.PUBLISHED, req);
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post published successfully',
-      data: await this.postsService.setStatus(id, PostStatus.PUBLISHED, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/unpublish')
   async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.postsService.setStatus(id, PostStatus.DRAFT, req);
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post unpublished successfully',
-      data: await this.postsService.setStatus(id, PostStatus.DRAFT, req),
+      data: mapped,
     };
   }
 
   @Patch(':id/archive')
   async archive(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
+    const raw = await this.postsService.archive(id, req);
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post archived successfully',
-      data: await this.postsService.archive(id, req),
+      data: mapped,
     };
   }
 
@@ -138,13 +167,15 @@ export class AdminPostsController {
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() body: { publishDate: string },
   ) {
+    const raw = await this.postsService.schedule(
+      id,
+      new Date(body.publishDate),
+      req,
+    );
+    const mapped = await mapPostToAdmin(raw, this.mediaService);
     return {
       message: 'Post scheduled successfully',
-      data: await this.postsService.schedule(
-        id,
-        new Date(body.publishDate),
-        req,
-      ),
+      data: mapped,
     };
   }
 
