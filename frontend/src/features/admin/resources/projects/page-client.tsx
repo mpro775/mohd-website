@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -231,7 +231,7 @@ export function ProjectsPageClient() {
     setIsDrawerOpen(true);
   };
 
-  const handleOpenEdit = (project: Project) => {
+  const handleOpenEdit = useCallback((project: Project) => {
     setEditingProject(project);
     reset({
       title: project.title || "",
@@ -266,7 +266,7 @@ export function ProjectsPageClient() {
       },
     });
     setIsDrawerOpen(true);
-  };
+  }, [reset]);
 
   const handleConfirmDelete = () => {
     if (deletingId) {
@@ -282,13 +282,13 @@ export function ProjectsPageClient() {
     bulkActionMutation.mutate({ action, ids: selectedIds });
   };
 
-  const columns = createProjectColumns({
+  const columns = useMemo(() => createProjectColumns({
     onEdit: handleOpenEdit,
     onDelete: setDeletingId,
     onPublish: (id) => patchActionMutation.mutate({ id, action: "publish" }),
     onUnpublish: (id) => patchActionMutation.mutate({ id, action: "unpublish" }),
     onArchive: (id) => patchActionMutation.mutate({ id, action: "archive" }),
-  });
+  }), [handleOpenEdit, patchActionMutation.mutate]);
 
   return (
     <div className="space-y-6 text-right" dir="rtl">

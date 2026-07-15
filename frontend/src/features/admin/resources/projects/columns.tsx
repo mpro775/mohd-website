@@ -180,22 +180,31 @@ export function createProjectColumns({
         const id = project.id ?? project._id ?? "";
 
         return (
-          <DropdownMenuPrimitive.Root>
+          <DropdownMenuPrimitive.Root modal={false}>
             <DropdownMenuPrimitive.Trigger asChild>
-              <button className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition select-none outline-none">
+              <button
+                type="button"
+                onClick={(event) => event.stopPropagation()}
+                className="h-8 w-8 rounded-lg border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition select-none outline-none"
+                aria-label="خيارات المشروع"
+              >
                 <MoreHorizontal className="h-4.5 w-4.5" />
               </button>
             </DropdownMenuPrimitive.Trigger>
 
             <DropdownMenuPrimitive.Portal>
               <DropdownMenuPrimitive.Content
-                className="z-50 min-w-[150px] overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95"
                 align="start"
+                sideOffset={6}
+                dir="rtl"
+                onCloseAutoFocus={(event) => event.preventDefault()}
+                onFocusOutside={(event) => event.preventDefault()}
+                className="z-[100] min-w-[170px] overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95"
               >
                 <div className="space-y-0.5">
                   {/* Edit */}
                   <DropdownMenuPrimitive.Item
-                    onClick={() => onEdit(project)}
+                    onSelect={() => onEdit(project)}
                     className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer outline-none select-none"
                   >
                     <Edit className="h-3.5 w-3.5" />
@@ -205,7 +214,7 @@ export function createProjectColumns({
                   {/* Publish / Unpublish toggles */}
                   {onPublish && !project.isPublished && (
                     <DropdownMenuPrimitive.Item
-                      onClick={() => onPublish(id)}
+                      onSelect={() => onPublish(id)}
                       className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-emerald-500 hover:bg-emerald-500/10 cursor-pointer outline-none select-none"
                     >
                       <Globe className="h-3.5 w-3.5" />
@@ -215,7 +224,7 @@ export function createProjectColumns({
 
                   {onUnpublish && project.isPublished && (
                     <DropdownMenuPrimitive.Item
-                      onClick={() => onUnpublish(id)}
+                      onSelect={() => onUnpublish(id)}
                       className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-amber-500 hover:bg-amber-500/10 cursor-pointer outline-none select-none"
                     >
                       <Ban className="h-3.5 w-3.5" />
@@ -225,7 +234,7 @@ export function createProjectColumns({
 
                   {/* Archive (Triggers confirm dialog via onDelete) */}
                   <DropdownMenuPrimitive.Item
-                    onClick={() => onDelete(id)}
+                    onSelect={() => onDelete(id)}
                     className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-bold text-amber-500 hover:bg-amber-500/10 cursor-pointer outline-none select-none"
                   >
                     <Archive className="h-3.5 w-3.5" />

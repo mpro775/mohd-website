@@ -35,9 +35,9 @@ const techIcons = [
     name: "Next.js",
     svg: (
       <svg viewBox="0 0 24 24" className="w-5 h-5" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="12" cy="12" r="12" fill="black"/>
-        <path d="M18.5 19.5L10.5 8.5H8.5V15.5H10.5V11L16.5 19.5H18.5Z" fill="white"/>
-        <rect x="15" y="8.5" width="2" height="7" fill="white"/>
+        <circle cx="12" cy="12" r="12" fill="black" />
+        <path d="M18.5 19.5L10.5 8.5H8.5V15.5H10.5V11L16.5 19.5H18.5Z" fill="white" />
+        <rect x="15" y="8.5" width="2" height="7" fill="white" />
       </svg>
     ),
   },
@@ -45,10 +45,10 @@ const techIcons = [
     name: "React",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6 fill-none stroke-secondary" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg">
-        <ellipse rx="10" ry="4.5" cx="12" cy="12" transform="rotate(0 12 12)"/>
-        <ellipse rx="10" ry="4.5" cx="12" cy="12" transform="rotate(60 12 12)"/>
-        <ellipse rx="10" ry="4.5" cx="12" cy="12" transform="rotate(120 12 12)"/>
-        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        <ellipse rx="10" ry="4.5" cx="12" cy="12" transform="rotate(0 12 12)" />
+        <ellipse rx="10" ry="4.5" cx="12" cy="12" transform="rotate(60 12 12)" />
+        <ellipse rx="10" ry="4.5" cx="12" cy="12" transform="rotate(120 12 12)" />
+        <circle cx="12" cy="12" r="2" fill="currentColor" />
       </svg>
     ),
   },
@@ -56,7 +56,7 @@ const techIcons = [
     name: "TypeScript",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-        <rect width="24" height="24" rx="4" fill="#3178c6"/>
+        <rect width="24" height="24" rx="4" fill="#3178c6" />
         <text x="12" y="16" fill="white" fontSize="10" fontWeight="bold" fontFamily="sans-serif" textAnchor="middle">TS</text>
       </svg>
     ),
@@ -65,8 +65,8 @@ const techIcons = [
     name: "Node.js",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2L4.5 6.3v9.4L12 20l7.5-4.3v-9.4L12 2zm5.5 13.1l-5.5 3.2-5.5-3.2V8.9l5.5-3.2 5.5 3.2v6.2z" fill="#339933"/>
-        <path d="M12 6.5l4 2.3v4.6l-4 2.3-4-2.3V8.8z" fill="#66cc33"/>
+        <path d="M12 2L4.5 6.3v9.4L12 20l7.5-4.3v-9.4L12 2zm5.5 13.1l-5.5 3.2-5.5-3.2V8.9l5.5-3.2 5.5 3.2v6.2z" fill="#339933" />
+        <path d="M12 6.5l4 2.3v4.6l-4 2.3-4-2.3V8.8z" fill="#66cc33" />
       </svg>
     ),
   },
@@ -74,7 +74,7 @@ const techIcons = [
     name: "NestJS",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2l10 5.8v11.5L12 22 2 19.3V7.8L12 2zm8 6.4L12 3.8 4 8.4v9.2l8 4.6 8-4.6V8.4zm-8 4.8L6.8 9.8l5.2-3 5.2 3-5.2 3.4z" fill="#e0234e"/>
+        <path d="M12 2l10 5.8v11.5L12 22 2 19.3V7.8L12 2zm8 6.4L12 3.8 4 8.4v9.2l8 4.6 8-4.6V8.4zm-8 4.8L6.8 9.8l5.2-3 5.2 3-5.2 3.4z" fill="#e0234e" />
       </svg>
     ),
   },
@@ -82,7 +82,7 @@ const techIcons = [
     name: "PostgreSQL",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 14.5h-2v-2h2v2zm0-3.5h-2V7h2v6z" fill="#336791"/>
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm1 14.5h-2v-2h2v2zm0-3.5h-2V7h2v6z" fill="#336791" />
       </svg>
     ),
   },
@@ -90,7 +90,7 @@ const techIcons = [
     name: "Docker",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 13h1.5v-1.5H2V13zm2.5 0H6v-1.5H4.5V13zm2.5 0h1.5v-1.5H7V13zm2.5 0H11v-1.5H9.5V13zm2.5 0h1.5v-1.5H12V13zm2.5-2.5H16V9h-1.5v1.5zm-2.5 0h1.5V9H12v1.5zm-2.5 0H11V9H9.5v1.5zm-2.5 0H8V9H6.5v1.5zm8.5 2.5h1.5v-1.5H15V13zm2.5 0H19v-1.5h-1.5V13zm2.5-2.5H21V9h-1.5v1.5zm-14.5-5H6V3H4.5v2.5zm2.5 0H8V3H7v2.5zm2.5 0h1.5V3H9.5v2.5zm2.5 0H13V3h-1.5v2.5zm3.5 6.5C18 7.5 16 6 13 6h-1v5h7.5c.3 0 .5-.2.5-.5z" fill="#0db7ed"/>
+        <path d="M2 13h1.5v-1.5H2V13zm2.5 0H6v-1.5H4.5V13zm2.5 0h1.5v-1.5H7V13zm2.5 0H11v-1.5H9.5V13zm2.5 0h1.5v-1.5H12V13zm2.5-2.5H16V9h-1.5v1.5zm-2.5 0h1.5V9H12v1.5zm-2.5 0H11V9H9.5v1.5zm-2.5 0H8V9H6.5v1.5zm8.5 2.5h1.5v-1.5H15V13zm2.5 0H19v-1.5h-1.5V13zm2.5-2.5H21V9h-1.5v1.5zm-14.5-5H6V3H4.5v2.5zm2.5 0H8V3H7v2.5zm2.5 0h1.5V3H9.5v2.5zm2.5 0H13V3h-1.5v2.5zm3.5 6.5C18 7.5 16 6 13 6h-1v5h7.5c.3 0 .5-.2.5-.5z" fill="#0db7ed" />
       </svg>
     ),
   },
@@ -98,7 +98,7 @@ const techIcons = [
     name: "AWS",
     svg: (
       <svg viewBox="0 0 24 24" className="w-6 h-6" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.5 13.5c-.8.6-2 .9-3.2.9-2.5 0-4.5-2-4.5-4.5S10.8 7.4 13.3 7.4c1.2 0 2.4.3 3.2.9l-1 1.2c-.6-.4-1.4-.6-2.2-.6-1.5 0-2.8 1.2-2.8 2.8s1.3 2.8 2.8 2.8c.8 0 1.6-.2 2.2-.6l1 1.2z" fill="#ff9900"/>
+        <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.5 13.5c-.8.6-2 .9-3.2.9-2.5 0-4.5-2-4.5-4.5S10.8 7.4 13.3 7.4c1.2 0 2.4.3 3.2.9l-1 1.2c-.6-.4-1.4-.6-2.2-.6-1.5 0-2.8 1.2-2.8 2.8s1.3 2.8 2.8 2.8c.8 0 1.6-.2 2.2-.6l1 1.2z" fill="#ff9900" />
       </svg>
     ),
   },
@@ -111,7 +111,7 @@ const clientLogos = [
     english: "ROA FOUNDATION",
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary" fill="currentColor">
-        <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13H5.5L12 6.5z"/>
+        <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13H5.5L12 6.5z" />
       </svg>
     ),
   },
@@ -121,7 +121,7 @@ const clientLogos = [
     english: "ELAF",
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
       </svg>
     ),
   },
@@ -131,7 +131,7 @@ const clientLogos = [
     english: "Benaa Platform",
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary" fill="currentColor">
-        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
       </svg>
     ),
   },
@@ -141,7 +141,7 @@ const clientLogos = [
     english: "TJAR",
     icon: (
       <svg viewBox="0 0 24 24" className="w-4 h-4 text-primary" fill="currentColor">
-        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.9 2 1.99 2 2-.9 2-2-.9-2-2-2z"/>
+        <path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.9 2 1.99 2 2-.9 2-2-.9-2-2-2z" />
       </svg>
     ),
   },
@@ -193,17 +193,17 @@ export default async function HomePage() {
             <HeroContent>
               <HeroBadge text="Full-Stack • مطور" isAvailable={true} />
               <HeroTypingSubtitle />
-              
+
               <h1 className="text-4xl font-extrabold leading-snug md:text-5xl lg:text-6xl text-foreground mt-4 text-right">
                 أبني منتجات رقمية <br />
                 كاملة من <span className="text-primary bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent animate-gradient-shift">الفكرة إلى النشر</span>
               </h1>
-              
+
               <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground md:text-lg md:leading-9 text-right">
                 أساعد الشركات وأصحاب الأفكار على تحويل رؤيتهم إلى منتجات ويب احترافية، سريعة، آمنة وقابلة للتوسع.
               </p>
-              
-              <div className="mt-8 flex flex-wrap gap-4 items-center justify-start flex-row-reverse">
+
+              <div className="mt-8 flex flex-wrap gap-4 items-center justify-center flex-row-reverse">
                 <LinkButton href="/contact" variant="terminal" size="lg" className="gap-2.5 font-semibold flex-row-reverse border-primary/40 hover:border-primary">
                   <Send className="h-5 w-5 text-primary" />
                   <span>تواصل معي</span>
@@ -230,30 +230,30 @@ export default async function HomePage() {
                     alt="Mohd Developer"
                     width={600}
                     height={750}
-                    className="w-full h-full object-cover scale-[1.03] origin-bottom rounded-2xl [mask-image:radial-gradient(circle_at_center_10%_50%,black_60%,transparent_100%)]"
+                    className="w-full h-full object-contain origin-bottom rounded-2xl"
                     priority
                   />
                 </div>
 
                 {/* Floating Widgets - Left side of developer */}
-                <div className="hidden lg:block absolute -left-12 top-[8%] z-20">
+                <div className="hidden lg:block absolute -left-24 top-[5%] z-20 scale-75 xl:scale-90 origin-left">
                   <CodeTerminalCard />
                 </div>
-                <div className="hidden md:block absolute -left-16 bottom-[18%] z-20">
+                <div className="hidden md:block absolute -left-28 bottom-[15%] z-20 scale-75 xl:scale-90 origin-left">
                   <DeploymentCard />
                 </div>
-                <div className="hidden lg:block absolute left-[15%] top-[45%] z-30">
+                <div className="hidden lg:block absolute -left-10 top-[45%] z-30 scale-75 xl:scale-90 origin-left">
                   <FloatingCodeBadge />
                 </div>
 
                 {/* Floating Widgets - Right side of developer */}
-                <div className="hidden lg:block absolute -right-12 top-[12%] z-20">
+                <div className="hidden lg:block absolute -right-24 top-[10%] z-20 scale-75 xl:scale-90 origin-right">
                   <DatabaseSchemaCard />
                 </div>
-                <div className="hidden md:block absolute -right-16 top-[45%] z-20">
+                <div className="hidden md:block absolute -right-28 top-[45%] z-20 scale-75 xl:scale-90 origin-right">
                   <ApiStatusCard />
                 </div>
-                <div className="hidden md:flex absolute right-0 bottom-[2%] z-20">
+                <div className="hidden md:flex absolute -right-12 bottom-[5%] z-20 scale-75 xl:scale-90 origin-right">
                   <WireframeGlobeWidget />
                 </div>
               </div>
@@ -273,13 +273,13 @@ export default async function HomePage() {
           </div>
 
           {/* Tech and clients section */}
-          <div className="border-t border-border/40 pt-10 grid gap-8 md:grid-cols-[1.25fr_0.75fr] items-start">
+          <div className="border-t border-border/40 pt-10 flex flex-col md:flex-row justify-between gap-10 items-start">
             {/* Tech stack */}
-            <div>
-              <h3 className="text-xs font-mono font-bold text-success mb-4 text-right">
+            <div className="flex flex-col items-start">
+              <h3 className="text-xs font-mono font-bold text-success mb-4 text-start">
                 أستخدم أحدث التقنيات
               </h3>
-              <div className="flex flex-wrap gap-2.5 justify-start md:justify-start" dir="ltr">
+              <div className="flex flex-wrap gap-2.5 justify-start">
                 {techIcons.map((tech) => (
                   <div
                     key={tech.name}
@@ -293,11 +293,11 @@ export default async function HomePage() {
             </div>
 
             {/* Client Logos */}
-            <div>
-              <h3 className="text-xs font-mono font-bold text-muted-foreground mb-4 text-left">
+            <div className="flex flex-col items-start">
+              <h3 className="text-xs font-mono font-bold text-muted-foreground mb-4 text-right">
                 بعض العملاء الذين عملت معهم
               </h3>
-              <div className="flex flex-wrap gap-4 items-center justify-end md:justify-end">
+              <div className="flex flex-wrap gap-4 items-center justify-start">
                 {clientLogos.map((client) => (
                   <div
                     key={client.name}

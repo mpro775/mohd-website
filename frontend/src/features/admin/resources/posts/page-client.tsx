@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -212,7 +212,7 @@ export function PostsPageClient() {
     setIsDrawerOpen(true);
   };
 
-  const handleOpenEdit = (post: Post) => {
+  const handleOpenEdit = useCallback((post: Post) => {
     setEditingPost(post);
     
     // Resolve category ID format
@@ -254,7 +254,7 @@ export function PostsPageClient() {
       },
     });
     setIsDrawerOpen(true);
-  };
+  }, [reset]);
 
   const handleConfirmDelete = () => {
     if (deletingId) {
@@ -270,13 +270,13 @@ export function PostsPageClient() {
     bulkActionMutation.mutate({ action, ids: selectedIds });
   };
 
-  const columns = createPostColumns({
+  const columns = useMemo(() => createPostColumns({
     onEdit: handleOpenEdit,
     onDelete: setDeletingId,
     onPublish: (id) => patchActionMutation.mutate({ id, action: "publish" }),
     onUnpublish: (id) => patchActionMutation.mutate({ id, action: "unpublish" }),
     onArchive: (id) => patchActionMutation.mutate({ id, action: "archive" }),
-  });
+  }), [handleOpenEdit, patchActionMutation]);
 
   return (
     <div className="space-y-6 text-right" dir="rtl">

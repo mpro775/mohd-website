@@ -38,6 +38,11 @@ export function SeoFieldsCard<TFieldValues extends HasSeoFields>({
   // Access nested fields safely
   const seoErrors = errors.seo as Record<string, { message?: string }> | undefined;
 
+  const ogImageUrl = useWatch({
+    control,
+    name: "seo.ogImage" as Path<TFieldValues>,
+  }) as string | undefined;
+
   return (
     <div
       className={cn(
@@ -87,31 +92,21 @@ export function SeoFieldsCard<TFieldValues extends HasSeoFields>({
           />
 
           {/* ogImage controller binding */}
-          {(() => {
-            // eslint-disable-next-line react-hooks/rules-of-hooks
-            const ogImageUrl = useWatch({
-              control,
-              name: "seo.ogImage" as Path<TFieldValues>,
-            }) as string | undefined;
-
-            return (
-              <Controller
-                control={control}
-                name={"seo.ogImageMediaId" as Path<TFieldValues>}
-                render={({ field }) => (
-                  <MediaField
-                    label="صورة المشاركة (og:image)"
-                    valueId={field.value as string | undefined}
-                    valueUrl={ogImageUrl}
-                    onChange={field.onChange}
-                    error={seoErrors?.ogImageMediaId?.message}
-                    allowedType="image"
-                    defaultFolder={defaultFolder}
-                  />
-                )}
+          <Controller
+            control={control}
+            name={"seo.ogImageMediaId" as Path<TFieldValues>}
+            render={({ field }) => (
+              <MediaField
+                label="صورة المشاركة (og:image)"
+                valueId={field.value as string | undefined}
+                valueUrl={ogImageUrl}
+                onChange={field.onChange}
+                error={seoErrors?.ogImageMediaId?.message}
+                allowedType="image"
+                defaultFolder={defaultFolder}
               />
-            );
-          })()}
+            )}
+          />
         </div>
       )}
     </div>
