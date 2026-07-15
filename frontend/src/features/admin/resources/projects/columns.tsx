@@ -180,7 +180,7 @@ export function createProjectColumns({
         const id = project.id ?? project._id ?? "";
 
         return (
-          <DropdownMenuPrimitive.Root modal={false}>
+          <DropdownMenuPrimitive.Root modal={false} dir="rtl">
             <DropdownMenuPrimitive.Trigger asChild>
               <button
                 type="button"
@@ -196,7 +196,6 @@ export function createProjectColumns({
               <DropdownMenuPrimitive.Content
                 align="start"
                 sideOffset={6}
-                dir="rtl"
                 onCloseAutoFocus={(event) => event.preventDefault()}
                 onFocusOutside={(event) => event.preventDefault()}
                 className="z-[100] min-w-[170px] overflow-hidden rounded-xl border border-border bg-card p-1.5 shadow-xl animate-in fade-in-50 zoom-in-95"
