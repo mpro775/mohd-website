@@ -8,7 +8,7 @@ export function ProjectGallery({ title, images }: { title: string; images: strin
       <div className="grid gap-4 sm:grid-cols-2">
         {images.slice(0, 6).map((image, index) => (
           <div key={image} className="relative aspect-video overflow-hidden rounded-lg border border-border bg-muted">
-            <Image src={image} alt={`${title} - ${index + 1}`} fill className="object-cover" />
+            <Image src={image} alt={`${title} - ${index + 1}`} fill unoptimized className="object-cover" />
           </div>
         ))}
       </div>

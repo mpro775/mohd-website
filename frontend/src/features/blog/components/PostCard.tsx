@@ -21,7 +21,7 @@ export function PostCard({ post }: { post: Post }) {
     <article className="premium-card group flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40">
       <Link href={`/blog/${post.slug}`} className="block">
         <div className="relative aspect-video overflow-hidden bg-muted">
-          <Image src={image} alt={post.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+          <Image src={image} alt={post.title} fill unoptimized className="object-cover transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
           <span className="absolute right-3 top-3 rounded-full border border-primary/30 bg-background/80 px-3 py-1 font-mono text-[10px] text-primary">
             Engineering Notes

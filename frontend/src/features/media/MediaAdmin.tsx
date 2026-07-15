@@ -98,7 +98,7 @@ export function MediaAdmin() {
   const [editUsage, setEditUsage] = useState("");
 
   // Upload state
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploadFolder, setUploadFolder] = useState("misc");
   const [uploadAlt, setUploadAlt] = useState("");
   const [isDragging, setIsDragging] = useState(false);
@@ -156,12 +156,15 @@ export function MediaAdmin() {
   // Upload Mutation
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (!uploadFile) return;
-      return adminClient.uploadMedia<MediaItem>(uploadFile, uploadFolder, uploadAlt || undefined);
+      if (uploadFiles.length === 0) return;
+      const promises = uploadFiles.map(file => 
+        adminClient.uploadMedia<MediaItem>(file, uploadFolder, uploadAlt || undefined)
+      );
+      return Promise.all(promises);
     },
     onSuccess: () => {
-      toast.success("تم رفع وحفظ الملف بنجاح!");
-      setUploadFile(null);
+      toast.success(`تم رفع وحفظ ${uploadFiles.length} ملفات بنجاح!`);
+      setUploadFiles([]);
       setUploadAlt("");
       invalidateKeys();
     },
@@ -224,7 +227,7 @@ export function MediaAdmin() {
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      setUploadFile(files[0]);
+      setUploadFiles((prev) => [...prev, ...Array.from(files)]);
     }
   };
 
@@ -342,7 +345,7 @@ export function MediaAdmin() {
               className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[140px] ${
                 isDragging 
                   ? "border-primary bg-primary/5 scale-[0.98]" 
-                  : uploadFile 
+                  : uploadFiles.length > 0 
                   ? "border-green-500/40 bg-green-500/5 hover:bg-green-500/10" 
                   : "border-border hover:border-primary/50 hover:bg-muted/10"
               }`}
@@ -350,30 +353,63 @@ export function MediaAdmin() {
               <input
                 ref={fileInputRef}
                 type="file"
-                onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+                multiple
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setUploadFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+                  }
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
                 className="hidden"
               />
               
-              {uploadFile ? (
-                <div className="space-y-2">
-                  <div className="h-10 w-10 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center mx-auto">
-                    {uploadFile.type.startsWith("image/") ? <ImageIcon className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+              {uploadFiles.length > 0 ? (
+                <div className="space-y-2 max-h-[200px] overflow-y-auto w-full px-2" onClick={(e) => e.stopPropagation()}>
+                  <div className="text-xs font-bold mb-2 text-foreground">تم تحديد {uploadFiles.length} ملفات:</div>
+                  {uploadFiles.map((file, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-background/50 p-2 rounded border border-border">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="h-6 w-6 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center shrink-0">
+                          {file.type.startsWith("image/") ? <ImageIcon className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+                        </div>
+                        <p className="text-[10px] font-bold truncate text-foreground max-w-[120px]" dir="ltr">
+                          {file.name}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[9px] text-muted-foreground">{formatBytes(file.size)}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUploadFiles(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="text-[10px] text-red-400 hover:text-red-300 cursor-pointer p-1"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 flex justify-center gap-3 border-t border-border mt-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUploadFiles([]);
+                      }}
+                      className="text-[10px] font-semibold text-red-400 hover:text-red-300 underline cursor-pointer"
+                    >
+                      إلغاء الكل
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="text-[10px] font-semibold text-primary hover:text-primary/80 underline cursor-pointer"
+                    >
+                      إضافة المزيد
+                    </button>
                   </div>
-                  <p className="text-xs font-bold truncate max-w-[240px] text-foreground" dir="ltr">
-                    {uploadFile.name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    الحجم: {formatBytes(uploadFile.size)}
-                  </p>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setUploadFile(null);
-                    }}
-                    className="text-[10px] font-semibold text-red-400 hover:text-red-300 underline cursor-pointer"
-                  >
-                    إلغاء الملف
-                  </button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -420,7 +456,7 @@ export function MediaAdmin() {
             {/* Submit Button */}
             <Button
               onClick={() => uploadMutation.mutate()}
-              disabled={!uploadFile || uploadMutation.isPending}
+              disabled={uploadFiles.length === 0 || uploadMutation.isPending}
               className="w-full text-xs font-bold py-2 flex items-center justify-center gap-2"
             >
               {uploadMutation.isPending ? (

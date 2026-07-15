@@ -22,12 +22,14 @@ type MediaItem = {
 type MediaPickerProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (item: MediaItem) => void;
+  onSelect?: (item: MediaItem) => void;
+  onSelectMultiple?: (items: MediaItem[]) => void;
+  allowMultiple?: boolean;
   allowedType?: "image" | "document" | "all";
   defaultFolder?: string;
 };
 
-export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", defaultFolder = "misc" }: MediaPickerProps) {
+export function MediaPicker({ isOpen, onClose, onSelect, onSelectMultiple, allowMultiple = false, allowedType = "all", defaultFolder = "misc" }: MediaPickerProps) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -35,11 +37,14 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", de
   const [alt, setAlt] = useState("");
   const [folder, setFolder] = useState(defaultFolder);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedItems, setSelectedItems] = useState<MediaItem[]>([]);
 
   useEffect(() => {
     if (isOpen) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setFolder(defaultFolder);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedItems([]);
     }
   }, [isOpen, defaultFolder]);
 
@@ -99,6 +104,21 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", de
       (allowedType === "document" && !item.mimeType.startsWith("image/"));
     return matchesSearch && matchesType;
   });
+
+  const handleItemClick = (item: MediaItem) => {
+    if (allowMultiple) {
+      setSelectedItems((prev) => {
+        const isSelected = prev.some((i) => (i._id || i.id) === (item._id || item.id));
+        if (isSelected) {
+          return prev.filter((i) => (i._id || i.id) !== (item._id || item.id));
+        } else {
+          return [...prev, item];
+        }
+      });
+    } else {
+      if (onSelect) onSelect(item);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -208,11 +228,14 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", de
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                   {filteredItems.map((item) => {
                     const isImage = item.mimeType.startsWith("image/");
+                    const isSelected = allowMultiple && selectedItems.some((i) => (i._id || i.id) === (item._id || item.id));
                     return (
                       <div
                         key={item._id ?? item.id}
-                        className="group relative cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition hover:border-primary/50"
-                        onClick={() => onSelect(item)}
+                        className={`group relative cursor-pointer overflow-hidden rounded-lg border transition ${
+                          isSelected ? "border-primary ring-2 ring-primary/50 bg-primary/5" : "border-border bg-card hover:border-primary/50"
+                        }`}
+                        onClick={() => handleItemClick(item)}
                       >
                         <div className="aspect-square relative flex items-center justify-center bg-muted/40">
                           {isImage ? (
@@ -231,6 +254,23 @@ export function MediaPicker({ isOpen, onClose, onSelect, allowedType = "all", de
                 </div>
               )}
             </div>
+            {allowMultiple && (
+              <div className="border-t border-border pt-4 mt-2 flex items-center justify-between">
+                <span className="text-xs font-bold text-muted-foreground">{selectedItems.length} ملفات محددة</span>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => {
+                      if (onSelectMultiple) onSelectMultiple(selectedItems);
+                      setSelectedItems([]);
+                    }}
+                    disabled={selectedItems.length === 0}
+                    className="h-8 text-xs px-4"
+                  >
+                    إدراج المحدد
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

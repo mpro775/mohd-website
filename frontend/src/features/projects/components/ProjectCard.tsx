@@ -26,6 +26,7 @@ export function ProjectCard({ project }: { project: Project }) {
             src={image}
             alt={project.title}
             fill
+            unoptimized
             className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />

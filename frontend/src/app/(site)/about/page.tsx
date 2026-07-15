@@ -32,7 +32,7 @@ export default async function AboutPage() {
           <aside className="premium-card space-y-5 p-6">
             {profile?.profileImage ? (
               <div className="relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
-                <Image src={profile.profileImage} alt={profile.profileImageAlt ?? profile.fullName} fill className="object-cover" />
+                <Image src={profile.profileImage} alt={profile.profileImageAlt ?? profile.fullName} fill unoptimized className="object-cover" />
               </div>
             ) : null}
             <div>

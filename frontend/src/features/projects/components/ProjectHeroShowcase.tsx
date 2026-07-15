@@ -35,7 +35,7 @@ export function ProjectHeroShowcase({ project }: { project: Project }) {
           </div>
         </div>
         <div className="relative aspect-video overflow-hidden rounded-xl border border-border bg-muted shadow-2xl">
-          <Image src={heroImage(project)} alt={project.title} fill priority className="object-cover" />
+          <Image src={heroImage(project)} alt={project.title} fill unoptimized priority className="object-cover" />
         </div>
       </div>
     </section>

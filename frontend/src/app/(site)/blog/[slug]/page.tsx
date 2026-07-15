@@ -77,7 +77,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </div>
 
           <div className="relative mb-8 aspect-video overflow-hidden rounded-xl border border-border bg-muted">
-            <Image src={image} alt={post.title} fill priority className="object-cover" />
+            <Image src={image} alt={post.title} fill unoptimized priority className="object-cover" />
           </div>
 
           <div className="premium-card p-6 md:p-8">

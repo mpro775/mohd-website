@@ -97,6 +97,20 @@ export function ProjectGalleryField({ valueIds = [], valueUrls = [], onChange }:
         isOpen={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
         onSelect={handleAdd}
+        allowMultiple={true}
+        onSelectMultiple={(items) => {
+          const newIds = items.map((i) => i._id || i.id).filter(Boolean) as string[];
+          const uniqueNewIds = newIds.filter((id) => !valueIds.includes(id));
+          if (uniqueNewIds.length > 0) {
+            const nextIds = [...valueIds, ...uniqueNewIds];
+            const newLocalItems = items
+              .filter((i) => uniqueNewIds.includes((i._id || i.id)!))
+              .map((i) => ({ id: (i._id || i.id)!, url: i.url }));
+            setLocalItems([...localItems, ...newLocalItems]);
+            onChange(nextIds);
+          }
+          setIsPickerOpen(false);
+        }}
         allowedType="image"
         defaultFolder="projects"
       />
