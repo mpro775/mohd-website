@@ -1,18 +1,36 @@
-name: Backend CI
+name: CI
 
 on:
   pull_request:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
 
 jobs:
-  backend:
+  backend-lint-test-build:
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ ping: 1 })'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     defaults:
       run:
         working-directory: backend
+    env:
+      NODE_ENV: test
+      MONGODB_URI: mongodb://127.0.0.1:27017/mohd-portfolio-test
+      JWT_ACCESS_SECRET: test-access-secret-with-enough-length
+      JWT_REFRESH_SECRET: test-refresh-secret-with-enough-length
+      R2_ACCOUNT_ID: test-account
+      R2_ACCESS_KEY_ID: test-key
+      R2_SECRET_ACCESS_KEY: test-secret
+      R2_BUCKET: test-bucket
+      R2_PUBLIC_URL: https://files.example.test
+      ANALYTICS_HASH_SALT: ci-analytics-hash-salt-change-me
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,15 +40,74 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: npm run lint
-      - run: npm run test
+      - run: npm test -- --runInBand
+      - run: npm run test:e2e -- --runInBand
       - run: npm run build
-        env:
-          NODE_ENV: test
-          MONGODB_URI: mongodb://localhost:27017/mohd-portfolio-test
-          JWT_ACCESS_SECRET: test-access-secret-with-enough-length
-          JWT_REFRESH_SECRET: test-refresh-secret-with-enough-length
-          R2_ACCOUNT_ID: test-account
-          R2_ACCESS_KEY_ID: test-key
-          R2_SECRET_ACCESS_KEY: test-secret
-          R2_BUCKET: test-bucket
-          R2_PUBLIC_URL: https://files.example.test
+
+  migration-dry-run:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/mohd-blog-migration-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run migrate:blog-v2 -- --dry-run
+      - run: npm run migrate:blog-v2 -- --verify
+
+  frontend-lint-test-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      NEXT_PUBLIC_API_URL: http://127.0.0.1:3000/api
+      NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3001
+      NEXT_PUBLIC_MEDIA_URL: https://files.example.test
+      REVALIDATION_SECRET: ci-revalidation-secret
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  blog-e2e:
+    if: ${{ vars.BLOG_E2E_ENABLED == 'true' }}
+    needs: [backend-lint-test-build, frontend-lint-test-build]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      E2E_BASE_URL: ${{ vars.BLOG_E2E_BASE_URL }}
+      E2E_ADMIN_EMAIL: ${{ secrets.BLOG_E2E_ADMIN_EMAIL }}
+      E2E_ADMIN_PASSWORD: ${{ secrets.BLOG_E2E_ADMIN_PASSWORD }}
+      E2E_TEST_DB_CONFIRMED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e

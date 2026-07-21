@@ -12,6 +12,8 @@ import type {
   Service,
   Tag,
   Technology,
+  PostNavigation,
+  SeoEntry,
 } from "./types";
 
 type ListQuery = Record<string, string | number | boolean | undefined | null>;
@@ -36,15 +38,22 @@ export const publicApi = {
     };
     const r = await apiRequest<Post[], import("./types").PaginationMeta>("/public/blog/posts", {
       query: normalized,
-      next: { revalidate: 120, tags: ["blog"] },
+      next: { revalidate: 120, tags: ["blog", "blog:list"] },
     });
     return normalizePaginated<Post>(r.data, r.meta);
   },
-  post: (slug: string) => apiRequest<Post>(`/public/blog/posts/${slug}`, { next: { revalidate: 120, tags: ["blog"] } }).then((r) => r.data),
-  categories: () => apiRequest<Category[]>("/public/blog/categories", { next: { revalidate: 300, tags: ["blog"] } }).then((r) => r.data ?? []),
-  category: (slug: string) => apiRequest<Category>(`/public/blog/categories/${slug}`, { next: { revalidate: 300, tags: ["blog"] } }).then((r) => r.data),
-  tags: () => apiRequest<Tag[]>("/public/blog/tags", { next: { revalidate: 300, tags: ["blog"] } }).then((r) => r.data ?? []),
-  tag: (slug: string) => apiRequest<Tag>(`/public/blog/tags/${slug}`, { next: { revalidate: 300, tags: ["blog"] } }).then((r) => r.data),
+  post: (slug: string) => apiRequest<Post>(`/public/blog/posts/${slug}`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data),
+  relatedPosts: (slug: string) => apiRequest<Post[]>(`/public/blog/posts/${slug}/related`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data ?? []),
+  postNavigation: (slug: string) => apiRequest<PostNavigation>(`/public/blog/posts/${slug}/navigation`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data),
+  trackPostView: (id: string, body: { sessionId?: string; referrer?: string }) => apiRequest(`/public/blog/posts/${id}/view`, { method: "POST", body }),
+  categories: () => apiRequest<Category[]>("/public/blog/categories", { next: { revalidate: 300, tags: ["blog", "blog:list"] } }).then((r) => r.data ?? []),
+  category: (slug: string) => apiRequest<Category>(`/public/blog/categories/${slug}`, { next: { revalidate: 300, tags: ["blog", `blog:category:${slug}`] } }).then((r) => r.data),
+  tags: () => apiRequest<Tag[]>("/public/blog/tags", { next: { revalidate: 300, tags: ["blog", "blog:list"] } }).then((r) => r.data ?? []),
+  tag: (slug: string) => apiRequest<Tag>(`/public/blog/tags/${slug}`, { next: { revalidate: 300, tags: ["blog", `blog:tag:${slug}`] } }).then((r) => r.data),
+  seoEntries: async (page = 1, limit = 200) => {
+    const r = await apiRequest<SeoEntry[], import("./types").PaginationMeta>("/public/seo/entries", { query: { page, limit }, next: { revalidate: 300, tags: ["blog:sitemap", "blog:rss"] } });
+    return normalizePaginated<SeoEntry>(r.data, r.meta);
+  },
   services: () => apiRequest<Service[]>("/public/services", { next: { revalidate: 300, tags: ["services"] } }).then((r) => r.data ?? []),
   service: (slug: string) => apiRequest<Service>(`/public/services/${slug}`, { next: { revalidate: 300, tags: ["services"] } }).then((r) => r.data),
   technologies: () => apiRequest<Technology[]>("/public/technologies", { next: { revalidate: 300, tags: ["technologies"] } }).then((r) => r.data ?? []),

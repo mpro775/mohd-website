@@ -1,37 +1,65 @@
-import { PostsService } from './posts.service';
+import { PostWorkflowService } from './post-workflow.service';
 import { PostStatus } from './schemas/post.schema';
 
-describe('PostsService', () => {
-  it('publishes due scheduled posts idempotently', async () => {
-    const duePost = {
-      _id: 'post-id',
-      publishDate: new Date('2026-01-01T00:00:00.000Z'),
-      scheduledAt: new Date('2026-01-01T00:00:00.000Z'),
+describe('scheduled publishing', () => {
+  it('claims a due post atomically and is idempotent across runs', async () => {
+    const candidate = {
+      _id: '507f1f77bcf86cd799439011',
+      version: 3,
+      author: { toString: () => '507f1f77bcf86cd799439012' },
+    };
+    const dueQuery = {
+      select: jest
+        .fn()
+        .mockReturnValue({ lean: jest.fn().mockResolvedValue([candidate]) }),
+    };
+    const updated = {
+      ...candidate,
+      slug: 'scheduled-post',
+      status: PostStatus.PUBLISHED,
+      version: 4,
     };
     const postModel = {
-      find: jest.fn().mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          exec: jest.fn().mockResolvedValue([duePost]),
-        }),
-      }),
-      updateOne: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+      find: jest.fn().mockReturnValue(dueQuery),
+      findOneAndUpdate: jest
+        .fn()
+        .mockResolvedValueOnce(updated)
+        .mockResolvedValueOnce(null),
     };
-    const service = new PostsService(
+    const revisions = { create: jest.fn().mockResolvedValue({}) };
+    const revalidation = {
+      revalidate: jest.fn(),
+      tagsForPost: jest.fn().mockReturnValue(['blog']),
+    };
+    const audit = { log: jest.fn() };
+    const service = new PostWorkflowService(
       postModel as any,
       {} as any,
-      {} as any,
-      {} as any,
-      { log: jest.fn() } as any,
+      revisions as any,
+      revalidation as any,
+      audit as any,
     );
 
-    const result = await service.publishDueScheduledPosts(
-      new Date('2026-01-01T00:01:00.000Z'),
+    const first = await service.publishDueScheduledPosts(
+      new Date('2026-01-01T00:01:00Z'),
+    );
+    const second = await service.publishDueScheduledPosts(
+      new Date('2026-01-01T00:01:00Z'),
     );
 
-    expect(postModel.updateOne).toHaveBeenCalledWith(
-      { _id: 'post-id', status: PostStatus.SCHEDULED },
-      expect.objectContaining({ status: PostStatus.PUBLISHED }),
+    expect(postModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: PostStatus.SCHEDULED,
+        scheduledAt: expect.any(Object),
+      }),
+      expect.objectContaining({
+        $set: expect.objectContaining({ status: PostStatus.PUBLISHED }),
+        $unset: { scheduledAt: 1 },
+      }),
+      { new: true },
     );
-    expect(result).toEqual({ matched: 1, modified: 1 });
+    expect(first.published).toBe(1);
+    expect(second.published).toBe(0);
+    expect(revisions.create).toHaveBeenCalledTimes(1);
   });
 });

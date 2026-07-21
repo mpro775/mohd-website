@@ -49,7 +49,7 @@ type DashboardStats = {
   media: { total: number; used: number; unused: number; totalSize: number };
   recent: {
     messages: Array<{ _id: string; fullName: string; email: string; subject: string; message: string; status: string; createdAt: string }>;
-    posts: Array<{ _id: string; title: string; slug: string; status: string; views: number; createdAt: string }>;
+    posts: Array<{ _id: string; title: string; slug: string; status: string; viewCount: number; createdAt: string }>;
     projects: Array<{ _id: string; title: string; coverImage?: string; views: number; createdAt: string }>;
   };
 };
@@ -343,7 +343,7 @@ export default function DashboardPage() {
                         </span>
                         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <Eye className="h-3.5 w-3.5" />
-                          <span>{post.views || 0}</span>
+                          <span>{post.viewCount || 0}</span>
                         </div>
                       </div>
                     </div>

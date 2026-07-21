@@ -1,7 +1,10 @@
 import { Technology } from '../schemas/technology.schema';
 import { MediaService } from '../../media/media.service';
 
-export async function mapTechnologyToPublic(tech: Technology, mediaService: MediaService) {
+export async function mapTechnologyToPublic(
+  tech: Technology,
+  mediaService: MediaService,
+) {
   const icon = await mediaService.resolveMediaUrl(tech.iconMediaId);
   return {
     id: tech._id.toString(),
@@ -21,7 +24,10 @@ export async function mapTechnologyToPublic(tech: Technology, mediaService: Medi
   };
 }
 
-export async function mapTechnologyToAdmin(tech: Technology, mediaService: MediaService) {
+export async function mapTechnologyToAdmin(
+  tech: Technology,
+  mediaService: MediaService,
+) {
   const icon = await mediaService.resolveMediaUrl(tech.iconMediaId);
   const iconMedia = await mediaService.resolveMediaObject(tech.iconMediaId);
   return {

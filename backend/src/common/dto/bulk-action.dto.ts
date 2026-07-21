@@ -11,6 +11,9 @@ export enum BulkAction {
   UNPUBLISH = 'unpublish',
   ARCHIVE = 'archive',
   DELETE = 'delete',
+  SUBMIT_REVIEW = 'submit-review',
+  SET_CATEGORY = 'set-category',
+  ADD_TAG = 'add-tag',
 }
 
 export class BulkActionDto {

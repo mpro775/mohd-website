@@ -22,7 +22,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
-import { mapServiceToPublic, mapServiceToAdmin } from './mappers/service.mapper';
+import {
+  mapServiceToPublic,
+  mapServiceToAdmin,
+} from './mappers/service.mapper';
 
 @Public()
 @Controller('public/services')

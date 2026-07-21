@@ -24,7 +24,10 @@ import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
 import { TechnologiesService } from '../technologies/technologies.service';
-import { mapProjectToPublic, mapProjectToAdmin } from './mappers/project.mapper';
+import {
+  mapProjectToPublic,
+  mapProjectToAdmin,
+} from './mappers/project.mapper';
 
 @Public()
 @Controller('public/projects')
@@ -39,7 +42,9 @@ export class PublicProjectsController {
   async findAll(@Query() filterDto: FilterProjectDto) {
     const result = await this.projectsService.findAllPublic(filterDto);
     const mappedData = await Promise.all(
-      result.data.map((item) => mapProjectToPublic(item, this.mediaService, this.technologiesService)),
+      result.data.map((item) =>
+        mapProjectToPublic(item, this.mediaService, this.technologiesService),
+      ),
     );
     return {
       message: 'Projects loaded successfully',
@@ -51,7 +56,11 @@ export class PublicProjectsController {
   @Get(':slug')
   async findOne(@Param('slug') slug: string) {
     const raw = await this.projectsService.findOnePublic(slug);
-    const mapped = await mapProjectToPublic(raw, this.mediaService, this.technologiesService);
+    const mapped = await mapProjectToPublic(
+      raw,
+      this.mediaService,
+      this.technologiesService,
+    );
     return {
       message: 'Project loaded successfully',
       data: mapped,
@@ -73,7 +82,9 @@ export class AdminProjectsController {
   async findAll(@Query() filterDto: FilterProjectDto) {
     const result = await this.projectsService.findAllAdmin(filterDto);
     const mappedData = await Promise.all(
-      result.data.map((item) => mapProjectToAdmin(item, this.mediaService, this.technologiesService)),
+      result.data.map((item) =>
+        mapProjectToAdmin(item, this.mediaService, this.technologiesService),
+      ),
     );
     return {
       message: 'Projects loaded successfully',
@@ -85,7 +96,11 @@ export class AdminProjectsController {
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
     const raw = await this.projectsService.findOneAdmin(id);
-    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
+    const mapped = await mapProjectToAdmin(
+      raw,
+      this.mediaService,
+      this.technologiesService,
+    );
     return {
       message: 'Project loaded successfully',
       data: mapped,
@@ -95,7 +110,11 @@ export class AdminProjectsController {
   @Post()
   async create(@Request() req, @Body() createProjectDto: CreateProjectDto) {
     const raw = await this.projectsService.create(createProjectDto, req);
-    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
+    const mapped = await mapProjectToAdmin(
+      raw,
+      this.mediaService,
+      this.technologiesService,
+    );
     return {
       message: 'Project created successfully',
       data: mapped,
@@ -118,7 +137,11 @@ export class AdminProjectsController {
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
     const raw = await this.projectsService.update(id, updateProjectDto, req);
-    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
+    const mapped = await mapProjectToAdmin(
+      raw,
+      this.mediaService,
+      this.technologiesService,
+    );
     return {
       message: 'Project updated successfully',
       data: mapped,
@@ -128,7 +151,11 @@ export class AdminProjectsController {
   @Patch(':id/publish')
   async publish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
     const raw = await this.projectsService.publish(id, true, req);
-    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
+    const mapped = await mapProjectToAdmin(
+      raw,
+      this.mediaService,
+      this.technologiesService,
+    );
     return {
       message: 'Project published successfully',
       data: mapped,
@@ -138,7 +165,11 @@ export class AdminProjectsController {
   @Patch(':id/unpublish')
   async unpublish(@Request() req, @Param('id', ParseObjectIdPipe) id: string) {
     const raw = await this.projectsService.publish(id, false, req);
-    const mapped = await mapProjectToAdmin(raw, this.mediaService, this.technologiesService);
+    const mapped = await mapProjectToAdmin(
+      raw,
+      this.mediaService,
+      this.technologiesService,
+    );
     return {
       message: 'Project unpublished successfully',
       data: mapped,

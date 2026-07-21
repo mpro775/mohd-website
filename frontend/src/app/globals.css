@@ -631,7 +631,31 @@ a {
 html {
   scroll-behavior: smooth;
   scrollbar-gutter: stable;
+  --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
+
+.callout {
+  margin-block: 1.5rem;
+  border-inline-start: 4px solid currentColor;
+  border-radius: 0.75rem;
+  padding: 1rem 1.125rem;
+  background: color-mix(in srgb, currentColor 8%, var(--card));
+}
+
+.callout-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.callout-note { color: #38bdf8; }
+.callout-tip { color: #34d399; }
+.callout-warning { color: #fbbf24; }
+.callout-danger { color: #fb7185; }
+
+.callout > div:last-child { color: var(--foreground); }
 
 @media (min-width: 640px) {
   .architecture-line {

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Service } from './schemas/service.schema';
@@ -38,7 +42,9 @@ export class ServicesService {
       service._id.toString(),
       'icon',
     );
-    const ogImages = service.seo?.ogImageMediaId ? [service.seo.ogImageMediaId.toString()] : [];
+    const ogImages = service.seo?.ogImageMediaId
+      ? [service.seo.ogImageMediaId.toString()]
+      : [];
     await this.mediaService.syncUsageByIds(
       ogImages,
       'Service',
@@ -51,16 +57,19 @@ export class ServicesService {
     createServiceDto: CreateServiceDto,
     req?: any,
   ): Promise<Service> {
-    const slug = normalizeSlug(
-      createServiceDto.slug || createServiceDto.name,
-    );
+    const slug = normalizeSlug(createServiceDto.slug || createServiceDto.name);
     await this.assertSlugIsAvailable(slug);
 
     if (createServiceDto.iconMediaId) {
-      await this.mediaService.assertMediaExists(createServiceDto.iconMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(createServiceDto.iconMediaId, {
+        type: 'image',
+      });
     }
     if (createServiceDto.seo?.ogImageMediaId) {
-      await this.mediaService.assertMediaExists(createServiceDto.seo.ogImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        createServiceDto.seo.ogImageMediaId,
+        { type: 'image' },
+      );
     }
 
     const service = new this.serviceModel({
@@ -166,10 +175,15 @@ export class ServicesService {
     const before = oldService.toObject();
 
     if (updateServiceDto.iconMediaId) {
-      await this.mediaService.assertMediaExists(updateServiceDto.iconMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(updateServiceDto.iconMediaId, {
+        type: 'image',
+      });
     }
     if (updateServiceDto.seo?.ogImageMediaId) {
-      await this.mediaService.assertMediaExists(updateServiceDto.seo.ogImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        updateServiceDto.seo.ogImageMediaId,
+        { type: 'image' },
+      );
     }
 
     const updateData = {

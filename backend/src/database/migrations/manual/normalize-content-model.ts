@@ -6,11 +6,15 @@ import mongoose, { Types } from 'mongoose';
 const envPath = path.resolve(__dirname, '../../../../.env');
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
-  envContent.split('\n').forEach(line => {
+  envContent.split('\n').forEach((line) => {
     const parts = line.split('=');
     if (parts.length >= 2) {
       const key = parts[0].trim();
-      const value = parts.slice(1).join('=').trim().replace(/(^["']|["']$)/g, '');
+      const value = parts
+        .slice(1)
+        .join('=')
+        .trim()
+        .replace(/(^["']|["']$)/g, '');
       process.env[key] = value;
     }
   });
@@ -25,8 +29,15 @@ if (!MONGODB_URI) {
 // 2. Import Enums & helpers
 import { ProjectCategory } from '../../../common/taxonomy/project-categories';
 import { ServiceCategory } from '../../../common/taxonomy/service-categories';
-import { TechnologyCategory, TechnologyGroup, ProficiencyLevel } from '../../../common/taxonomy/technology-taxonomy';
-import { LinkCategory, LinkPlatform } from '../../../common/taxonomy/link-taxonomy';
+import {
+  TechnologyCategory,
+  TechnologyGroup,
+  ProficiencyLevel,
+} from '../../../common/taxonomy/technology-taxonomy';
+import {
+  LinkCategory,
+  LinkPlatform,
+} from '../../../common/taxonomy/link-taxonomy';
 import { normalizeSlug } from '../../../common/utils/slug.util';
 
 const PROJECT_CATEGORY_LEGACY_MAP: Record<string, string> = {
@@ -71,7 +82,9 @@ async function run() {
   };
 
   // Helper to extract key and lookup MediaId
-  async function findMediaIdByUrl(urlStr: string): Promise<Types.ObjectId | undefined> {
+  async function findMediaIdByUrl(
+    urlStr: string,
+  ): Promise<Types.ObjectId | undefined> {
     if (!urlStr || typeof urlStr !== 'string') return undefined;
     const trimmed = urlStr.trim();
     if (!trimmed) return undefined;
@@ -138,7 +151,9 @@ async function run() {
         // Check if link exists
         const exists = await linksColl.findOne({ url: linkUrl });
         if (!exists) {
-          const title = social.platform ? social.platform.charAt(0).toUpperCase() + social.platform.slice(1) : 'Social Link';
+          const title = social.platform
+            ? social.platform.charAt(0).toUpperCase() + social.platform.slice(1)
+            : 'Social Link';
           const baseSlug = normalizeSlug(`social-${social.platform || 'link'}`);
           let slug = baseSlug;
           let counter = 1;
@@ -193,9 +208,16 @@ async function run() {
 
     // Category validation
     let category = link.category;
-    if (!category || !Object.values(LinkCategory).includes(category as LinkCategory)) {
+    if (
+      !category ||
+      !Object.values(LinkCategory).includes(category as LinkCategory)
+    ) {
       category = LinkCategory.OTHER;
-      report.unknownCategoriesMappedToOther.push({ type: 'link', id: link._id.toString(), value: link.category });
+      report.unknownCategoriesMappedToOther.push({
+        type: 'link',
+        id: link._id.toString(),
+        value: link.category,
+      });
     }
     update.category = category;
 
@@ -226,17 +248,33 @@ async function run() {
 
     // Category validation
     let category = tech.category;
-    if (!category || !Object.values(TechnologyCategory).includes(category as TechnologyCategory)) {
+    if (
+      !category ||
+      !Object.values(TechnologyCategory).includes(
+        category as TechnologyCategory,
+      )
+    ) {
       category = TechnologyCategory.OTHER;
-      report.unknownCategoriesMappedToOther.push({ type: 'technology-category', id: tech._id.toString(), value: tech.category });
+      report.unknownCategoriesMappedToOther.push({
+        type: 'technology-category',
+        id: tech._id.toString(),
+        value: tech.category,
+      });
     }
     update.category = category;
 
     // Group validation
     let group = tech.group;
-    if (!group || !Object.values(TechnologyGroup).includes(group as TechnologyGroup)) {
+    if (
+      !group ||
+      !Object.values(TechnologyGroup).includes(group as TechnologyGroup)
+    ) {
       group = TechnologyGroup.OTHER;
-      report.unknownCategoriesMappedToOther.push({ type: 'technology-group', id: tech._id.toString(), value: tech.group });
+      report.unknownCategoriesMappedToOther.push({
+        type: 'technology-group',
+        id: tech._id.toString(),
+        value: tech.group,
+      });
     }
     update.group = group;
 
@@ -322,11 +360,15 @@ async function run() {
     update.technologySlugs = [...new Set(technologySlugs)];
 
     // Map category
-    let legacyCat = project.category;
+    const legacyCat = project.category;
     let category = PROJECT_CATEGORY_LEGACY_MAP[legacyCat] || legacyCat;
     if (!Object.values(ProjectCategory).includes(category as ProjectCategory)) {
       category = ProjectCategory.OTHER;
-      report.unknownCategoriesMappedToOther.push({ type: 'project', id: project._id.toString(), value: project.category });
+      report.unknownCategoriesMappedToOther.push({
+        type: 'project',
+        id: project._id.toString(),
+        value: project.category,
+      });
     }
     update.category = category;
 
@@ -356,17 +398,30 @@ async function run() {
 
     // Map Category (Services need a valid category)
     let category = service.category;
-    if (!category || !Object.values(ServiceCategory).includes(category as ServiceCategory)) {
+    if (
+      !category ||
+      !Object.values(ServiceCategory).includes(category as ServiceCategory)
+    ) {
       // Map based on slug if possible
       if (service.slug?.includes('web')) {
         category = ServiceCategory.WEB_DEVELOPMENT;
-      } else if (service.slug?.includes('mobile') || service.slug?.includes('app')) {
+      } else if (
+        service.slug?.includes('mobile') ||
+        service.slug?.includes('app')
+      ) {
         category = ServiceCategory.MOBILE_DEVELOPMENT;
-      } else if (service.slug?.includes('api') || service.slug?.includes('backend')) {
+      } else if (
+        service.slug?.includes('api') ||
+        service.slug?.includes('backend')
+      ) {
         category = ServiceCategory.BACKEND_API;
       } else {
         category = ServiceCategory.OTHER;
-        report.unknownCategoriesMappedToOther.push({ type: 'service', id: service._id.toString(), value: service.category });
+        report.unknownCategoriesMappedToOther.push({
+          type: 'service',
+          id: service._id.toString(),
+          value: service.category,
+        });
       }
     }
     update.category = category;
@@ -409,14 +464,27 @@ async function run() {
   // Reset all media
   await mediaColl.updateMany({}, { $set: { usedIn: [], isUsed: false } });
 
-  const mediaUsages: Record<string, { resourceType: string; resourceId: string; field: string }[]> = {};
+  const mediaUsages: Record<
+    string,
+    { resourceType: string; resourceId: string; field: string }[]
+  > = {};
 
-  function addUsage(mediaId: any, resourceType: string, resourceId: string, field: string) {
+  function addUsage(
+    mediaId: any,
+    resourceType: string,
+    resourceId: string,
+    field: string,
+  ) {
     if (!mediaId) return;
     const mIdStr = mediaId.toString();
     if (!mediaUsages[mIdStr]) mediaUsages[mIdStr] = [];
     // prevent duplicate
-    const exists = mediaUsages[mIdStr].some(u => u.resourceType === resourceType && u.resourceId === resourceId && u.field === field);
+    const exists = mediaUsages[mIdStr].some(
+      (u) =>
+        u.resourceType === resourceType &&
+        u.resourceId === resourceId &&
+        u.field === field,
+    );
     if (!exists) {
       mediaUsages[mIdStr].push({ resourceType, resourceId, field });
     }
@@ -425,38 +493,74 @@ async function run() {
   // Gather Profile usages
   const updatedProfiles = await profileColl.find({}).toArray();
   for (const p of updatedProfiles) {
-    if (p.profileImageMediaId) addUsage(p.profileImageMediaId, 'Profile', p._id.toString(), 'profileImage');
-    if (p.cvMediaId) addUsage(p.cvMediaId, 'Profile', p._id.toString(), 'cvFile');
-    if (p.seo?.ogImageMediaId) addUsage(p.seo.ogImageMediaId, 'Profile', p._id.toString(), 'seo.ogImage');
+    if (p.profileImageMediaId)
+      addUsage(
+        p.profileImageMediaId,
+        'Profile',
+        p._id.toString(),
+        'profileImage',
+      );
+    if (p.cvMediaId)
+      addUsage(p.cvMediaId, 'Profile', p._id.toString(), 'cvFile');
+    if (p.seo?.ogImageMediaId)
+      addUsage(
+        p.seo.ogImageMediaId,
+        'Profile',
+        p._id.toString(),
+        'seo.ogImage',
+      );
   }
 
   // Gather Link usages
   const updatedLinks = await linksColl.find({}).toArray();
   for (const l of updatedLinks) {
-    if (l.iconMediaId) addUsage(l.iconMediaId, 'Link', l._id.toString(), 'icon');
+    if (l.iconMediaId)
+      addUsage(l.iconMediaId, 'Link', l._id.toString(), 'icon');
   }
 
   // Gather Tech usages
   const updatedTechs = await techColl.find({}).toArray();
   for (const t of updatedTechs) {
-    if (t.iconMediaId) addUsage(t.iconMediaId, 'Technology', t._id.toString(), 'icon');
+    if (t.iconMediaId)
+      addUsage(t.iconMediaId, 'Technology', t._id.toString(), 'icon');
   }
 
   // Gather Project usages
   const updatedProjects = await projectsColl.find({}).toArray();
   for (const pr of updatedProjects) {
-    if (pr.coverImageMediaId) addUsage(pr.coverImageMediaId, 'Project', pr._id.toString(), 'coverImage');
+    if (pr.coverImageMediaId)
+      addUsage(
+        pr.coverImageMediaId,
+        'Project',
+        pr._id.toString(),
+        'coverImage',
+      );
     if (Array.isArray(pr.galleryMediaIds)) {
-      pr.galleryMediaIds.forEach((id: any) => addUsage(id, 'Project', pr._id.toString(), 'gallery'));
+      pr.galleryMediaIds.forEach((id: any) =>
+        addUsage(id, 'Project', pr._id.toString(), 'gallery'),
+      );
     }
-    if (pr.seo?.ogImageMediaId) addUsage(pr.seo.ogImageMediaId, 'Project', pr._id.toString(), 'seo.ogImage');
+    if (pr.seo?.ogImageMediaId)
+      addUsage(
+        pr.seo.ogImageMediaId,
+        'Project',
+        pr._id.toString(),
+        'seo.ogImage',
+      );
   }
 
   // Gather Service usages
   const updatedServices = await servicesColl.find({}).toArray();
   for (const s of updatedServices) {
-    if (s.iconMediaId) addUsage(s.iconMediaId, 'Service', s._id.toString(), 'icon');
-    if (s.seo?.ogImageMediaId) addUsage(s.seo.ogImageMediaId, 'Service', s._id.toString(), 'seo.ogImage');
+    if (s.iconMediaId)
+      addUsage(s.iconMediaId, 'Service', s._id.toString(), 'icon');
+    if (s.seo?.ogImageMediaId)
+      addUsage(
+        s.seo.ogImageMediaId,
+        'Service',
+        s._id.toString(),
+        'seo.ogImage',
+      );
   }
 
   // Gather Post usages
@@ -465,9 +569,17 @@ async function run() {
   const htmlImageRegex = /<img\b[^>]*\bsrc=["'](?<url>[^"']+)["'][^>]*>/gi;
 
   for (const po of updatedPosts) {
-    if (po.featuredImageMediaId) addUsage(po.featuredImageMediaId, 'Post', po._id.toString(), 'featuredImage');
-    if (po.coverImageMediaId) addUsage(po.coverImageMediaId, 'Post', po._id.toString(), 'coverImage');
-    if (po.seo?.ogImageMediaId) addUsage(po.seo.ogImageMediaId, 'Post', po._id.toString(), 'seo.ogImage');
+    if (po.featuredImageMediaId)
+      addUsage(
+        po.featuredImageMediaId,
+        'Post',
+        po._id.toString(),
+        'featuredImage',
+      );
+    if (po.coverImageMediaId)
+      addUsage(po.coverImageMediaId, 'Post', po._id.toString(), 'coverImage');
+    if (po.seo?.ogImageMediaId)
+      addUsage(po.seo.ogImageMediaId, 'Post', po._id.toString(), 'seo.ogImage');
 
     // Extract from content
     const content = po.content || '';
@@ -488,25 +600,30 @@ async function run() {
   }
 
   // Write usages to Media
-  console.log(`Writing usages to ${Object.keys(mediaUsages).length} media items...`);
+  console.log(
+    `Writing usages to ${Object.keys(mediaUsages).length} media items...`,
+  );
   for (const [mIdStr, usages] of Object.entries(mediaUsages)) {
     await mediaColl.updateOne(
       { _id: new Types.ObjectId(mIdStr) },
-      { $set: { usedIn: usages, isUsed: true } }
+      { $set: { usedIn: usages, isUsed: true } },
     );
   }
 
   console.log('Migration Completed successfully.');
 
   // Save report file
-  const reportPath = path.resolve(__dirname, '../../../../media-migration-report.json');
+  const reportPath = path.resolve(
+    __dirname,
+    '../../../../media-migration-report.json',
+  );
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2), 'utf8');
   console.log(`Report written to ${reportPath}`);
 
   await mongoose.disconnect();
 }
 
-run().catch(err => {
+run().catch((err) => {
   console.error('Migration failed:', err);
   process.exit(1);
 });

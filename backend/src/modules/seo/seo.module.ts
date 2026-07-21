@@ -2,16 +2,19 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { SeoController } from './seo.controller';
 import { SeoService } from './seo.service';
-import { Project, ProjectSchema } from '../projects/schemas/project.schema';
 import { Post, PostSchema } from '../blog/posts/schemas/post.schema';
-import { Service, ServiceSchema } from '../services/schemas/service.schema';
+import {
+  Category,
+  CategorySchema,
+} from '../blog/categories/schemas/category.schema';
+import { Tag, TagSchema } from '../blog/tags/schemas/tag.schema';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
-      { name: Project.name, schema: ProjectSchema },
       { name: Post.name, schema: PostSchema },
-      { name: Service.name, schema: ServiceSchema },
+      { name: Category.name, schema: CategorySchema },
+      { name: Tag.name, schema: TagSchema },
     ]),
   ],
   controllers: [SeoController],

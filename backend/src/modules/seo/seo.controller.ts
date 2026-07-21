@@ -1,30 +1,24 @@
-import { Controller, Get, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Get, Query } from '@nestjs/common';
 import { Public } from '../../common/decorators/public.decorator';
 import { SeoService } from './seo.service';
 
 @Public()
-@Controller()
+@Controller('public/seo')
 export class SeoController {
   constructor(private readonly seoService: SeoService) {}
 
-  @Get('sitemap.xml')
-  async sitemap(@Res() res: Response) {
-    res.type('application/xml').send(await this.seoService.generateSitemap());
-  }
-
-  @Get('robots.txt')
-  robots(@Res() res: Response) {
-    res.type('text/plain').send(this.seoService.generateRobots());
-  }
-
-  @Get('rss.xml')
-  async rss(@Res() res: Response) {
-    res.type('application/rss+xml').send(await this.seoService.generateRss());
-  }
-
-  @Get('feed.xml')
-  async feed(@Res() res: Response) {
-    res.type('application/rss+xml').send(await this.seoService.generateRss());
+  @Get('entries')
+  async entries(
+    @Query('page') pageValue?: string,
+    @Query('limit') limitValue?: string,
+  ) {
+    const page = Math.max(1, Number(pageValue ?? 1));
+    const limit = Math.min(500, Math.max(1, Number(limitValue ?? 200)));
+    const result = await this.seoService.getEntries(page, limit);
+    return {
+      message: 'تم تحميل بيانات SEO',
+      data: result.data,
+      meta: result.meta,
+    };
   }
 }

@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { ProjectCategory, ProjectStatus } from '../../../common/taxonomy/project-categories';
+import {
+  ProjectCategory,
+  ProjectStatus,
+} from '../../../common/taxonomy/project-categories';
 
 export { ProjectCategory, ProjectStatus };
 
@@ -55,7 +58,13 @@ export class Project extends Document {
   })
   status: ProjectStatus;
 
-  @Prop({ type: String, enum: ProjectCategory, default: ProjectCategory.OTHER, required: true, trim: true })
+  @Prop({
+    type: String,
+    enum: ProjectCategory,
+    default: ProjectCategory.OTHER,
+    required: true,
+    trim: true,
+  })
   category: ProjectCategory;
 
   @Prop({ type: Number, default: 0 })

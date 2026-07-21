@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Link } from './schemas/link.schema';
@@ -45,7 +49,9 @@ export class LinksService {
     await this.assertSlugIsAvailable(slug);
 
     if (createLinkDto.iconMediaId) {
-      await this.mediaService.assertMediaExists(createLinkDto.iconMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(createLinkDto.iconMediaId, {
+        type: 'image',
+      });
     }
 
     const link = new this.linkModel({
@@ -160,7 +166,9 @@ export class LinksService {
     const before = oldLink.toObject();
 
     if (updateLinkDto.iconMediaId) {
-      await this.mediaService.assertMediaExists(updateLinkDto.iconMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(updateLinkDto.iconMediaId, {
+        type: 'image',
+      });
     }
 
     const updateData = {

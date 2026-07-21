@@ -1,11 +1,15 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Category } from './schemas/category.schema';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { FilterCategoryDto } from './dto/filter-category.dto';
-import { Post } from '../posts/schemas/post.schema';
+import { Post, PostStatus } from '../posts/schemas/post.schema';
 import { AuditLogsService } from '../../audit-logs/audit-logs.service';
 import { normalizeSlug } from '../../../common/utils/slug.util';
 import { buildSafeRegex } from '../../../common/utils/regex.util';
@@ -34,7 +38,9 @@ export class CategoriesService {
     createCategoryDto: CreateCategoryDto,
     req?: any,
   ): Promise<Category> {
-    const slug = normalizeSlug(createCategoryDto.slug || createCategoryDto.name);
+    const slug = normalizeSlug(
+      createCategoryDto.slug || createCategoryDto.name,
+    );
     await this.assertSlugIsAvailable(slug);
 
     const category = new this.categoryModel({
@@ -62,8 +68,30 @@ export class CategoriesService {
     return this.findOneAdmin(id);
   }
 
-  async findAllPublic(): Promise<Category[]> {
-    return this.categoryModel.find({ isActive: true }).sort({ name: 1 });
+  async findAllPublic(): Promise<any[]> {
+    const [categories, counts] = await Promise.all([
+      this.categoryModel
+        .find({ isActive: true, deletedAt: { $exists: false } })
+        .sort({ order: 1, name: 1 })
+        .lean(),
+      this.postModel.aggregate([
+        {
+          $match: {
+            status: PostStatus.PUBLISHED,
+            publishedAt: { $lte: new Date() },
+            deletedAt: { $exists: false },
+          },
+        },
+        { $group: { _id: '$category', postCount: { $sum: 1 } } },
+      ]),
+    ]);
+    const countMap = new Map(
+      counts.map((item) => [item._id?.toString(), item.postCount]),
+    );
+    return categories.map((item) => ({
+      ...item,
+      postCount: countMap.get(item._id.toString()) ?? 0,
+    }));
   }
 
   async findAllAdmin(
@@ -120,7 +148,11 @@ export class CategoriesService {
   }
 
   async findOnePublic(slug: string): Promise<Category> {
-    const category = await this.categoryModel.findOne({ slug, isActive: true });
+    const category = await this.categoryModel.findOne({
+      slug,
+      isActive: true,
+      deletedAt: { $exists: false },
+    });
     if (!category) {
       throw new NotFoundException('Category not found');
     }
@@ -182,6 +214,9 @@ export class CategoriesService {
       if (slug !== oldCategory.slug) {
         await this.assertSlugIsAvailable(slug, id);
         updateData.slug = slug;
+        updateData.previousSlugs = [
+          ...new Set([...(oldCategory.previousSlugs ?? []), oldCategory.slug]),
+        ];
       }
     }
 
@@ -220,7 +255,10 @@ export class CategoriesService {
     }
     const before = oldCategory.toObject();
 
-    await this.categoryModel.findByIdAndDelete(id);
+    await this.categoryModel.findByIdAndUpdate(id, {
+      isActive: false,
+      deletedAt: new Date(),
+    });
 
     await this.auditLogsService.log({
       action: 'category.deleted',

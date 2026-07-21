@@ -7,12 +7,24 @@ export async function mapProjectToPublic(
   mediaService: MediaService,
   techService: TechnologiesService,
 ) {
-  const coverImage = await mediaService.resolveMediaUrl(project.coverImageMediaId);
-  const gallery = await mediaService.resolveManyMediaUrls(project.galleryMediaIds);
-  const coverImageMedia = await mediaService.resolveMediaObject(project.coverImageMediaId);
-  const galleryMedia = await mediaService.resolveManyMediaObjects(project.galleryMediaIds);
-  const technologies = await techService.findSummariesBySlugs(project.technologySlugs || []);
-  const ogImage = await mediaService.resolveMediaUrl(project.seo?.ogImageMediaId);
+  const coverImage = await mediaService.resolveMediaUrl(
+    project.coverImageMediaId,
+  );
+  const gallery = await mediaService.resolveManyMediaUrls(
+    project.galleryMediaIds,
+  );
+  const coverImageMedia = await mediaService.resolveMediaObject(
+    project.coverImageMediaId,
+  );
+  const galleryMedia = await mediaService.resolveManyMediaObjects(
+    project.galleryMediaIds,
+  );
+  const technologies = await techService.findSummariesBySlugs(
+    project.technologySlugs || [],
+  );
+  const ogImage = await mediaService.resolveMediaUrl(
+    project.seo?.ogImageMediaId,
+  );
 
   return {
     id: project._id.toString(),
@@ -56,13 +68,27 @@ export async function mapProjectToAdmin(
   mediaService: MediaService,
   techService: TechnologiesService,
 ) {
-  const coverImage = await mediaService.resolveMediaUrl(project.coverImageMediaId);
-  const gallery = await mediaService.resolveManyMediaUrls(project.galleryMediaIds);
-  const coverImageMedia = await mediaService.resolveMediaObject(project.coverImageMediaId);
-  const galleryMedia = await mediaService.resolveManyMediaObjects(project.galleryMediaIds);
-  const technologies = await techService.findSummariesBySlugs(project.technologySlugs || []);
-  const ogImage = await mediaService.resolveMediaUrl(project.seo?.ogImageMediaId);
-  const ogImageMedia = await mediaService.resolveMediaObject(project.seo?.ogImageMediaId);
+  const coverImage = await mediaService.resolveMediaUrl(
+    project.coverImageMediaId,
+  );
+  const gallery = await mediaService.resolveManyMediaUrls(
+    project.galleryMediaIds,
+  );
+  const coverImageMedia = await mediaService.resolveMediaObject(
+    project.coverImageMediaId,
+  );
+  const galleryMedia = await mediaService.resolveManyMediaObjects(
+    project.galleryMediaIds,
+  );
+  const technologies = await techService.findSummariesBySlugs(
+    project.technologySlugs || [],
+  );
+  const ogImage = await mediaService.resolveMediaUrl(
+    project.seo?.ogImageMediaId,
+  );
+  const ogImageMedia = await mediaService.resolveMediaObject(
+    project.seo?.ogImageMediaId,
+  );
 
   return {
     id: project._id.toString(),
@@ -73,7 +99,7 @@ export async function mapProjectToAdmin(
     coverImageMediaId: project.coverImageMediaId?.toString(),
     coverImage,
     coverImageMedia,
-    galleryMediaIds: project.galleryMediaIds?.map(id => id.toString()) || [],
+    galleryMediaIds: project.galleryMediaIds?.map((id) => id.toString()) || [],
     gallery,
     galleryMedia,
     technologySlugs: project.technologySlugs || [],

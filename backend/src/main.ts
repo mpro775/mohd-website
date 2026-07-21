@@ -18,9 +18,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  app.setGlobalPrefix('api', {
-    exclude: ['sitemap.xml', 'robots.txt', 'rss.xml', 'feed.xml'],
-  });
+  app.setGlobalPrefix('api');
 
   app.useGlobalPipes(
     new ValidationPipe({

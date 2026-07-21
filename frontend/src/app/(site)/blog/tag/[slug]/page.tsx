@@ -1,39 +1,22 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Container } from "@/components/common/Container";
+import { EmptyState } from "@/components/common/State";
+import { Pagination } from "@/components/common/Pagination";
+import { JsonLd } from "@/components/common/JsonLd";
 import { PostCard } from "@/features/blog/components/PostCard";
 import { publicApi } from "@/lib/api/public";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd } from "@/lib/seo/structured-data";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const tag = await publicApi.tag(slug).catch(() => null);
-  if (!tag) return {};
-  return buildMetadata(`#${tag.name}`, tag.description, undefined, false, `/blog/tag/${slug}`);
-}
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) { const { slug } = await params; const item = await publicApi.tag(slug).catch(() => null); return item ? buildMetadata(item.seo?.metaTitle ?? `#${item.name}`, item.seo?.metaDescription ?? item.description, item.seo, false, `/blog/tag/${item.slug}`) : {}; }
 
-export default async function TagPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  const [tag, posts] = await Promise.all([
-    publicApi.tag(slug).catch(() => null),
-    publicApi.posts({ tagSlug: slug }).catch(() => ({ items: [], meta: undefined })),
-  ]);
-  return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            breadcrumbJsonLd([
-              { name: "الرئيسية", item: "/" },
-              { name: "المدونة", item: "/blog" },
-              { name: `#${tag?.name ?? slug}`, item: `/blog/tag/${slug}` }
-            ])
-          )
-        }}
-      />
-      <PageHeader title={`#${tag?.name ?? slug}`} description={tag?.description} />
-      <Container className="grid gap-5 py-12 md:grid-cols-2 lg:grid-cols-3">{posts.items.map((post) => <PostCard key={post.slug} post={post} />)}</Container>
-    </>
-  );
+export default async function TagPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> }) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
+  const tag = await publicApi.tag(slug).catch(() => null);
+  if (!tag) notFound();
+  const page = Math.max(1, Number(query.page ?? 1));
+  const posts = await publicApi.posts({ tagSlug: slug, page }).catch(() => ({ items: [], meta: { total: 0, page, limit: 10, totalPages: 1, hasNextPage: false, hasPreviousPage: page > 1 } }));
+  return <><JsonLd data={breadcrumbJsonLd([{ name: "الرئيسية", item: "/" }, { name: "المدونة", item: "/blog" }, { name: `#${tag.name}`, item: `/blog/tag/${slug}` }])} /><PageHeader title={`#${tag.name}`} description={`${tag.description ?? "مقالات مرتبطة بهذا الوسم"} · ${posts.meta.total} مقال`} /><Container className="py-12"><nav className="mb-6 flex gap-2 text-xs text-muted-foreground"><Link href="/">الرئيسية</Link><span>/</span><Link href="/blog">المدونة</Link><span>/</span><span>#{tag.name}</span></nav>{posts.items.length ? <><div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">{posts.items.map((post) => <PostCard key={post.slug} post={post} />)}</div><Pagination meta={posts.meta} basePath={`/blog/tag/${slug}`} /></> : <EmptyState title="لا توجد مقالات منشورة" description="لا توجد مقالات منشورة بهذا الوسم حاليًا." />}</Container></>;
 }

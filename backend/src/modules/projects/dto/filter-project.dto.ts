@@ -1,7 +1,10 @@
 import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { PaginationDto } from '../../../common/dto/pagination.dto';
-import { ProjectCategory, ProjectStatus } from '../../../common/taxonomy/project-categories';
+import {
+  ProjectCategory,
+  ProjectStatus,
+} from '../../../common/taxonomy/project-categories';
 import { transformBooleanQuery } from '../../../common/transforms/boolean-query.transform';
 
 export class FilterProjectDto extends PaginationDto {

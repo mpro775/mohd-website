@@ -22,7 +22,10 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
-import { mapTechnologyToPublic, mapTechnologyToAdmin } from './mappers/technology.mapper';
+import {
+  mapTechnologyToPublic,
+  mapTechnologyToAdmin,
+} from './mappers/technology.mapper';
 
 @Public()
 @Controller('public/technologies')
@@ -106,7 +109,11 @@ export class AdminTechnologiesController {
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() updateTechnologyDto: UpdateTechnologyDto,
   ) {
-    const raw = await this.technologiesService.update(id, updateTechnologyDto, req);
+    const raw = await this.technologiesService.update(
+      id,
+      updateTechnologyDto,
+      req,
+    );
     const mapped = await mapTechnologyToAdmin(raw, this.mediaService);
     return {
       message: 'Technology updated successfully',

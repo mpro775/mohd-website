@@ -25,7 +25,13 @@ export class Service extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Media' })
   iconMediaId?: Types.ObjectId;
 
-  @Prop({ type: String, enum: ServiceCategory, default: ServiceCategory.OTHER, required: true, trim: true })
+  @Prop({
+    type: String,
+    enum: ServiceCategory,
+    default: ServiceCategory.OTHER,
+    required: true,
+    trim: true,
+  })
   category: ServiceCategory;
 
   @Prop({ type: Number })

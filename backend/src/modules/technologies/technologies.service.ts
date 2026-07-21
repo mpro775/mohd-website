@@ -36,7 +36,9 @@ export class TechnologiesService {
   }
 
   private async syncMedia(technology: Technology) {
-    const icons = technology.iconMediaId ? [technology.iconMediaId.toString()] : [];
+    const icons = technology.iconMediaId
+      ? [technology.iconMediaId.toString()]
+      : [];
     await this.mediaService.syncUsageByIds(
       icons,
       'Technology',
@@ -49,12 +51,16 @@ export class TechnologiesService {
     if (!slugs || slugs.length === 0) {
       return [];
     }
-    const cleanSlugs = [...new Set(slugs.map(s => s.toLowerCase().trim()))];
-    const found = await this.technologyModel.find({ slug: { $in: cleanSlugs } });
+    const cleanSlugs = [...new Set(slugs.map((s) => s.toLowerCase().trim()))];
+    const found = await this.technologyModel.find({
+      slug: { $in: cleanSlugs },
+    });
     if (found.length !== cleanSlugs.length) {
-      const foundSlugs = found.map(t => t.slug);
-      const missingSlugs = cleanSlugs.filter(s => !foundSlugs.includes(s));
-      throw new BadRequestException(`التقنيات التالية غير موجودة: ${missingSlugs.join(', ')}`);
+      const foundSlugs = found.map((t) => t.slug);
+      const missingSlugs = cleanSlugs.filter((s) => !foundSlugs.includes(s));
+      throw new BadRequestException(
+        `التقنيات التالية غير موجودة: ${missingSlugs.join(', ')}`,
+      );
     }
     return found;
   }
@@ -76,7 +82,7 @@ export class TechnologiesService {
           group: tech.group,
           color: tech.color,
         };
-      })
+      }),
     );
   }
 
@@ -90,7 +96,10 @@ export class TechnologiesService {
     await this.assertSlugIsAvailable(slug);
 
     if (createTechnologyDto.iconMediaId) {
-      await this.mediaService.assertMediaExists(createTechnologyDto.iconMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        createTechnologyDto.iconMediaId,
+        { type: 'image' },
+      );
     }
 
     const technology = new this.technologyModel({
@@ -195,7 +204,10 @@ export class TechnologiesService {
     const before = oldTech.toObject();
 
     if (updateTechnologyDto.iconMediaId) {
-      await this.mediaService.assertMediaExists(updateTechnologyDto.iconMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        updateTechnologyDto.iconMediaId,
+        { type: 'image' },
+      );
     }
 
     const updateData = {

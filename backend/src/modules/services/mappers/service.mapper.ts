@@ -1,9 +1,14 @@
 import { Service } from '../schemas/service.schema';
 import { MediaService } from '../../media/media.service';
 
-export async function mapServiceToPublic(service: Service, mediaService: MediaService) {
+export async function mapServiceToPublic(
+  service: Service,
+  mediaService: MediaService,
+) {
   const icon = await mediaService.resolveMediaUrl(service.iconMediaId);
-  const ogImage = await mediaService.resolveMediaUrl(service.seo?.ogImageMediaId);
+  const ogImage = await mediaService.resolveMediaUrl(
+    service.seo?.ogImageMediaId,
+  );
   return {
     id: service._id.toString(),
     name: service.name,
@@ -31,11 +36,18 @@ export async function mapServiceToPublic(service: Service, mediaService: MediaSe
   };
 }
 
-export async function mapServiceToAdmin(service: Service, mediaService: MediaService) {
+export async function mapServiceToAdmin(
+  service: Service,
+  mediaService: MediaService,
+) {
   const icon = await mediaService.resolveMediaUrl(service.iconMediaId);
   const iconMedia = await mediaService.resolveMediaObject(service.iconMediaId);
-  const ogImage = await mediaService.resolveMediaUrl(service.seo?.ogImageMediaId);
-  const ogImageMedia = await mediaService.resolveMediaObject(service.seo?.ogImageMediaId);
+  const ogImage = await mediaService.resolveMediaUrl(
+    service.seo?.ogImageMediaId,
+  );
+  const ogImageMedia = await mediaService.resolveMediaObject(
+    service.seo?.ogImageMediaId,
+  );
   return {
     id: service._id.toString(),
     name: service.name,

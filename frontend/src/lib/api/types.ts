@@ -222,6 +222,10 @@ export type Category = {
   slug: string;
   description?: string;
   isActive?: boolean;
+  postCount?: number;
+  imageMediaId?: string;
+  order?: number;
+  seo?: SeoFields;
 };
 
 export type Tag = Category & { color?: string };
@@ -242,17 +246,67 @@ export type Post = {
   coverImageMedia?: ResolvedMedia;
   category?: Category | string;
   tags?: Array<Tag | string>;
-  publishDate?: string;
+  relatedPostIds?: string[];
+  previousSlugs?: string[];
+  contentFormat?: "markdown";
+  contentVersion?: number;
+  version?: number;
+  contentHash?: string;
+  contentMediaIds?: string[];
+  author?: { id?: string; name?: string; title?: string; avatar?: string } | string;
+  reviewer?: { id?: string; name?: string };
+  publisher?: { id?: string; name?: string };
+  firstPublishedAt?: string;
+  publishedAt?: string;
+  lastPublishedAt?: string;
   scheduledAt?: string;
-  status?: "published" | "draft" | "scheduled" | "archived";
-  views?: number;
+  status?: "draft" | "in_review" | "changes_requested" | "approved" | "scheduled" | "published" | "archived";
+  viewCount?: number;
+  uniqueViewCount?: number;
   readTime?: number;
   isFeatured?: boolean;
+  featuredOrder?: number;
   allowIndexing?: boolean;
   canonicalUrl?: string;
   seo?: SeoFields;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string;
+  canonicalSlug?: string;
+  redirectRequired?: boolean;
+};
+
+export type PostRevision = {
+  _id?: string;
+  id?: string;
+  revisionNumber: number;
+  version: number;
+  reason: "manual_save" | "autosave" | "publish" | "schedule" | "restore" | "migration";
+  snapshot?: Partial<Post>;
+  contentHash: string;
+  createdBy?: { name?: string; email?: string };
+  createdAt: string;
+};
+
+export type ReadinessResult = {
+  ready: boolean;
+  blockers: Array<{ code: string; message: string }>;
+  warnings: Array<{ code: string; message: string }>;
+  checks: Array<{ code: string; passed: boolean }>;
+};
+
+export type PostNavigation = {
+  previous?: { title: string; slug: string } | null;
+  next?: { title: string; slug: string } | null;
+};
+
+export type SeoEntry = {
+  type: "post" | "category" | "tag";
+  path: string;
+  lastModified: string;
+  publishedAt?: string;
+  title?: string;
+  description?: string;
 };
 
 export type Service = {

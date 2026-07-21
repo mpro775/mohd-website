@@ -15,9 +15,13 @@ export class ProfileService {
   ) {}
 
   private async syncMedia(profile: Profile): Promise<void> {
-    const profileImageId = profile.profileImageMediaId ? [profile.profileImageMediaId.toString()] : [];
+    const profileImageId = profile.profileImageMediaId
+      ? [profile.profileImageMediaId.toString()]
+      : [];
     const cvId = profile.cvMediaId ? [profile.cvMediaId.toString()] : [];
-    const ogImageId = profile.seo?.ogImageMediaId ? [profile.seo.ogImageMediaId.toString()] : [];
+    const ogImageId = profile.seo?.ogImageMediaId
+      ? [profile.seo.ogImageMediaId.toString()]
+      : [];
 
     await this.mediaService.syncUsageByIds(
       profileImageId,
@@ -55,13 +59,21 @@ export class ProfileService {
   ): Promise<Profile> {
     // Assert media existence and correct types if provided
     if (updateProfileDto.profileImageMediaId) {
-      await this.mediaService.assertMediaExists(updateProfileDto.profileImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        updateProfileDto.profileImageMediaId,
+        { type: 'image' },
+      );
     }
     if (updateProfileDto.cvMediaId) {
-      await this.mediaService.assertMediaExists(updateProfileDto.cvMediaId, { type: 'document' });
+      await this.mediaService.assertMediaExists(updateProfileDto.cvMediaId, {
+        type: 'document',
+      });
     }
     if (updateProfileDto.seo?.ogImageMediaId) {
-      await this.mediaService.assertMediaExists(updateProfileDto.seo.ogImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        updateProfileDto.seo.ogImageMediaId,
+        { type: 'image' },
+      );
     }
 
     let profile = await this.profileModel.findOne();
@@ -98,13 +110,21 @@ export class ProfileService {
     }
 
     if (data.profileImageMediaId) {
-      await this.mediaService.assertMediaExists(data.profileImageMediaId.toString(), { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        data.profileImageMediaId.toString(),
+        { type: 'image' },
+      );
     }
     if (data.cvMediaId) {
-      await this.mediaService.assertMediaExists(data.cvMediaId.toString(), { type: 'document' });
+      await this.mediaService.assertMediaExists(data.cvMediaId.toString(), {
+        type: 'document',
+      });
     }
     if (data.seo?.ogImageMediaId) {
-      await this.mediaService.assertMediaExists(data.seo.ogImageMediaId.toString(), { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        data.seo.ogImageMediaId.toString(),
+        { type: 'image' },
+      );
     }
 
     const profile = new this.profileModel(data);

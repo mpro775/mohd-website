@@ -16,6 +16,7 @@
     "seed:admin": "ts-node src/database/seeds/seed.ts",
     "migrate:profile-certificates": "ts-node src/database/migrations/manual/migrate-profile-certificates.ts",
     "migrate:profile-certificates:rollback": "ts-node src/database/migrations/manual/rollback-profile-certificates.ts",
+    "migrate:blog-v2": "ts-node src/database/migrations/manual/migrate-blog-v2.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
