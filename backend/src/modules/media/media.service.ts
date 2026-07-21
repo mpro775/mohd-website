@@ -749,6 +749,16 @@ export class MediaService {
     );
   }
 
+  async findIdsByUrls(urls: string[]): Promise<string[]> {
+    const uniqueUrls = [...new Set(urls.filter(Boolean))];
+    if (!uniqueUrls.length) return [];
+    const media = await this.mediaModel
+      .find({ url: { $in: uniqueUrls } })
+      .select('_id')
+      .lean();
+    return media.map((item) => item._id.toString());
+  }
+
   async resolveManyMediaObjects(
     mediaIds?: Array<string | Types.ObjectId>,
   ): Promise<ResolvedMedia[]> {

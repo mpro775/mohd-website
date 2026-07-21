@@ -2,52 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Category, Post } from "@/lib/api/types";
 import { formatDate } from "@/lib/utils";
-import { TechStackBadge } from "@/components/common/TechStackBadge";
 
-function categoryName(category: Post["category"]) {
-  if (!category) return "Engineering";
-  return typeof category === "string" ? category : (category as Category).name;
-}
+function category(value: Post["category"]): Category | null { return value && typeof value === "object" ? value : null; }
 
-function tagName(tag: unknown) {
-  if (!tag) return "";
-  return typeof tag === "string" ? tag : (tag as { name?: string }).name ?? "";
-}
-
-export function PostCard({ post }: { post: Post }) {
+export function PostCard({ post, featured = false }: { post: Post; featured?: boolean }) {
   const image = post.featuredImage ?? post.coverImage ?? "/brand/og-fallback.svg";
-
-  return (
-    <article className="premium-card group flex h-full flex-col overflow-hidden transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40">
-      <Link href={`/blog/${post.slug}`} className="block">
-        <div className="relative aspect-video overflow-hidden bg-muted">
-          <Image src={image} alt={post.title} fill unoptimized className="object-cover transition-transform duration-500 group-hover:scale-105" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/70 via-transparent to-transparent" />
-          <span className="absolute right-3 top-3 rounded-full border border-primary/30 bg-background/80 px-3 py-1 font-mono text-[10px] text-primary">
-            Engineering Notes
-          </span>
-        </div>
-      </Link>
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground">
-          <span className="text-primary">{categoryName(post.category)}</span>
-          <span>/</span>
-          <span>{formatDate(post.publishDate)}</span>
-          {post.readTime ? <span>{post.readTime} دقائق قراءة</span> : null}
-          {post.views !== undefined ? <span>{post.views} views</span> : null}
-        </div>
-        <Link href={`/blog/${post.slug}`} className="text-xl font-bold text-foreground transition hover:text-primary">
-          {post.title}
-        </Link>
-        <p className="line-clamp-3 text-sm leading-7 text-muted-foreground">{post.summary ?? post.excerpt}</p>
-        {post.tags?.length ? (
-          <div className="mt-auto flex flex-wrap gap-1.5 pt-3">
-            {post.tags.slice(0, 4).map((tag, idx) => (
-              <TechStackBadge key={`${post.slug}-tag-${idx}`} name={tagName(tag)} />
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </article>
-  );
+  const currentCategory = category(post.category);
+  return <article className={`premium-card group flex h-full flex-col overflow-hidden transition hover:-translate-y-1 hover:border-primary/40 ${featured ? "md:grid md:grid-cols-[1.1fr_1fr]" : ""}`}><Link href={`/blog/${post.slug}`} className="block"><div className={`relative overflow-hidden bg-muted ${featured ? "h-full min-h-64" : "aspect-video"}`}><Image src={image} alt={post.featuredImageMedia?.alt || post.title} fill sizes={featured ? "(min-width: 768px) 55vw, 100vw" : "(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"} priority={featured} className="object-cover transition-transform duration-500 group-hover:scale-105" />{post.isFeatured ? <span className="absolute right-3 top-3 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">مقال مميز</span> : null}</div></Link><div className="flex flex-1 flex-col gap-3 p-5">{currentCategory ? <Link href={`/blog/category/${currentCategory.slug}`} className="text-xs font-bold text-primary">{currentCategory.name}</Link> : null}<Link href={`/blog/${post.slug}`} className={`${featured ? "text-3xl" : "text-xl"} font-black hover:text-primary`}>{post.title}</Link><p className="line-clamp-3 text-sm leading-7 text-muted-foreground">{post.summary ?? post.excerpt}</p><div className="mt-auto flex flex-wrap items-center gap-2 pt-2 text-xs text-muted-foreground"><span>{formatDate(post.publishedAt)}</span>{post.readTime ? <span>· {post.readTime} دقائق قراءة</span> : null}{post.viewCount !== undefined ? <span>· {post.viewCount} مشاهدة</span> : null}</div>{post.tags?.length ? <div className="flex flex-wrap gap-1.5">{post.tags.slice(0, 4).map((tag) => typeof tag === "object" ? <Link key={tag.slug} href={`/blog/tag/${tag.slug}`} className="rounded-full border border-border px-2 py-1 text-[11px] hover:text-primary">#{tag.name}</Link> : null)}</div> : null}</div></article>;
 }

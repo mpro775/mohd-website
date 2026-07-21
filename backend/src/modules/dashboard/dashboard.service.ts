@@ -229,7 +229,7 @@ export class DashboardService {
         { $group: { _id: null, total: { $sum: '$views' } } },
       ]),
       this.postModel.aggregate([
-        { $group: { _id: null, total: { $sum: '$views' } } },
+        { $group: { _id: null, total: { $sum: '$viewCount' } } },
       ]),
       this.linkModel.aggregate([
         { $group: { _id: null, total: { $sum: '$clicks' } } },

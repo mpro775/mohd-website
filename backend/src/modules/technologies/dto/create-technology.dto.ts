@@ -7,7 +7,11 @@ import {
   MinLength,
   IsUrl,
 } from 'class-validator';
-import { TechnologyCategory, TechnologyGroup, ProficiencyLevel } from '../../../common/taxonomy/technology-taxonomy';
+import {
+  TechnologyCategory,
+  TechnologyGroup,
+  ProficiencyLevel,
+} from '../../../common/taxonomy/technology-taxonomy';
 
 export class CreateTechnologyDto {
   @IsString()

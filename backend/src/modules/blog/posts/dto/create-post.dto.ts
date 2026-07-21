@@ -1,104 +1,107 @@
+import { Type } from 'class-transformer';
 import {
-  IsString,
-  IsOptional,
-  IsEnum,
+  ArrayUnique,
   IsArray,
-  IsNumber,
-  IsDateString,
+  IsBoolean,
+  IsInt,
+  IsMongoId,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+  Min,
   MinLength,
   ValidateNested,
-  IsBoolean,
-  IsUrl,
-  IsMongoId,
 } from 'class-validator';
-import { Type } from 'class-transformer';
-import { PostStatus } from '../schemas/post.schema';
 
-class SEODto {
+export class PostSeoDto {
   @IsOptional()
   @IsString()
+  @MaxLength(70)
   metaTitle?: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(180)
   metaDescription?: string;
 
   @IsOptional()
-  @IsString()
+  @IsMongoId()
   ogImageMediaId?: string;
 }
 
-export class CreatePostDto {
+export class CreatePostDraftDto {
   @IsString()
-  @MinLength(3, { message: 'العنوان يجب أن يكون 3 أحرف على الأقل' })
+  @MinLength(3)
+  @MaxLength(180)
   title: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   slug?: string;
 
   @IsString()
-  @MinLength(20, { message: 'الملخص يجب أن يكون 20 حرف على الأقل' })
+  @MinLength(20)
+  @MaxLength(500)
   summary: string;
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   excerpt?: string;
 
   @IsString()
-  @MinLength(50, { message: 'المحتوى يجب أن يكون 50 حرف على الأقل' })
+  @MinLength(1)
   content: string;
 
   @IsOptional()
-  @IsString()
+  @IsMongoId()
   featuredImageMediaId?: string;
 
   @IsOptional()
-  @IsString()
+  @IsMongoId()
   coverImageMediaId?: string;
 
-  @IsOptional()
   @IsMongoId()
-  category?: string;
+  category: string;
 
   @IsOptional()
   @IsArray()
+  @ArrayUnique()
   @IsMongoId({ each: true })
   tags?: string[];
 
   @IsOptional()
-  @IsDateString()
-  publishDate?: string;
-
-  @IsOptional()
-  @IsDateString()
-  scheduledAt?: string;
-
-  @IsOptional()
-  @IsEnum(PostStatus)
-  status?: PostStatus;
-
-  @IsOptional()
-  @IsNumber()
-  readTime?: number;
+  @IsArray()
+  @ArrayUnique()
+  @IsMongoId({ each: true })
+  relatedPostIds?: string[];
 
   @IsOptional()
   @IsBoolean()
   isFeatured?: boolean;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(10_000)
+  featuredOrder?: number;
+
+  @IsOptional()
   @IsBoolean()
   allowIndexing?: boolean;
 
   @IsOptional()
-  @IsUrl(
-    {},
-    { message: 'الرابط الأساسي canonicalUrl يجب أن يكون رابطاً صالحاً' },
-  )
+  @IsUrl({ require_protocol: true })
   canonicalUrl?: string;
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => SEODto)
-  seo?: SEODto;
+  @Type(() => PostSeoDto)
+  seo?: PostSeoDto;
 }
+
+/** Compatibility name for existing imports; it intentionally contains no workflow fields. */
+export class CreatePostDto extends CreatePostDraftDto {}

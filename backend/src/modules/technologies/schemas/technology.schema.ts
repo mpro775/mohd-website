@@ -1,6 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { TechnologyCategory, TechnologyGroup, ProficiencyLevel } from '../../../common/taxonomy/technology-taxonomy';
+import {
+  TechnologyCategory,
+  TechnologyGroup,
+  ProficiencyLevel,
+} from '../../../common/taxonomy/technology-taxonomy';
 
 export { TechnologyCategory, TechnologyGroup, ProficiencyLevel };
 
@@ -25,10 +29,20 @@ export class Technology extends Document {
   })
   proficiencyLevel: ProficiencyLevel;
 
-  @Prop({ type: String, enum: TechnologyCategory, default: TechnologyCategory.OTHER, trim: true })
+  @Prop({
+    type: String,
+    enum: TechnologyCategory,
+    default: TechnologyCategory.OTHER,
+    trim: true,
+  })
   category: TechnologyCategory;
 
-  @Prop({ type: String, enum: TechnologyGroup, default: TechnologyGroup.OTHER, trim: true })
+  @Prop({
+    type: String,
+    enum: TechnologyGroup,
+    default: TechnologyGroup.OTHER,
+    trim: true,
+  })
   group: TechnologyGroup;
 
   @Prop()

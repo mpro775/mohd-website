@@ -15,15 +15,26 @@ export function personJsonLd(profile?: Profile, socialUrls: string[] = []) {
 }
 
 export function postJsonLd(post: Post) {
-  return {
+  const canonical = post.canonicalUrl || absoluteUrl(`/blog/${post.slug}`);
+  const authorName = typeof post.author === "object" ? post.author.name : undefined;
+  const section = typeof post.category === "object" ? post.category.name : undefined;
+  const keywords = (post.tags ?? []).map((tag) => typeof tag === "object" ? tag.name : tag).filter(Boolean);
+  const value = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     headline: post.title,
-    description: post.summary,
-    datePublished: post.publishDate,
-    image: post.featuredImage ?? post.coverImage,
-    url: absoluteUrl(`/blog/${post.slug}`),
+    description: post.seo?.metaDescription ?? post.summary,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt ?? post.publishedAt,
+    author: authorName ? { "@type": "Person", name: authorName } : undefined,
+    publisher: { "@type": "Person", name: "Mohd", url: absoluteUrl("/") },
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+    image: post.seo?.ogImage ?? post.featuredImage ?? post.coverImage,
+    articleSection: section,
+    keywords: keywords.length ? keywords : undefined,
+    url: canonical,
   };
+  return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined));
 }
 
 export function projectJsonLd(project: Project) {

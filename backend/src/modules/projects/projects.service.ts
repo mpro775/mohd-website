@@ -35,21 +35,27 @@ export class ProjectsService {
   ) {}
 
   private async syncMedia(project: Project) {
-    const coverImages = project.coverImageMediaId ? [project.coverImageMediaId.toString()] : [];
+    const coverImages = project.coverImageMediaId
+      ? [project.coverImageMediaId.toString()]
+      : [];
     await this.mediaService.syncUsageByIds(
       coverImages,
       'Project',
       project._id.toString(),
       'coverImage',
     );
-    const galleryIds = project.galleryMediaIds ? project.galleryMediaIds.map(id => id.toString()) : [];
+    const galleryIds = project.galleryMediaIds
+      ? project.galleryMediaIds.map((id) => id.toString())
+      : [];
     await this.mediaService.syncUsageByIds(
       galleryIds,
       'Project',
       project._id.toString(),
       'gallery',
     );
-    const ogImages = project.seo?.ogImageMediaId ? [project.seo.ogImageMediaId.toString()] : [];
+    const ogImages = project.seo?.ogImageMediaId
+      ? [project.seo.ogImageMediaId.toString()]
+      : [];
     await this.mediaService.syncUsageByIds(
       ogImages,
       'Project',
@@ -62,22 +68,31 @@ export class ProjectsService {
     createProjectDto: CreateProjectDto,
     req?: any,
   ): Promise<Project> {
-    const slug = normalizeSlug(
-      createProjectDto.slug || createProjectDto.title,
-    );
+    const slug = normalizeSlug(createProjectDto.slug || createProjectDto.title);
     await this.assertSlugIsAvailable(slug);
 
     if (createProjectDto.coverImageMediaId) {
-      await this.mediaService.assertMediaExists(createProjectDto.coverImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        createProjectDto.coverImageMediaId,
+        { type: 'image' },
+      );
     }
     if (createProjectDto.galleryMediaIds) {
-      await this.mediaService.assertManyMediaExist(createProjectDto.galleryMediaIds, { type: 'image' });
+      await this.mediaService.assertManyMediaExist(
+        createProjectDto.galleryMediaIds,
+        { type: 'image' },
+      );
     }
     if (createProjectDto.seo?.ogImageMediaId) {
-      await this.mediaService.assertMediaExists(createProjectDto.seo.ogImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        createProjectDto.seo.ogImageMediaId,
+        { type: 'image' },
+      );
     }
     if (createProjectDto.technologySlugs) {
-      await this.technologiesService.assertSlugsExist(createProjectDto.technologySlugs);
+      await this.technologiesService.assertSlugsExist(
+        createProjectDto.technologySlugs,
+      );
     }
 
     const project = new this.projectModel({
@@ -143,16 +158,27 @@ export class ProjectsService {
     const before = oldProject.toObject();
 
     if (updateProjectDto.coverImageMediaId) {
-      await this.mediaService.assertMediaExists(updateProjectDto.coverImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        updateProjectDto.coverImageMediaId,
+        { type: 'image' },
+      );
     }
     if (updateProjectDto.galleryMediaIds) {
-      await this.mediaService.assertManyMediaExist(updateProjectDto.galleryMediaIds, { type: 'image' });
+      await this.mediaService.assertManyMediaExist(
+        updateProjectDto.galleryMediaIds,
+        { type: 'image' },
+      );
     }
     if (updateProjectDto.seo?.ogImageMediaId) {
-      await this.mediaService.assertMediaExists(updateProjectDto.seo.ogImageMediaId, { type: 'image' });
+      await this.mediaService.assertMediaExists(
+        updateProjectDto.seo.ogImageMediaId,
+        { type: 'image' },
+      );
     }
     if (updateProjectDto.technologySlugs) {
-      await this.technologiesService.assertSlugsExist(updateProjectDto.technologySlugs);
+      await this.technologiesService.assertSlugsExist(
+        updateProjectDto.technologySlugs,
+      );
     }
 
     const updateData: any = {

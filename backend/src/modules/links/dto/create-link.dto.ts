@@ -7,7 +7,10 @@ import {
   IsUrl,
   IsEnum,
 } from 'class-validator';
-import { LinkCategory, LinkPlatform } from '../../../common/taxonomy/link-taxonomy';
+import {
+  LinkCategory,
+  LinkPlatform,
+} from '../../../common/taxonomy/link-taxonomy';
 
 export class CreateLinkDto {
   @IsString()

@@ -21,6 +21,7 @@ import { RolesGuard } from '../../../common/guards/roles.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { UserRole } from '../../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
+import { MergeTagsDto } from './dto/merge-tags.dto';
 
 @Public()
 @Controller('public/blog/tags')
@@ -77,6 +78,14 @@ export class AdminTagsController {
     return {
       message: 'تم إنشاء الوسم بنجاح',
       data: tag,
+    };
+  }
+
+  @Post('merge')
+  async merge(@Request() req, @Body() dto: MergeTagsDto) {
+    return {
+      message: 'تم دمج الوسمين بنجاح',
+      data: await this.tagsService.merge(dto, req),
     };
   }
 

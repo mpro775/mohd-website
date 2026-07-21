@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Tag } from './schemas/tag.schema';
@@ -10,11 +14,14 @@ import { normalizeSlug } from '../../../common/utils/slug.util';
 import { buildSafeRegex } from '../../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
+import { Post, PostStatus } from '../posts/schemas/post.schema';
+import { MergeTagsDto } from './dto/merge-tags.dto';
 
 @Injectable()
 export class TagsService {
   constructor(
     @InjectModel(Tag.name) private tagModel: Model<Tag>,
+    @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly auditLogsService: AuditLogsService,
   ) {}
 
@@ -57,8 +64,31 @@ export class TagsService {
     return this.findOneAdmin(id);
   }
 
-  async findAllPublic(): Promise<Tag[]> {
-    return this.tagModel.find({ isActive: true }).sort({ name: 1 });
+  async findAllPublic(): Promise<any[]> {
+    const [tags, counts] = await Promise.all([
+      this.tagModel
+        .find({ isActive: true, deletedAt: { $exists: false } })
+        .sort({ order: 1, name: 1 })
+        .lean(),
+      this.postModel.aggregate([
+        {
+          $match: {
+            status: PostStatus.PUBLISHED,
+            publishedAt: { $lte: new Date() },
+            deletedAt: { $exists: false },
+          },
+        },
+        { $unwind: '$tags' },
+        { $group: { _id: '$tags', postCount: { $sum: 1 } } },
+      ]),
+    ]);
+    const countMap = new Map(
+      counts.map((item) => [item._id?.toString(), item.postCount]),
+    );
+    return tags.map((item) => ({
+      ...item,
+      postCount: countMap.get(item._id.toString()) ?? 0,
+    }));
   }
 
   async findAllAdmin(queryDto: FilterTagDto): Promise<IPaginatedResponse<Tag>> {
@@ -113,7 +143,11 @@ export class TagsService {
   }
 
   async findOnePublic(slug: string): Promise<Tag> {
-    const tag = await this.tagModel.findOne({ slug, isActive: true });
+    const tag = await this.tagModel.findOne({
+      slug,
+      isActive: true,
+      deletedAt: { $exists: false },
+    });
     if (!tag) {
       throw new NotFoundException('Tag not found');
     }
@@ -175,6 +209,9 @@ export class TagsService {
       if (slug !== oldTag.slug) {
         await this.assertSlugIsAvailable(slug, id);
         updateData.slug = slug;
+        updateData.previousSlugs = [
+          ...new Set([...(oldTag.previousSlugs ?? []), oldTag.slug]),
+        ];
       }
     }
 
@@ -204,7 +241,16 @@ export class TagsService {
     }
     const before = oldTag.toObject();
 
-    await this.tagModel.findByIdAndDelete(id);
+    if (await this.postModel.exists({ tags: id })) {
+      throw new ConflictException(
+        'Tag is used by existing posts; merge or deactivate it',
+      );
+    }
+
+    await this.tagModel.findByIdAndUpdate(id, {
+      isActive: false,
+      deletedAt: new Date(),
+    });
 
     await this.auditLogsService.log({
       action: 'tag.deleted',
@@ -213,5 +259,52 @@ export class TagsService {
       before,
       request: req,
     });
+  }
+
+  async merge(dto: MergeTagsDto, req?: any): Promise<Tag> {
+    if (dto.sourceTagId === dto.targetTagId) {
+      throw new ConflictException('Source and target tags must be different');
+    }
+    const [source, target] = await Promise.all([
+      this.tagModel.findById(dto.sourceTagId),
+      this.tagModel.findOne({
+        _id: dto.targetTagId,
+        isActive: true,
+        deletedAt: { $exists: false },
+      }),
+    ]);
+    if (!source || !target)
+      throw new NotFoundException('Source or target tag not found');
+    const posts = await this.postModel
+      .find({ tags: source._id })
+      .select('_id tags');
+    for (const post of posts) {
+      const tags = [
+        ...new Set(
+          post.tags
+            .map((item) => item.toString())
+            .filter((id) => id !== source._id.toString())
+            .concat(target._id.toString()),
+        ),
+      ];
+      await this.postModel.updateOne(
+        { _id: post._id },
+        { $set: { tags }, $inc: { version: 1 } },
+      );
+    }
+    source.isActive = false;
+    source.deletedAt = new Date();
+    await source.save();
+    await this.auditLogsService.log({
+      action: 'tag.merged',
+      resource: 'Tag',
+      resourceId: source._id.toString(),
+      metadata: {
+        targetTagId: target._id.toString(),
+        migratedPosts: posts.length,
+      },
+      request: req,
+    });
+    return target;
   }
 }

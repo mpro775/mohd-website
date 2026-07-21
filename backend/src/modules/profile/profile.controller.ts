@@ -7,7 +7,10 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/schemas/user.schema';
 import { MediaService } from '../media/media.service';
-import { mapProfileToPublic, mapProfileToAdmin } from './mappers/profile.mapper';
+import {
+  mapProfileToPublic,
+  mapProfileToAdmin,
+} from './mappers/profile.mapper';
 
 @Public()
 @Controller('public/profile')

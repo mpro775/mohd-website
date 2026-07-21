@@ -10,7 +10,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ProjectCategory, ProjectStatus } from '../../../common/taxonomy/project-categories';
+import {
+  ProjectCategory,
+  ProjectStatus,
+} from '../../../common/taxonomy/project-categories';
 
 class SeoDto {
   @IsOptional()

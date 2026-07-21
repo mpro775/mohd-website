@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
-import { LinkCategory, LinkPlatform } from '../../../common/taxonomy/link-taxonomy';
+import {
+  LinkCategory,
+  LinkPlatform,
+} from '../../../common/taxonomy/link-taxonomy';
 
 @Schema({ timestamps: true })
 export class Link extends Document {
@@ -19,10 +22,20 @@ export class Link extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Media' })
   iconMediaId?: Types.ObjectId;
 
-  @Prop({ type: String, enum: LinkPlatform, default: LinkPlatform.OTHER, trim: true })
+  @Prop({
+    type: String,
+    enum: LinkPlatform,
+    default: LinkPlatform.OTHER,
+    trim: true,
+  })
   platform: LinkPlatform;
 
-  @Prop({ type: String, enum: LinkCategory, default: LinkCategory.OTHER, trim: true })
+  @Prop({
+    type: String,
+    enum: LinkCategory,
+    default: LinkCategory.OTHER,
+    trim: true,
+  })
   category: LinkCategory;
 
   @Prop({ type: Boolean, default: true })

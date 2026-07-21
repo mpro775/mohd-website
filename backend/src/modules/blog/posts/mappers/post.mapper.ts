@@ -1,81 +1,120 @@
-import { Post } from '../schemas/post.schema';
-import { MediaService } from '../../../media/media.service';
+import type { ResolvedMedia } from '../../../media/media.service';
 
-export async function mapPostToPublic(post: Post, mediaService: MediaService) {
-  const featuredImage = await mediaService.resolveMediaUrl(post.featuredImageMediaId);
-  const coverImage = await mediaService.resolveMediaUrl(post.coverImageMediaId);
-  const ogImage = await mediaService.resolveMediaUrl(post.seo?.ogImageMediaId);
+type PostLike = Record<string, any>;
+type MediaMap = Map<string, ResolvedMedia>;
 
+function id(value: any): string | undefined {
+  if (!value) return undefined;
+  return (value._id ?? value).toString();
+}
+
+function media(value: any, mediaMap: MediaMap): ResolvedMedia | undefined {
+  const mediaId = id(value);
+  return mediaId ? mediaMap.get(mediaId) : undefined;
+}
+
+function taxonomy(value: any) {
+  if (!value) return undefined;
+  if (typeof value === 'string') return value;
   return {
-    id: post._id.toString(),
+    id: id(value),
+    name: value.name,
+    slug: value.slug,
+    color: value.color,
+  };
+}
+
+function author(value: any) {
+  if (!value) return undefined;
+  return {
+    id: id(value),
+    name: value.name,
+    title: value.title,
+    avatar: value.avatar,
+  };
+}
+
+function base(post: PostLike, mediaMap: MediaMap) {
+  const featuredImageMedia = media(post.featuredImageMediaId, mediaMap);
+  return {
+    id: id(post),
     title: post.title,
     slug: post.slug,
     summary: post.summary,
     excerpt: post.excerpt,
-    content: post.content,
-    featuredImage,
-    coverImage,
-    category: post.category,
-    tags: post.tags,
-    author: post.author,
-    publishDate: post.publishDate,
-    status: post.status,
-    views: post.views,
+    featuredImageMediaId: id(post.featuredImageMediaId),
+    featuredImage: featuredImageMedia?.url,
+    featuredImageMedia,
+    category: taxonomy(post.category),
+    tags: (post.tags ?? []).map(taxonomy),
+    publishedAt: post.publishedAt,
+    updatedAt: post.updatedAt,
     readTime: post.readTime,
+    viewCount: post.viewCount,
     isFeatured: post.isFeatured,
+    featuredOrder: post.featuredOrder,
+  };
+}
+
+export function mapPostToPublicListItem(post: PostLike, mediaMap: MediaMap) {
+  return base(post, mediaMap);
+}
+
+export function mapPostToPublicDetail(post: PostLike, mediaMap: MediaMap) {
+  const coverImageMedia = media(post.coverImageMediaId, mediaMap);
+  const ogImageMedia = media(post.seo?.ogImageMediaId, mediaMap);
+  return {
+    ...base(post, mediaMap),
+    content: post.content,
+    contentFormat: post.contentFormat,
+    coverImageMediaId: id(post.coverImageMediaId),
+    coverImage: coverImageMedia?.url,
+    coverImageMedia,
+    contentMedia: (post.contentMediaIds ?? [])
+      .map((item: any) => media(item, mediaMap))
+      .filter(Boolean),
+    author: author(post.author),
     allowIndexing: post.allowIndexing,
     canonicalUrl: post.canonicalUrl,
     seo: {
       metaTitle: post.seo?.metaTitle,
       metaDescription: post.seo?.metaDescription,
-      ogImage,
+      ogImageMediaId: id(post.seo?.ogImageMediaId),
+      ogImage: ogImageMedia?.url,
+      ogImageMedia,
     },
     createdAt: post.createdAt,
   };
 }
 
-export async function mapPostToAdmin(post: Post, mediaService: MediaService) {
-  const featuredImage = await mediaService.resolveMediaUrl(post.featuredImageMediaId);
-  const featuredImageMedia = await mediaService.resolveMediaObject(post.featuredImageMediaId);
-  const coverImage = await mediaService.resolveMediaUrl(post.coverImageMediaId);
-  const coverImageMedia = await mediaService.resolveMediaObject(post.coverImageMediaId);
-  const ogImage = await mediaService.resolveMediaUrl(post.seo?.ogImageMediaId);
-  const ogImageMedia = await mediaService.resolveMediaObject(post.seo?.ogImageMediaId);
-
+export function mapPostToAdminListItem(post: PostLike, mediaMap: MediaMap) {
   return {
-    id: post._id.toString(),
-    title: post.title,
-    slug: post.slug,
-    summary: post.summary,
-    excerpt: post.excerpt,
-    content: post.content,
-    featuredImageMediaId: post.featuredImageMediaId?.toString(),
-    featuredImage,
-    featuredImageMedia,
-    coverImageMediaId: post.coverImageMediaId?.toString(),
-    coverImage,
-    coverImageMedia,
-    category: post.category,
-    tags: post.tags,
-    author: post.author,
-    publishDate: post.publishDate,
-    scheduledAt: post.scheduledAt,
-    lastPublishedAt: post.lastPublishedAt,
-    updatedDate: post.updatedDate,
+    ...base(post, mediaMap),
+    author: author(post.author),
     status: post.status,
-    views: post.views,
-    readTime: post.readTime,
-    isFeatured: post.isFeatured,
-    allowIndexing: post.allowIndexing,
-    canonicalUrl: post.canonicalUrl,
-    seo: {
-      metaTitle: post.seo?.metaTitle,
-      metaDescription: post.seo?.metaDescription,
-      ogImageMediaId: post.seo?.ogImageMediaId?.toString(),
-      ogImage,
-      ogImageMedia,
-    },
-    createdAt: post.createdAt,
-    updatedAt: post.updatedAt,
+    scheduledAt: post.scheduledAt,
+    version: post.version,
+    deletedAt: post.deletedAt,
+  };
+}
+
+export function mapPostToAdminDetail(post: PostLike, mediaMap: MediaMap) {
+  return {
+    ...mapPostToPublicDetail(post, mediaMap),
+    previousSlugs: post.previousSlugs ?? [],
+    contentVersion: post.contentVersion,
+    version: post.version,
+    contentHash: post.contentHash,
+    contentMediaIds: (post.contentMediaIds ?? []).map(id),
+    relatedPostIds: (post.relatedPostIds ?? []).map(id),
+    reviewer: author(post.reviewer),
+    publisher: author(post.publisher),
+    status: post.status,
+    statusChangedAt: post.statusChangedAt,
+    scheduledAt: post.scheduledAt,
+    firstPublishedAt: post.firstPublishedAt,
+    lastPublishedAt: post.lastPublishedAt,
+    uniqueViewCount: post.uniqueViewCount,
+    deletedAt: post.deletedAt,
   };
 }

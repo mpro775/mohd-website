@@ -1,128 +1,86 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Project } from '../projects/schemas/project.schema';
+import { createPaginatedResponse } from '../../common/utils/pagination.util';
+import { Category } from '../blog/categories/schemas/category.schema';
 import { Post, PostStatus } from '../blog/posts/schemas/post.schema';
-import { Service } from '../services/schemas/service.schema';
+import { Tag } from '../blog/tags/schemas/tag.schema';
 
-type UrlEntry = {
-  loc: string;
-  lastmod?: Date;
-  changefreq?: string;
-  priority?: string;
+export type SeoEntry = {
+  type: 'post' | 'category' | 'tag';
+  path: string;
+  lastModified: Date;
+  publishedAt?: Date;
+  title?: string;
+  description?: string;
 };
 
 @Injectable()
 export class SeoService {
   constructor(
-    private readonly configService: ConfigService,
-    @InjectModel(Project.name) private projectModel: Model<Project>,
-    @InjectModel(Post.name) private postModel: Model<Post>,
-    @InjectModel(Service.name) private serviceModel: Model<Service>,
+    @InjectModel(Post.name) private readonly postModel: Model<Post>,
+    @InjectModel(Category.name) private readonly categoryModel: Model<Category>,
+    @InjectModel(Tag.name) private readonly tagModel: Model<Tag>,
   ) {}
 
-  async generateSitemap(): Promise<string> {
-    const entries = await this.getUrlEntries();
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries
-      .map(
-        (entry) =>
-          `  <url><loc>${entry.loc}</loc>${entry.lastmod ? `<lastmod>${entry.lastmod.toISOString()}</lastmod>` : ''}<changefreq>${entry.changefreq ?? 'weekly'}</changefreq><priority>${entry.priority ?? '0.7'}</priority></url>`,
-      )
-      .join('\n')}\n</urlset>`;
-  }
-
-  generateRobots(): string {
-    const baseUrl = this.baseUrl();
-    return [
-      'User-agent: *',
-      'Allow: /',
-      'Disallow: /api/admin/',
-      'Disallow: /api/auth/',
-      `Sitemap: ${baseUrl}/sitemap.xml`,
-      '',
-    ].join('\n');
-  }
-
-  async generateRss(): Promise<string> {
-    const baseUrl = this.baseUrl();
-    const posts = await this.postModel
-      .find({
-        status: PostStatus.PUBLISHED,
-        publishDate: { $lte: new Date() },
-        allowIndexing: { $ne: false },
-      })
-      .sort({ publishDate: -1 })
-      .limit(20)
-      .exec();
-
-    return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>Mohd Blog</title><link>${baseUrl}</link><description>Latest posts</description>${posts
-      .map(
-        (post) =>
-          `<item><title>${this.escapeXml(post.title)}</title><link>${baseUrl}/blog/${post.slug}</link><guid>${baseUrl}/blog/${post.slug}</guid><pubDate>${(post.publishDate ?? post.createdAt).toUTCString()}</pubDate><description>${this.escapeXml(post.summary ?? post.excerpt ?? '')}</description></item>`,
-      )
-      .join('')}</channel></rss>`;
-  }
-
-  private async getUrlEntries(): Promise<UrlEntry[]> {
-    const baseUrl = this.baseUrl();
-    const [projects, posts, services] = await Promise.all([
-      this.projectModel
-        .find({ isPublished: true, isArchived: { $ne: true } })
-        .select('slug updatedAt')
-        .exec(),
+  async getEntries(page: number, limit: number) {
+    const now = new Date();
+    const postFilter = {
+      status: PostStatus.PUBLISHED,
+      publishedAt: { $lte: now },
+      allowIndexing: { $ne: false },
+      deletedAt: { $exists: false },
+    };
+    const [posts, categories, tags, tagCounts] = await Promise.all([
       this.postModel
-        .find({
-          status: PostStatus.PUBLISHED,
-          publishDate: { $lte: new Date() },
-          allowIndexing: { $ne: false },
-        })
+        .find(postFilter)
+        .select('slug title summary publishedAt updatedAt')
+        .sort({ publishedAt: -1 })
+        .lean(),
+      this.categoryModel
+        .find({ isActive: true, deletedAt: { $exists: false } })
         .select('slug updatedAt')
-        .exec(),
-      this.serviceModel
-        .find({ isPublished: true })
+        .lean(),
+      this.tagModel
+        .find({ isActive: true, deletedAt: { $exists: false } })
         .select('slug updatedAt')
-        .exec(),
+        .lean(),
+      this.postModel.aggregate([
+        { $match: postFilter },
+        { $unwind: '$tags' },
+        { $group: { _id: '$tags', count: { $sum: 1 } } },
+      ]),
     ]);
-
-    return [
-      { loc: baseUrl, changefreq: 'weekly', priority: '1.0' },
-      { loc: `${baseUrl}/projects`, changefreq: 'weekly', priority: '0.8' },
-      { loc: `${baseUrl}/blog`, changefreq: 'daily', priority: '0.8' },
-      { loc: `${baseUrl}/services`, changefreq: 'weekly', priority: '0.8' },
-      ...projects.map((project) => ({
-        loc: `${baseUrl}/projects/${project.slug}`,
-        lastmod: project.updatedAt,
-      })),
+    const tagCountMap = new Map(
+      tagCounts.map((item) => [item._id.toString(), item.count]),
+    );
+    const entries: SeoEntry[] = [
       ...posts.map((post) => ({
-        loc: `${baseUrl}/blog/${post.slug}`,
-        lastmod: post.updatedAt,
+        type: 'post' as const,
+        path: `/blog/${post.slug}`,
+        lastModified: post.updatedAt,
+        publishedAt: post.publishedAt,
+        title: post.title,
+        description: post.summary,
       })),
-      ...services.map((service) => ({
-        loc: `${baseUrl}/services/${service.slug}`,
-        lastmod: service.updatedAt,
+      ...categories.map((category) => ({
+        type: 'category' as const,
+        path: `/blog/category/${category.slug}`,
+        lastModified: category.updatedAt,
       })),
+      ...tags
+        .filter((tag) => (tagCountMap.get(tag._id.toString()) ?? 0) >= 2)
+        .map((tag) => ({
+          type: 'tag' as const,
+          path: `/blog/tag/${tag.slug}`,
+          lastModified: tag.updatedAt,
+        })),
     ];
-  }
-
-  private baseUrl(): string {
-    return (
-      this.configService.get<string>('app.siteUrl') ||
-      process.env.SITE_URL ||
-      'http://localhost:3000'
-    ).replace(/\/$/, '');
-  }
-
-  private escapeXml(value: string): string {
-    return value.replace(/[<>&'"]/g, (char) => {
-      const map: Record<string, string> = {
-        '<': '&lt;',
-        '>': '&gt;',
-        '&': '&amp;',
-        "'": '&apos;',
-        '"': '&quot;',
-      };
-      return map[char];
-    });
+    return createPaginatedResponse(
+      entries.slice((page - 1) * limit, page * limit),
+      entries.length,
+      page,
+      limit,
+    );
   }
 }
