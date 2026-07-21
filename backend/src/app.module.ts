@@ -31,6 +31,8 @@ import { DeprecatedController } from './common/controllers/deprecated.controller
 import { FaqsModule } from './modules/faqs/faqs.module';
 import { SeoModule } from './modules/seo/seo.module';
 import { OptionsModule } from './modules/options/options.module';
+import { CertificationsModule } from './modules/certifications/certifications.module';
+import { EducationModule } from './modules/education/education.module';
 
 @Module({
   imports: [
@@ -106,6 +108,8 @@ import { OptionsModule } from './modules/options/options.module';
     FaqsModule,
     SeoModule,
     OptionsModule,
+    CertificationsModule,
+    EducationModule,
   ],
   controllers: [AppController, DeprecatedController],
   providers: [

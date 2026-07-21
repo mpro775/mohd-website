@@ -2,6 +2,7 @@ export const siteNav = [
   { href: "/", label: "الرئيسية" },
   { href: "/projects", label: "المشاريع" },
   { href: "/services", label: "الخدمات" },
+  { href: "/certifications", label: "الشهادات" },
   { href: "/blog", label: "المدونة" },
   { href: "/about", label: "من أنا" },
   { href: "/contact", label: "التواصل" },
@@ -10,6 +11,8 @@ export const siteNav = [
 export const adminNav = [
   { href: "/admin/dashboard", label: "لوحة التحكم" },
   { href: "/admin/profile", label: "الملف الشخصي" },
+  { href: "/admin/certifications", label: "الشهادات المهنية" },
+  { href: "/admin/education", label: "المؤهلات الأكاديمية" },
   { href: "/admin/projects", label: "المشاريع" },
   { href: "/admin/blog/posts", label: "المقالات" },
   { href: "/admin/blog/categories", label: "التصنيفات" },

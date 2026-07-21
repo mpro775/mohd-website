@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { UseFormReturn, Controller } from "react-hook-form";
-import { Plus, X, Trash2, Upload } from "lucide-react";
+import { X, Trash2, Upload } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { adminClient } from "@/lib/api/admin-client";
-import type { Technology } from "@/lib/api/types";
+import type { MediaItem, Technology } from "@/lib/api/types";
 import {
   InputField,
   TextAreaField,
@@ -35,22 +35,17 @@ interface ProjectGalleryFieldProps {
 
 export function ProjectGalleryField({ valueIds = [], valueUrls = [], onChange }: ProjectGalleryFieldProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [localItems, setLocalItems] = useState<{ id: string; url: string }[]>([]);
+  const [localUrls, setLocalUrls] = useState<Record<string, string>>({});
+  const localItems = valueIds.map((id, index) => ({
+    id,
+    url: localUrls[id] || valueUrls[index] || "",
+  }));
 
-  useEffect(() => {
-    const items = valueIds.map((id, index) => ({
-      id,
-      url: valueUrls[index] || "",
-    }));
-    setLocalItems(items);
-  }, [valueIds, valueUrls]);
-
-  const handleAdd = (item: any) => {
+  const handleAdd = (item: MediaItem) => {
     const id = item._id || item.id;
     if (id && !valueIds.includes(id)) {
       const nextIds = [...valueIds, id];
-      const nextItems = [...localItems, { id, url: item.url }];
-      setLocalItems(nextItems);
+      setLocalUrls((current) => ({ ...current, [id]: item.url }));
       onChange(nextIds);
     }
     setIsPickerOpen(false);
@@ -58,16 +53,19 @@ export function ProjectGalleryField({ valueIds = [], valueUrls = [], onChange }:
 
   const handleRemove = (id: string) => {
     const nextIds = valueIds.filter((x) => x !== id);
-    const nextItems = localItems.filter((x) => x.id !== id);
-    setLocalItems(nextItems);
+    setLocalUrls((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
     onChange(nextIds);
   };
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-card/35 p-3">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-        {localItems.map((item, index) => (
-          <div key={item.id + index} className="group relative aspect-video rounded-lg border border-border bg-muted/40 overflow-hidden">
+        {localItems.map((item) => (
+          <div key={item.id} className="group relative aspect-video rounded-lg border border-border bg-muted/40 overflow-hidden">
             {item.url ? (
               <img src={item.url} alt="Gallery item" className="h-full w-full object-cover" />
             ) : (
@@ -103,10 +101,12 @@ export function ProjectGalleryField({ valueIds = [], valueUrls = [], onChange }:
           const uniqueNewIds = newIds.filter((id) => !valueIds.includes(id));
           if (uniqueNewIds.length > 0) {
             const nextIds = [...valueIds, ...uniqueNewIds];
-            const newLocalItems = items
-              .filter((i) => uniqueNewIds.includes((i._id || i.id)!))
-              .map((i) => ({ id: (i._id || i.id)!, url: i.url }));
-            setLocalItems([...localItems, ...newLocalItems]);
+            setLocalUrls((current) => ({
+              ...current,
+              ...Object.fromEntries(items
+                .filter((i) => uniqueNewIds.includes((i._id || i.id)!))
+                .map((i) => [(i._id || i.id)!, i.url])),
+            }));
             onChange(nextIds);
           }
           setIsPickerOpen(false);

@@ -24,5 +24,14 @@ export const adminSearchParamsSchema = {
   type: parseAsString.withDefault("all"),
   folder: parseAsString.withDefault("all"),
   isUsed: parseAsString.withDefault("all"),
+  platform: parseAsString.withDefault(""),
+  issuer: parseAsString.withDefault(""),
+  year: parseAsString.withDefault(""),
+  isFeatured: parseAsString.withDefault("all"),
+  degreeType: parseAsString.withDefault("all"),
+  isCurrent: parseAsString.withDefault("all"),
+  institution: parseAsString.withDefault(""),
+  startYear: parseAsString.withDefault(""),
+  endYear: parseAsString.withDefault(""),
 };
 

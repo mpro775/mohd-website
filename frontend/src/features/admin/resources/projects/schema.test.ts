@@ -9,7 +9,7 @@ describe("projectFormSchema tests", () => {
     status: "completed" as const,
     shortDescription: "الوصف القصير للمشروع التجريبي.",
     detailedDescription: "هذا هو الوصف التفصيلي الكامل للمشروع التجريبي الذي يتجاوز الحد الأدنى.",
-    technologies: ["React", "TailwindCSS"],
+    technologySlugs: ["react", "tailwindcss"],
     coverImage: "https://example.com/image.jpg",
     liveUrl: "https://example.com",
     githubUrl: "https://github.com/test/repo",

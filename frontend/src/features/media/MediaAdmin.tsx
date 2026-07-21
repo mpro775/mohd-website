@@ -116,6 +116,8 @@ export function MediaAdmin() {
     { value: "blog", label: "المدونة (blog)" },
     { value: "services", label: "الخدمات (services)" },
     { value: "technologies", label: "التقنيات (technologies)" },
+    { value: "certifications", label: "الشهادات المهنية (certifications)" },
+    { value: "education", label: "المؤهلات الأكاديمية (education)" },
     { value: "links", label: "الروابط (links)" },
     { value: "cv", label: "السيرة الذاتية (cv)" },
     { value: "misc", label: "عام / أخرى (misc)" },

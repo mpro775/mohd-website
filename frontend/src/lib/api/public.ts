@@ -1,7 +1,9 @@
 import { apiRequest, normalizePaginated } from "./client";
 import type {
   Category,
+  Certification,
   ContactPayload,
+  Education,
   Faq,
   LinkItem,
   Post,
@@ -54,5 +56,30 @@ export const publicApi = {
     const r = await apiRequest<Faq[], import("./types").PaginationMeta>("/public/faqs", { query, next: { revalidate: 300, tags: ["faqs"] } });
     return normalizePaginated<Faq>(r.data, r.meta);
   },
+  certifications: async (query?: ListQuery) => {
+    const r = await apiRequest<Certification[], import("./types").PaginationMeta>(
+      "/public/certifications",
+      { query, next: { revalidate: 300, tags: ["certifications"] } },
+    );
+    return normalizePaginated<Certification>(r.data, r.meta);
+  },
+  certification: (slug: string) =>
+    apiRequest<Certification>(`/public/certifications/${slug}`, {
+      next: {
+        revalidate: 300,
+        tags: ["certifications", `certification:${slug}`],
+      },
+    }).then((r) => r.data),
+  education: async (query?: ListQuery) => {
+    const r = await apiRequest<Education[], import("./types").PaginationMeta>(
+      "/public/education",
+      { query, next: { revalidate: 300, tags: ["education"] } },
+    );
+    return normalizePaginated<Education>(r.data, r.meta);
+  },
+  educationItem: (slug: string) =>
+    apiRequest<Education>(`/public/education/${slug}`, {
+      next: { revalidate: 300, tags: ["education", `education:${slug}`] },
+    }).then((r) => r.data),
   contact: (body: ContactPayload) => apiRequest("/public/contact", { method: "POST", body }),
 };

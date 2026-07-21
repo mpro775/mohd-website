@@ -203,11 +203,10 @@ export const adminClient = {
   // Revalidate cache tags
   revalidate: async (tags: string[]) => {
     try {
-      const secret = process.env.NEXT_PUBLIC_REVALIDATE_SECRET || "fallback-secret";
       await fetch("/api/revalidate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secret, tags }),
+        body: JSON.stringify({ tags }),
       });
     } catch (e) {
       console.error("Failed to revalidate cache tags:", e);

@@ -22,7 +22,7 @@ import type { Profile } from "@/lib/api/types";
 
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { FormSection } from "@/components/admin/forms/FormSection";
-import { InputField, TextAreaField, SwitchField, SelectField } from "@/components/admin/forms/FieldComponents";
+import { InputField, TextAreaField, SwitchField } from "@/components/admin/forms/FieldComponents";
 import { MediaField } from "@/components/admin/forms/MediaField";
 import { RepeaterField } from "@/components/admin/forms/RepeaterField";
 import { SeoFieldsCard } from "@/components/admin/forms/SeoFieldsCard";
@@ -53,7 +53,6 @@ export function ProfilePageClient() {
       yearsOfExperience: 0,
       availableForWork: false,
       languages: [],
-      certificates: [],
       seo: {
         metaTitle: "",
         metaDescription: "",
@@ -98,7 +97,6 @@ export function ProfilePageClient() {
         yearsOfExperience: profile.yearsOfExperience || 0,
         availableForWork: !!profile.availableForWork,
         languages: profile.languages || [],
-        certificates: profile.certificates || [],
         seo: {
           metaTitle: profile.seo?.metaTitle || "",
           metaDescription: profile.seo?.metaDescription || "",
@@ -130,12 +128,6 @@ export function ProfilePageClient() {
         languages: (values.languages || []).map((lang: any) => ({
           name: lang.name,
           level: lang.level || undefined,
-        })),
-        certificates: (values.certificates || []).map((cert: any) => ({
-          title: cert.title,
-          issuer: cert.issuer || undefined,
-          date: cert.date || undefined,
-          url: cert.url || undefined,
         })),
         seo: values.seo
           ? {
@@ -174,7 +166,7 @@ export function ProfilePageClient() {
     { id: "personal", label: "البيانات الشخصية", icon: User },
     { id: "bio", label: "النبذة والتفاصيل", icon: FileText },
     { id: "contact", label: "روابط التواصل الاجتماعي", icon: Share2 },
-    { id: "education", label: "اللغات والشهادات", icon: GraduationCap },
+    { id: "education", label: "اللغات والخبرة", icon: GraduationCap },
     { id: "seo", label: "تحسين محركات البحث SEO", icon: Globe },
   ] as const;
 
@@ -412,7 +404,7 @@ export function ProfilePageClient() {
                       <span>إدارة روابط شبكات التواصل الاجتماعي</span>
                     </h4>
                     <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-                      تم توحيد وسائل التواصل والروابط الخارجية بالكامل داخل قسم "الروابط" (Links).
+                      تم توحيد وسائل التواصل والروابط الخارجية بالكامل داخل قسم «الروابط» (Links).
                       يسمح لك ذلك برفع أيقونات مخصصة لكل رابط، تحديد تصنيفات متعددة، وتتبع النقرات بشكل ديناميكي.
                     </p>
                     <div className="mt-4">
@@ -427,15 +419,15 @@ export function ProfilePageClient() {
                 </div>
               )}
 
-              {/* Tab 4: Languages & Certificates */}
+              {/* Tab 4: Languages and independent credentials guidance */}
               {activeTab === "education" && (
                 <div className="space-y-6 animate-in fade-in duration-200">
                   <div className="border-b border-border/40 pb-3 mb-2 text-right">
                     <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
                       <GraduationCap className="h-4.5 w-4.5 text-primary" />
-                      <span>اللغات والشهادات العلمية والمهنية</span>
+                      <span>اللغات والخبرة</span>
                     </h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">وثّق لغاتك والشهادات الفنية الحاصل عليها لإبراز مصداقيتك.</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">وثّق اللغات التي تتقنها، وانتقل إلى الأقسام المستقلة لإدارة الشهادات والمؤهلات.</p>
                   </div>
 
                   {/* Languages Repeater */}
@@ -468,45 +460,14 @@ export function ProfilePageClient() {
 
                   <div className="border-t border-border/40 my-6 pt-5" />
 
-                  {/* Certificates Repeater */}
-                  <RepeaterField
-                    control={control as any}
-                    name="certificates"
-                    label="الشهادات المهنية والأكاديمية"
-                    description="أضف الشهادات أو الاعتمادات الفنية التي حصلت عليها مع الجهة المانحة والتاريخ."
-                    addButtonLabel="إضافة شهادة جديدة"
-                    emptyItem={{ title: "", issuer: "", date: "", url: "" }}
-                  >
-                    {({ index }) => (
-                      <div className="grid gap-4 md:grid-cols-2 flex-1 text-right">
-                        <InputField
-                          label="عنوان الشهادة"
-                          register={register(`certificates.${index}.title`)}
-                          error={errors.certificates?.[index]?.title?.message}
-                          required
-                          placeholder="مثال: شهادة مطور AWS معتمد"
-                        />
-                        <InputField
-                          label="الجهة المانحة"
-                          register={register(`certificates.${index}.issuer`)}
-                          error={errors.certificates?.[index]?.issuer?.message}
-                          placeholder="مثال: Amazon Web Services"
-                        />
-                        <InputField
-                          label="تاريخ الحصول عليها"
-                          type="date"
-                          register={register(`certificates.${index}.date`)}
-                          error={errors.certificates?.[index]?.date?.message}
-                        />
-                        <InputField
-                          label="رابط إثبات الشهادة / التحقق (URL)"
-                          register={register(`certificates.${index}.url`)}
-                          error={errors.certificates?.[index]?.url?.message}
-                          placeholder="https://..."
-                        />
-                      </div>
-                    )}
-                  </RepeaterField>
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+                    <h4 className="text-sm font-bold text-foreground">أصبحت الشهادات والتعليم موارد مستقلة</h4>
+                    <p className="mt-2 text-xs leading-6 text-muted-foreground">يمكنك الآن البحث والتصفية والنشر وإرفاق الصور والملفات لكل عنصر على حدة.</p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <a href="/admin/certifications" className="rounded-lg bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">إدارة الشهادات المهنية</a>
+                      <a href="/admin/education" className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold text-foreground">إدارة المؤهلات الأكاديمية</a>
+                    </div>
+                  </div>
                 </div>
               )}
 

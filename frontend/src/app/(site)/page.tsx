@@ -27,6 +27,7 @@ import { FaqList } from "@/features/faqs/components/FaqList";
 import { ProjectCard } from "@/features/projects/components/ProjectCard";
 import { ServiceCard } from "@/features/services/components/ServiceCard";
 import { TechnologyCard } from "@/features/technologies/components/TechnologyCard";
+import { FeaturedCertifications } from "@/features/certifications/components/FeaturedCertifications";
 import { publicApi } from "@/lib/api/public";
 import { personJsonLd } from "@/lib/seo/structured-data";
 
@@ -148,7 +149,7 @@ const clientLogos = [
 ];
 
 export default async function HomePage() {
-  const [profile, projects, services, technologies, posts, faqs, links] = await Promise.all([
+  const [profile, projects, services, technologies, posts, faqs, links, certifications] = await Promise.all([
     publicApi.profile().catch(() => null),
     publicApi.projects({ limit: 6 }).catch(() => ({ items: [], meta: undefined })),
     publicApi.services().catch(() => []),
@@ -156,6 +157,7 @@ export default async function HomePage() {
     publicApi.posts({ limit: 3 }).catch(() => ({ items: [], meta: undefined })),
     publicApi.faqs({ limit: 4, featured: true }).catch(() => ({ items: [], meta: undefined })),
     publicApi.links().catch(() => []),
+    publicApi.certifications({ isFeatured: true, limit: 4 }).catch(() => ({ items: [], meta: undefined })),
   ]);
 
   const socialUrls = links.filter((l) => l.category === "social").map((l) => l.url);
@@ -317,6 +319,12 @@ export default async function HomePage() {
       </section>
 
       <EngineeringProcess />
+
+      {certifications.items.length ? (
+        <Container className="py-14">
+          <FeaturedCertifications items={certifications.items.slice(0, 4)} title="تطور مهني موثّق" />
+        </Container>
+      ) : null}
 
       <Container className="py-14">
         <ScrollReveal>

@@ -84,7 +84,6 @@ export function MediaPicker({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setFolder(defaultFolder);
     setPage(1);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedItems([]);
   }, [isOpen, defaultFolder, allowedType]);
 
@@ -256,6 +255,8 @@ export function MediaPicker({
                     <option value="blog">blog (المدونة)</option>
                     <option value="services">services (الخدمات)</option>
                     <option value="technologies">technologies (التقنيات)</option>
+                    <option value="certifications">certifications (الشهادات المهنية)</option>
+                    <option value="education">education (المؤهلات الأكاديمية)</option>
                     <option value="links">links (الروابط)</option>
                     <option value="cv">cv (السيرة الذاتية)</option>
                     <option value="misc">misc (عام / أخرى)</option>

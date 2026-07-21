@@ -32,18 +32,10 @@ export function MediaField({
   className,
 }: MediaFieldProps) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
-  const [localUrl, setLocalUrl] = useState<string | null>(null);
-  const [localName, setLocalName] = useState<string | null>(null);
-
-  // Clear local preview if the value ID becomes empty
-  React.useEffect(() => {
-    if (!valueId && !value) {
-      setLocalUrl(null);
-      setLocalName(null);
-    }
-  }, [valueId, value]);
-
-  const displayUrl = localUrl || valueUrl || (value && value.startsWith("http") ? value : null);
+  const [localSelection, setLocalSelection] = useState<{ id: string; url: string; name: string } | null>(null);
+  const displayUrl = valueId && localSelection?.id === valueId
+    ? localSelection.url
+    : valueUrl || (value && value.startsWith("http") ? value : null);
 
   const isImage = displayUrl && (
     displayUrl.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) || 
@@ -52,7 +44,9 @@ export function MediaField({
     displayUrl.includes("/blog") || 
     displayUrl.includes("/profile") ||
     displayUrl.includes("/services") ||
-    displayUrl.includes("/technologies")
+    displayUrl.includes("/technologies") ||
+    displayUrl.includes("/certifications") ||
+    displayUrl.includes("/education")
   );
 
   return (
@@ -74,7 +68,7 @@ export function MediaField({
               
               <div className="flex-1 min-w-0 text-right">
                 <p className="text-[11px] font-bold text-foreground truncate" dir="ltr">
-                  {localName || displayUrl.split("/").pop() || "ملف محدد"}
+                  {(valueId && localSelection?.id === valueId ? localSelection.name : null) || displayUrl.split("/").pop() || "ملف محدد"}
                 </p>
                 <p className="text-[10px] text-muted-foreground truncate mt-0.5" dir="ltr">
                   {displayUrl}
@@ -93,8 +87,7 @@ export function MediaField({
               <button
                 type="button"
                 onClick={() => {
-                  setLocalUrl(null);
-                  setLocalName(null);
+                  setLocalSelection(null);
                   onChange(null);
                 }}
                 className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-danger/10 bg-danger/5 text-danger hover:bg-danger/10 cursor-pointer transition select-none"
@@ -126,8 +119,7 @@ export function MediaField({
         onClose={() => setIsPickerOpen(false)}
         onSelect={(item) => {
           const id = item._id || item.id || "";
-          setLocalUrl(item.url);
-          setLocalName(item.originalName || item.filename);
+          setLocalSelection({ id, url: item.url, name: item.originalName || item.filename });
           onChange(id);
           setIsPickerOpen(false);
         }}

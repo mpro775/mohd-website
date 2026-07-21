@@ -19,23 +19,6 @@ class LanguageDto {
   level?: string;
 }
 
-class CertificateDto {
-  @IsString()
-  title: string;
-
-  @IsOptional()
-  @IsString()
-  issuer?: string;
-
-  @IsOptional()
-  @IsString()
-  date?: string;
-
-  @IsOptional()
-  @IsString()
-  url?: string;
-}
-
 class ProfileSeoDto {
   @IsOptional()
   @IsString()
@@ -103,12 +86,6 @@ export class UpdateProfileDto {
   @IsNumber()
   @Min(0)
   yearsOfExperience?: number;
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CertificateDto)
-  certificates?: CertificateDto[];
 
   @IsOptional()
   @IsArray()

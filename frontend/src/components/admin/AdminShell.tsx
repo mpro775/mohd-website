@@ -27,7 +27,9 @@ import {
   Search,
   Sun,
   Moon,
-  X
+  X,
+  BadgeCheck,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +37,8 @@ import { cn } from "@/lib/utils";
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   "/admin/dashboard": LayoutDashboard,
   "/admin/profile": User,
+  "/admin/certifications": BadgeCheck,
+  "/admin/education": GraduationCap,
   "/admin/projects": FolderGit2,
   "/admin/blog/posts": FileText,
   "/admin/blog/categories": Tags,
@@ -55,6 +59,8 @@ const navGroups = [
     items: [
       { href: "/admin/dashboard", label: "لوحة التحكم" },
       { href: "/admin/profile", label: "الملف الشخصي" },
+      { href: "/admin/certifications", label: "الشهادات المهنية" },
+      { href: "/admin/education", label: "المؤهلات الأكاديمية" },
     ],
   },
   {

@@ -70,8 +70,107 @@ export type Profile = {
   availableForWork: boolean;
   languages: { name: string; level?: string }[];
   yearsOfExperience?: number;
-  certificates: { title: string; issuer?: string; date?: string; url?: string }[];
   seo?: SeoFields;
+};
+
+export type CertificationType =
+  | "course"
+  | "specialization"
+  | "professional-certificate"
+  | "professional-certification"
+  | "license"
+  | "bootcamp"
+  | "workshop"
+  | "attendance"
+  | "diploma"
+  | "award"
+  | "other";
+
+export type CertificationValidityStatus =
+  | "no-expiry"
+  | "active"
+  | "expired"
+  | "unknown";
+
+export type Certification = {
+  id?: string;
+  _id?: string;
+  title: string;
+  slug: string;
+  type: CertificationType;
+  issuer: string;
+  platform?: string;
+  platformUrl?: string;
+  description?: string;
+  credentialId?: string;
+  credentialUrl?: string;
+  issuedAt?: string;
+  expiresAt?: string;
+  doesNotExpire: boolean;
+  validityStatus?: CertificationValidityStatus;
+  imageMediaId?: string;
+  image?: string;
+  imageMedia?: ResolvedMedia;
+  documentMediaId?: string;
+  document?: string;
+  documentMedia?: ResolvedMedia;
+  issuerLogoMediaId?: string;
+  issuerLogo?: string;
+  issuerLogoMedia?: ResolvedMedia;
+  skills?: string[];
+  category?: string;
+  language?: string;
+  durationHours?: number;
+  isFeatured?: boolean;
+  isPublished?: boolean;
+  order?: number;
+  seo?: SeoFields;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type EducationDegreeType =
+  | "high-school"
+  | "diploma"
+  | "associate"
+  | "bachelor"
+  | "master"
+  | "doctorate"
+  | "postgraduate"
+  | "professional-degree"
+  | "other";
+
+export type Education = {
+  id?: string;
+  _id?: string;
+  institution: string;
+  slug: string;
+  degree: string;
+  degreeType: EducationDegreeType;
+  fieldOfStudy?: string;
+  startDate?: string;
+  endDate?: string;
+  isCurrent: boolean;
+  grade?: string;
+  description?: string;
+  location?: string;
+  institutionUrl?: string;
+  institutionLogoMediaId?: string;
+  institutionLogo?: string;
+  institutionLogoMedia?: ResolvedMedia;
+  coverImageMediaId?: string;
+  coverImage?: string;
+  coverImageMedia?: ResolvedMedia;
+  certificateMediaId?: string;
+  certificate?: string;
+  certificateMedia?: ResolvedMedia;
+  achievements?: string[];
+  isFeatured?: boolean;
+  isPublished?: boolean;
+  order?: number;
+  seo?: SeoFields;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type Project = {

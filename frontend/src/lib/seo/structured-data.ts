@@ -1,4 +1,4 @@
-import type { Post, Profile, Project } from "@/lib/api/types";
+import type { Certification, Education, Post, Profile, Project } from "@/lib/api/types";
 import { absoluteUrl } from "@/lib/utils";
 
 export function personJsonLd(profile?: Profile, socialUrls: string[] = []) {
@@ -48,5 +48,33 @@ export function breadcrumbJsonLd(items: Array<{ name: string; item: string }>) {
       "name": x.name,
       "item": absoluteUrl(x.item),
     })),
+  };
+}
+
+export function certificationJsonLd(certification: Certification) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "EducationalOccupationalCredential",
+    name: certification.title,
+    description: certification.description,
+    credentialCategory: certification.type,
+    recognizedBy: { "@type": "Organization", name: certification.issuer },
+    url: absoluteUrl(`/certifications/${certification.slug}`),
+    dateCreated: certification.issuedAt,
+    image: certification.image ?? certification.issuerLogo,
+  };
+}
+
+export function educationJsonLd(education: Education) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "EducationalOccupationalCredential",
+    name: education.degree,
+    description: education.description,
+    credentialCategory: education.degreeType,
+    educationalLevel: education.degreeType,
+    recognizedBy: { "@type": "EducationalOrganization", name: education.institution, url: education.institutionUrl },
+    url: absoluteUrl(`/education/${education.slug}`),
+    image: education.coverImage ?? education.institutionLogo,
   };
 }

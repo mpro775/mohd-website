@@ -1,10 +1,17 @@
 import { Profile } from '../schemas/profile.schema';
 import { MediaService } from '../../media/media.service';
 
-export async function mapProfileToPublic(profile: Profile, mediaService: MediaService) {
-  const profileImage = await mediaService.resolveMediaUrl(profile.profileImageMediaId);
+export async function mapProfileToPublic(
+  profile: Profile,
+  mediaService: MediaService,
+) {
+  const profileImage = await mediaService.resolveMediaUrl(
+    profile.profileImageMediaId,
+  );
   const cvFile = await mediaService.resolveMediaUrl(profile.cvMediaId);
-  const ogImage = await mediaService.resolveMediaUrl(profile.seo?.ogImageMediaId);
+  const ogImage = await mediaService.resolveMediaUrl(
+    profile.seo?.ogImageMediaId,
+  );
 
   return {
     id: profile._id.toString(),
@@ -22,7 +29,6 @@ export async function mapProfileToPublic(profile: Profile, mediaService: MediaSe
     availableForWork: profile.availableForWork,
     languages: profile.languages || [],
     yearsOfExperience: profile.yearsOfExperience,
-    certificates: profile.certificates || [],
     seo: {
       metaTitle: profile.seo?.metaTitle,
       metaDescription: profile.seo?.metaDescription,
@@ -33,14 +39,25 @@ export async function mapProfileToPublic(profile: Profile, mediaService: MediaSe
   };
 }
 
-export async function mapProfileToAdmin(profile: Profile, mediaService: MediaService) {
-  const profileImage = await mediaService.resolveMediaUrl(profile.profileImageMediaId);
+export async function mapProfileToAdmin(
+  profile: Profile,
+  mediaService: MediaService,
+) {
+  const profileImage = await mediaService.resolveMediaUrl(
+    profile.profileImageMediaId,
+  );
   const cvFile = await mediaService.resolveMediaUrl(profile.cvMediaId);
-  const ogImage = await mediaService.resolveMediaUrl(profile.seo?.ogImageMediaId);
+  const ogImage = await mediaService.resolveMediaUrl(
+    profile.seo?.ogImageMediaId,
+  );
 
-  const profileImageMedia = await mediaService.resolveMediaObject(profile.profileImageMediaId);
+  const profileImageMedia = await mediaService.resolveMediaObject(
+    profile.profileImageMediaId,
+  );
   const cvMedia = await mediaService.resolveMediaObject(profile.cvMediaId);
-  const ogImageMedia = await mediaService.resolveMediaObject(profile.seo?.ogImageMediaId);
+  const ogImageMedia = await mediaService.resolveMediaObject(
+    profile.seo?.ogImageMediaId,
+  );
 
   return {
     id: profile._id.toString(),
@@ -62,7 +79,6 @@ export async function mapProfileToAdmin(profile: Profile, mediaService: MediaSer
     availableForWork: profile.availableForWork,
     languages: profile.languages || [],
     yearsOfExperience: profile.yearsOfExperience,
-    certificates: profile.certificates || [],
     seo: {
       metaTitle: profile.seo?.metaTitle,
       metaDescription: profile.seo?.metaDescription,

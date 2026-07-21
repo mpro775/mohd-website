@@ -21,4 +21,3 @@ export function normalizeSlug(input: string): string {
   }
   return assertSlugIsNotEmpty(input);
 }
-

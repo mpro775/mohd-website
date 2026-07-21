@@ -34,6 +34,8 @@ export class Media extends Document {
       'technologies',
       'links',
       'cv',
+      'certifications',
+      'education',
       'misc',
     ],
   })
@@ -45,6 +47,8 @@ export class Media extends Document {
     | 'technologies'
     | 'links'
     | 'cv'
+    | 'certifications'
+    | 'education'
     | 'misc';
 
   @Prop({ required: true, enum: ['image', 'document'] })

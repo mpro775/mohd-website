@@ -1,9 +1,24 @@
 import { Injectable } from '@nestjs/common';
-import { PROJECT_CATEGORIES_METADATA, PROJECT_STATUSES_METADATA } from '../../common/taxonomy/project-categories';
+import {
+  PROJECT_CATEGORIES_METADATA,
+  PROJECT_STATUSES_METADATA,
+} from '../../common/taxonomy/project-categories';
 import { SERVICE_CATEGORIES_METADATA } from '../../common/taxonomy/service-categories';
-import { TECHNOLOGY_CATEGORIES_METADATA, TECHNOLOGY_GROUPS_METADATA, PROFICIENCY_LEVELS_METADATA } from '../../common/taxonomy/technology-taxonomy';
-import { LINK_CATEGORIES_METADATA, LINK_PLATFORMS_METADATA } from '../../common/taxonomy/link-taxonomy';
+import {
+  TECHNOLOGY_CATEGORIES_METADATA,
+  TECHNOLOGY_GROUPS_METADATA,
+  PROFICIENCY_LEVELS_METADATA,
+} from '../../common/taxonomy/technology-taxonomy';
+import {
+  LINK_CATEGORIES_METADATA,
+  LINK_PLATFORMS_METADATA,
+} from '../../common/taxonomy/link-taxonomy';
 import { CURRENCY_OPTIONS } from '../../common/taxonomy/currency-options';
+import {
+  CERTIFICATION_PLATFORM_SUGGESTIONS,
+  CERTIFICATION_TYPES_METADATA,
+  EDUCATION_DEGREE_TYPES_METADATA,
+} from '../../common/taxonomy/credential-taxonomy';
 
 @Injectable()
 export class OptionsService {
@@ -18,6 +33,9 @@ export class OptionsService {
       currencies: CURRENCY_OPTIONS,
       projectStatuses: PROJECT_STATUSES_METADATA,
       proficiencyLevels: PROFICIENCY_LEVELS_METADATA,
+      certificationTypes: CERTIFICATION_TYPES_METADATA,
+      educationDegreeTypes: EDUCATION_DEGREE_TYPES_METADATA,
+      certificationPlatformSuggestions: CERTIFICATION_PLATFORM_SUGGESTIONS,
     };
   }
 }

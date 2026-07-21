@@ -19,7 +19,9 @@ import {
   Link2,
   HelpCircle,
   Cpu,
-  Boxes
+  Boxes,
+  BadgeCheck,
+  GraduationCap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,6 +37,8 @@ type DashboardStats = {
     technologies: { total: number; published: number; highlighted: number };
     links: { total: number; published: number; featured: number };
     faqs: { total: number; published: number; featured: number };
+    certifications: { total: number; published: number; unpublished: number; featured: number; expired: number };
+    education: { total: number; published: number; unpublished: number; featured: number; current: number };
   };
   engagement: {
     projectViews: number;
@@ -489,6 +493,22 @@ export default function DashboardPage() {
                 </div>
                 <span className="font-black text-foreground">{content.faqs.total}</span>
               </div>
+
+              <Link href="/admin/certifications" className="flex items-center justify-between p-2 rounded bg-muted/20 border border-border/40 hover:border-primary/30">
+                <div className="flex items-center gap-2">
+                  <BadgeCheck className="h-4 w-4 text-primary" />
+                  <span className="font-bold">الشهادات المهنية</span>
+                </div>
+                <span className="font-black text-foreground">{content.certifications.total}</span>
+              </Link>
+
+              <Link href="/admin/education" className="flex items-center justify-between p-2 rounded bg-muted/20 border border-border/40 hover:border-primary/30">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-sky-400" />
+                  <span className="font-bold">المؤهلات الأكاديمية</span>
+                </div>
+                <span className="font-black text-foreground">{content.education.total}</span>
+              </Link>
 
             </div>
           </div>

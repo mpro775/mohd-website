@@ -16,6 +16,7 @@ interface ResourceFormDrawerProps {
   cancelLabel?: string;
   children: React.ReactNode;
   className?: string;
+  size?: "md" | "lg" | "xl";
 }
 
 export function ResourceFormDrawer({
@@ -29,6 +30,7 @@ export function ResourceFormDrawer({
   cancelLabel = "إلغاء",
   children,
   className,
+  size = "md",
 }: ResourceFormDrawerProps) {
   return (
     <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -39,7 +41,10 @@ export function ResourceFormDrawer({
         {/* Slide-over sheet content */}
         <DialogPrimitive.Content
           className={cn(
-            "fixed inset-y-0 left-0 z-50 h-full w-full max-w-xl border-r border-border bg-card shadow-2xl flex flex-col justify-between duration-300 animate-in slide-in-from-left focus:outline-none",
+            "fixed inset-y-0 left-0 z-50 h-full w-full border-r border-border bg-card shadow-2xl flex flex-col justify-between duration-300 animate-in slide-in-from-left focus:outline-none",
+            size === "md" && "max-w-xl",
+            size === "lg" && "max-w-3xl",
+            size === "xl" && "max-w-5xl",
             className
           )}
           dir="rtl"

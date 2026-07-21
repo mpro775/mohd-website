@@ -567,7 +567,9 @@ export class MediaService {
     }
     const media = await this.mediaModel.findById(mediaId);
     if (!media) {
-      throw new NotFoundException(`الملف ذو المعرّف ${mediaId} غير موجود`);
+      throw new NotFoundException(
+        `الملف ذو المعرّف ${mediaId.toString()} غير موجود`,
+      );
     }
     if (options?.type && media.type !== options.type) {
       throw new BadRequestException(
@@ -575,7 +577,9 @@ export class MediaService {
       );
     }
     if (options?.folder) {
-      const allowedFolders = Array.isArray(options.folder) ? options.folder : [options.folder];
+      const allowedFolders = Array.isArray(options.folder)
+        ? options.folder
+        : [options.folder];
       if (!allowedFolders.includes(media.folder)) {
         throw new BadRequestException(
           `المجلد الخاص بالملف غير مطابق. المجلد الحالي: ${media.folder}`,
@@ -664,7 +668,9 @@ export class MediaService {
     }
   }
 
-  async resolveMediaUrl(mediaId?: string | Types.ObjectId): Promise<string | undefined> {
+  async resolveMediaUrl(
+    mediaId?: string | Types.ObjectId,
+  ): Promise<string | undefined> {
     if (!mediaId || !isValidObjectId(mediaId)) {
       return undefined;
     }
@@ -672,7 +678,9 @@ export class MediaService {
     return media?.url;
   }
 
-  async resolveManyMediaUrls(mediaIds?: Array<string | Types.ObjectId>): Promise<string[]> {
+  async resolveManyMediaUrls(
+    mediaIds?: Array<string | Types.ObjectId>,
+  ): Promise<string[]> {
     if (!mediaIds || !Array.isArray(mediaIds)) {
       return [];
     }
@@ -686,7 +694,9 @@ export class MediaService {
     return urls;
   }
 
-  async resolveMediaObject(mediaId?: string | Types.ObjectId): Promise<ResolvedMedia | undefined> {
+  async resolveMediaObject(
+    mediaId?: string | Types.ObjectId,
+  ): Promise<ResolvedMedia | undefined> {
     if (!mediaId || !isValidObjectId(mediaId)) {
       return undefined;
     }
@@ -707,7 +717,41 @@ export class MediaService {
     };
   }
 
-  async resolveManyMediaObjects(mediaIds?: Array<string | Types.ObjectId>): Promise<ResolvedMedia[]> {
+  async resolveMediaObjectsByIds(
+    mediaIds?: Array<string | Types.ObjectId | null | undefined>,
+  ): Promise<Map<string, ResolvedMedia>> {
+    const ids = [
+      ...new Set(
+        (mediaIds ?? [])
+          .filter((id): id is string | Types.ObjectId => Boolean(id))
+          .map((id) => id.toString())
+          .filter((id) => isValidObjectId(id)),
+      ),
+    ];
+    if (!ids.length) return new Map();
+
+    const mediaList = await this.mediaModel.find({ _id: { $in: ids } }).lean();
+    return new Map(
+      mediaList.map((media) => [
+        media._id.toString(),
+        {
+          id: media._id.toString(),
+          key: media.key,
+          url: media.url,
+          alt: media.alt || '',
+          type: media.type,
+          folder: media.folder,
+          mimeType: media.mimeType,
+          width: media.width,
+          height: media.height,
+        },
+      ]),
+    );
+  }
+
+  async resolveManyMediaObjects(
+    mediaIds?: Array<string | Types.ObjectId>,
+  ): Promise<ResolvedMedia[]> {
     if (!mediaIds || !Array.isArray(mediaIds)) {
       return [];
     }

@@ -273,3 +273,128 @@ Body format:
 ## Scheduled Posts
 
 Scheduled posts use `status: "scheduled"` with `publishDate` or `scheduledAt`. A cron runs every minute and publishes due posts. Manual admin trigger: `POST /api/admin/blog/posts/publish-due`.
+
+## Certifications
+
+Professional certifications are independent from `Profile` and are stored in the `certifications` collection. Dates are returned as ISO strings. Public responses expose resolved media URLs only; admin responses additionally expose media IDs and resolved media objects.
+
+### Public
+
+- `GET /api/public/certifications`
+- `GET /api/public/certifications/:slug`
+
+List query parameters: `page`, `limit` (maximum 100), `search`, `sortBy`, `sortOrder`, `type`, `platform`, `issuer`, `category`, `year`, and `isFeatured`. Public queries always enforce `isPublished=true`.
+
+Allowed types: `course`, `specialization`, `professional-certificate`, `professional-certification`, `license`, `bootcamp`, `workshop`, `attendance`, `diploma`, `award`, `other`.
+
+`doesNotExpire=true` means `expiresAt` is removed. The computed `validityStatus` is one of `no-expiry`, `active`, `expired`, or `unknown`.
+
+### Admin
+
+- `GET /api/admin/certifications`
+- `GET /api/admin/certifications/:id`
+- `POST /api/admin/certifications`
+- `PUT /api/admin/certifications/:id`
+- `PATCH /api/admin/certifications/:id/publish`
+- `PATCH /api/admin/certifications/:id/unpublish`
+- `PATCH /api/admin/certifications/:id/feature`
+- `PATCH /api/admin/certifications/:id/unfeature`
+- `PATCH /api/admin/certifications/reorder`
+- `POST /api/admin/certifications/bulk`
+- `DELETE /api/admin/certifications/:id`
+
+Create example:
+
+```json
+{
+  "title": "AWS Certified Solutions Architect – Associate",
+  "type": "professional-certification",
+  "issuer": "Amazon Web Services",
+  "platform": "AWS Training and Certification",
+  "credentialId": "AWS-123456",
+  "credentialUrl": "https://www.credly.com/badges/example",
+  "issuedAt": "2026-01-10",
+  "expiresAt": "2029-01-10",
+  "doesNotExpire": false,
+  "skills": ["AWS", "Cloud Architecture"],
+  "imageMediaId": "66a000000000000000000001",
+  "documentMediaId": "66a000000000000000000002",
+  "issuerLogoMediaId": "66a000000000000000000003",
+  "isFeatured": true,
+  "isPublished": true,
+  "order": 1
+}
+```
+
+`imageMediaId`, `issuerLogoMediaId`, and `seo.ogImageMediaId` must reference image media. `documentMediaId` must reference PDF/document media. Sending `null` during update removes an optional media/date value; empty optional strings are not stored.
+
+Bulk body uses actions `publish`, `unpublish`, `feature`, `unfeature`, or `delete`, with 1–100 Mongo IDs. Reorder accepts 1–1000 `{ id, order }` objects and is rejected atomically if any ID is missing.
+
+## Education
+
+Academic credentials are stored in `educations` and never embedded into either Profile or Certification.
+
+### Public
+
+- `GET /api/public/education`
+- `GET /api/public/education/:slug`
+
+List query parameters: `page`, `limit`, `search`, `sortBy`, `sortOrder`, `degreeType`, `institution`, `startYear`, `endYear`, `isCurrent`, and `isFeatured`. Public queries always enforce `isPublished=true`.
+
+Allowed degree types: `high-school`, `diploma`, `associate`, `bachelor`, `master`, `doctorate`, `postgraduate`, `professional-degree`, `other`.
+
+### Admin
+
+- `GET /api/admin/education`
+- `GET /api/admin/education/:id`
+- `POST /api/admin/education`
+- `PUT /api/admin/education/:id`
+- `PATCH /api/admin/education/:id/publish`
+- `PATCH /api/admin/education/:id/unpublish`
+- `PATCH /api/admin/education/:id/feature`
+- `PATCH /api/admin/education/:id/unfeature`
+- `PATCH /api/admin/education/reorder`
+- `POST /api/admin/education/bulk`
+- `DELETE /api/admin/education/:id`
+
+Create example:
+
+```json
+{
+  "institution": "جامعة مثال",
+  "degree": "بكالوريوس علوم الحاسوب",
+  "degreeType": "bachelor",
+  "fieldOfStudy": "علوم الحاسوب",
+  "startDate": "2019-09-01",
+  "endDate": "2023-06-30",
+  "isCurrent": false,
+  "grade": "جيد جداً",
+  "location": "الرياض، السعودية",
+  "institutionUrl": "https://example.edu",
+  "achievements": ["مشروع تخرج في الأنظمة الموزعة"],
+  "isFeatured": true,
+  "isPublished": true,
+  "order": 1
+}
+```
+
+`isCurrent=true` removes `endDate`. `institutionLogoMediaId`, `coverImageMediaId`, and `seo.ogImageMediaId` must reference image media; `certificateMediaId` must reference document media.
+
+## Pagination and errors
+
+Paginated list responses include:
+
+```json
+{
+  "meta": {
+    "total": 42,
+    "page": 1,
+    "limit": 12,
+    "totalPages": 4,
+    "hasNextPage": true,
+    "hasPreviousPage": false
+  }
+}
+```
+
+Expected errors: `400` validation, invalid Mongo ID, media mismatch, invalid date relationship, or incomplete reorder; `401` missing/expired authentication; `403` insufficient role; `404` missing record or public draft; `409` duplicate slug.

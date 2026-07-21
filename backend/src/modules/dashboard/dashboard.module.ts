@@ -16,6 +16,14 @@ import { Media, MediaSchema } from '../media/schemas/media.schema';
 import { Faq, FaqSchema } from '../faqs/schemas/faq.schema';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
+import {
+  Certification,
+  CertificationSchema,
+} from '../certifications/schemas/certification.schema';
+import {
+  Education,
+  EducationSchema,
+} from '../education/schemas/education.schema';
 
 @Module({
   imports: [
@@ -28,6 +36,8 @@ import { DashboardService } from './dashboard.service';
       { name: ContactMessage.name, schema: ContactMessageSchema },
       { name: Media.name, schema: MediaSchema },
       { name: Faq.name, schema: FaqSchema },
+      { name: Certification.name, schema: CertificationSchema },
+      { name: Education.name, schema: EducationSchema },
     ]),
   ],
   controllers: [DashboardController],

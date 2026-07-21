@@ -41,6 +41,9 @@ export async function SiteFooter() {
                 {item.label}
               </Link>
             ))}
+            <Link href="/education" className="text-xs text-muted-foreground transition hover:text-primary">
+              المؤهلات الأكاديمية
+            </Link>
           </div>
         </div>
 

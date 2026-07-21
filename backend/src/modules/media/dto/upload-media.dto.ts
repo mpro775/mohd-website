@@ -8,13 +8,15 @@ export enum MediaFolder {
   TECHNOLOGIES = 'technologies',
   LINKS = 'links',
   CV = 'cv',
+  CERTIFICATIONS = 'certifications',
+  EDUCATION = 'education',
   MISC = 'misc',
 }
 
 export class UploadMediaDto {
   @IsEnum(MediaFolder, {
     message:
-      'المجلد المحدد غير صالح. المجلدات المسموحة: profile, projects, blog, services, technologies, links, cv, misc',
+      'المجلد المحدد غير صالح. المجلدات المسموحة: profile, projects, blog, services, technologies, links, cv, certifications, education, misc',
   })
   folder: MediaFolder;
 

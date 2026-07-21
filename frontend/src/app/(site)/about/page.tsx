@@ -1,17 +1,23 @@
 import Image from "next/image";
-import { Award, CheckCircle2, Globe, Mail, MapPin } from "lucide-react";
+import { CheckCircle2, Globe, Mail, MapPin } from "lucide-react";
 import { LinkButton } from "@/components/common/Button";
 import { Container } from "@/components/common/Container";
 import { PageHeader } from "@/components/common/PageHeader";
 import { SectionHeader } from "@/components/common/SectionHeader";
 import { brand } from "@/config/brand";
 import { publicApi } from "@/lib/api/public";
+import { FeaturedCertifications } from "@/features/certifications/components/FeaturedCertifications";
+import { FeaturedEducation } from "@/features/education/components/FeaturedEducation";
 
 const timeline = ["تعلم الأساسيات", "بناء واجهات", "بناء Backends", "بناء مشاريع Full-stack", "نشر وتحسين الإنتاج"];
 const cares = ["Clean code", "UX clarity", "Performance", "Maintainability", "Deployment readiness"];
 
 export default async function AboutPage() {
-  const profile = await publicApi.profile().catch(() => null);
+  const [profile, featuredCertifications, featuredEducation] = await Promise.all([
+    publicApi.profile().catch(() => null),
+    publicApi.certifications({ isFeatured: true, limit: 6 }).catch(() => ({ items: [], meta: undefined })),
+    publicApi.education({ isFeatured: true, limit: 3 }).catch(() => ({ items: [], meta: undefined })),
+  ]);
 
   return (
     <>
@@ -69,8 +75,7 @@ export default async function AboutPage() {
           </div>
         </section>
 
-        <section className="grid gap-6 lg:grid-cols-2">
-          <div className="premium-card p-6">
+        <section className="premium-card p-6">
             <SectionHeader eyebrow="Care" title="What I care about" />
             <div className="flex flex-wrap gap-2">
               {cares.map((item) => (
@@ -79,29 +84,22 @@ export default async function AboutPage() {
                 </span>
               ))}
             </div>
-          </div>
-          <div className="premium-card p-6">
-            <SectionHeader eyebrow="Profile" title="Languages / Certificates" />
-            <div className="grid gap-5 md:grid-cols-2">
-              <div>
+        </section>
+
+        <section className="premium-card p-6">
+            <SectionHeader eyebrow="Profile" title="اللغات" />
+            <div>
                 <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground"><Globe className="h-4 w-4 text-primary" />اللغات</h3>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   {profile?.languages?.length ? profile.languages.map((language) => (
                     <li key={language.name}>{language.name}{language.level ? ` - ${language.level}` : ""}</li>
                   )) : <li>تُضاف لاحقًا</li>}
                 </ul>
-              </div>
-              <div>
-                <h3 className="mb-3 flex items-center gap-2 font-semibold text-foreground"><Award className="h-4 w-4 text-primary" />الشهادات</h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  {profile?.certificates?.length ? profile.certificates.map((cert) => (
-                    <li key={cert.title}>{cert.title}{cert.issuer ? ` - ${cert.issuer}` : ""}</li>
-                  )) : <li>تُضاف لاحقًا</li>}
-                </ul>
-              </div>
             </div>
-          </div>
         </section>
+
+        <FeaturedCertifications items={featuredCertifications.items.slice(0, 6)} />
+        <FeaturedEducation items={featuredEducation.items.slice(0, 3)} />
 
         <section className="premium-card p-8 text-center">
           <h2 className="text-2xl font-bold text-foreground">خلينا نبني شيئًا حقيقيًا</h2>

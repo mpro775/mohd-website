@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 
 type Particle = {
@@ -24,12 +24,6 @@ export function FloatingParticles({
   count?: number;
   className?: string;
 }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const particles: Particle[] = useMemo(() => {
     return Array.from({ length: count }, (_, i) => ({
       id: i,
@@ -40,10 +34,6 @@ export function FloatingParticles({
       delay: seededValue(i + 401) * 4,
     }));
   }, [count]);
-
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <div

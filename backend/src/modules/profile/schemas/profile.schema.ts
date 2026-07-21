@@ -11,21 +11,6 @@ export class Language {
 }
 
 @Schema({ _id: false })
-export class Certificate {
-  @Prop({ required: true })
-  title: string;
-
-  @Prop()
-  issuer?: string;
-
-  @Prop({ type: Date })
-  date?: Date;
-
-  @Prop()
-  url?: string;
-}
-
-@Schema({ _id: false })
 export class ProfileSeo {
   @Prop()
   metaTitle?: string;
@@ -80,9 +65,6 @@ export class Profile extends Document {
 
   @Prop({ type: Number, default: 0 })
   yearsOfExperience?: number;
-
-  @Prop({ type: [SchemaFactory.createForClass(Certificate)], default: [] })
-  certificates: Certificate[];
 
   @Prop({ type: SchemaFactory.createForClass(ProfileSeo), default: {} })
   seo: ProfileSeo;

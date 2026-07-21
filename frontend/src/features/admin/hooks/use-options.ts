@@ -22,6 +22,9 @@ export type AdminOptions = {
   currencies: CurrencyOption[];
   projectStatuses: OptionItem[];
   proficiencyLevels: OptionItem[];
+  certificationTypes: Array<OptionItem & { label?: string }>;
+  educationDegreeTypes: Array<OptionItem & { label?: string }>;
+  certificationPlatformSuggestions: string[];
 };
 
 export function useAdminOptions() {

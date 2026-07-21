@@ -23,7 +23,7 @@ if (!MONGODB_URI) {
 }
 
 // 2. Import Enums & helpers
-import { ProjectCategory, ProjectStatus } from '../../../common/taxonomy/project-categories';
+import { ProjectCategory } from '../../../common/taxonomy/project-categories';
 import { ServiceCategory } from '../../../common/taxonomy/service-categories';
 import { TechnologyCategory, TechnologyGroup, ProficiencyLevel } from '../../../common/taxonomy/technology-taxonomy';
 import { LinkCategory, LinkPlatform } from '../../../common/taxonomy/link-taxonomy';

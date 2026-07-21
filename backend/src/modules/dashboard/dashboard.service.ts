@@ -12,6 +12,8 @@ import {
 } from '../contact/schemas/contact-message.schema';
 import { Media } from '../media/schemas/media.schema';
 import { Faq } from '../faqs/schemas/faq.schema';
+import { Certification } from '../certifications/schemas/certification.schema';
+import { Education } from '../education/schemas/education.schema';
 
 @Injectable()
 export class DashboardService {
@@ -25,6 +27,9 @@ export class DashboardService {
     private contactModel: Model<ContactMessage>,
     @InjectModel(Media.name) private mediaModel: Model<Media>,
     @InjectModel(Faq.name) private faqModel: Model<Faq>,
+    @InjectModel(Certification.name)
+    private certificationModel: Model<Certification>,
+    @InjectModel(Education.name) private educationModel: Model<Education>,
   ) {}
 
   async getStats() {
@@ -41,6 +46,8 @@ export class DashboardService {
       recentMessages,
       recentPosts,
       recentProjects,
+      certificationStats,
+      educationStats,
     ] = await Promise.all([
       this.getProjectStats(),
       this.getPostStats(),
@@ -54,6 +61,8 @@ export class DashboardService {
       this.contactModel.find().sort({ createdAt: -1 }).limit(5).exec(),
       this.postModel.find().sort({ createdAt: -1 }).limit(5).exec(),
       this.projectModel.find().sort({ createdAt: -1 }).limit(5).exec(),
+      this.getCertificationStats(),
+      this.getEducationStats(),
     ]);
 
     return {
@@ -64,6 +73,8 @@ export class DashboardService {
         technologies: technologyStats,
         links: linkStats,
         faqs: faqStats,
+        certifications: certificationStats,
+        education: educationStats,
       },
       engagement,
       contact: contactStats,
@@ -145,6 +156,41 @@ export class DashboardService {
       this.faqModel.countDocuments({ isFeatured: true }),
     ]);
     return { total, published, featured };
+  }
+
+  private async getCertificationStats() {
+    const [total, published, featured, expired] = await Promise.all([
+      this.certificationModel.countDocuments(),
+      this.certificationModel.countDocuments({ isPublished: true }),
+      this.certificationModel.countDocuments({ isFeatured: true }),
+      this.certificationModel.countDocuments({
+        doesNotExpire: false,
+        expiresAt: { $lt: new Date() },
+      }),
+    ]);
+    return {
+      total,
+      published,
+      unpublished: Math.max(total - published, 0),
+      featured,
+      expired,
+    };
+  }
+
+  private async getEducationStats() {
+    const [total, published, featured, current] = await Promise.all([
+      this.educationModel.countDocuments(),
+      this.educationModel.countDocuments({ isPublished: true }),
+      this.educationModel.countDocuments({ isFeatured: true }),
+      this.educationModel.countDocuments({ isCurrent: true }),
+    ]);
+    return {
+      total,
+      published,
+      unpublished: Math.max(total - published, 0),
+      featured,
+      current,
+    };
   }
 
   private async getContactStats() {
