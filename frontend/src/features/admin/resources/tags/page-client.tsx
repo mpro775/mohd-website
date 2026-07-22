@@ -66,7 +66,7 @@ export function TagsPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("blog/tags") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("posts") });
-    adminClient.revalidate(["blog"]);
+    adminClient.revalidate({ tags: ["blog"] });
   };
 
   // 2. Save Mutation (Create/Update)

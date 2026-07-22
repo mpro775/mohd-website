@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { 
@@ -62,7 +62,9 @@ export function ProfilePageClient() {
     },
   });
 
-  const { register, control, watch, handleSubmit, reset, setError, formState: { errors } } = form;
+  const { register, control, handleSubmit, reset, setError, formState: { errors } } = form;
+  const profileImageUrl = useWatch({ control, name: "profileImage" as any });
+  const cvFileUrl = useWatch({ control, name: "cvFile" as any });
 
   // 1. Fetch Profile Data
   const { data: profile, isLoading, isRefetching, refetch } = useQuery<Profile>({
@@ -147,7 +149,7 @@ export function ProfilePageClient() {
       toast.success(res?.message || "تم حفظ ملفك الشخصي بنظام بنجاح!");
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("profile") });
       queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-      adminClient.revalidate(["profile", "links", "home"]);
+      adminClient.revalidate({ tags: ["profile", "links", "home"] });
     },
     onError: (err) => {
       const isValidationMapped = setFormErrors(err, setError);
@@ -276,7 +278,7 @@ export function ProfilePageClient() {
                         <MediaField
                           label="الصورة الشخصية"
                           valueId={field.value}
-                          valueUrl={watch("profileImage" as any)}
+                          valueUrl={profileImageUrl}
                           onChange={field.onChange}
                           error={errors.profileImageMediaId?.message}
                           defaultFolder="profile"
@@ -291,7 +293,7 @@ export function ProfilePageClient() {
                         <MediaField
                           label="ملف السيرة الذاتية (CV)"
                           valueId={field.value}
-                          valueUrl={watch("cvFile" as any)}
+                          valueUrl={cvFileUrl}
                           onChange={field.onChange}
                           error={errors.cvMediaId?.message}
                           defaultFolder="cv"

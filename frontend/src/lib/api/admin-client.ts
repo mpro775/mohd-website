@@ -200,16 +200,19 @@ export const adminClient = {
     return r.data;
   },
 
-  // Revalidate cache tags
-  revalidate: async (tags: string[]) => {
-    try {
-      await fetch("/api/revalidate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tags }),
-      });
-    } catch (e) {
-      console.error("Failed to revalidate cache tags:", e);
+  // Revalidate cache tags and/or paths
+  revalidate: async (payload: { tags?: string[]; paths?: string[] }) => {
+    const response = await fetch("/api/revalidate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const result = await response.json().catch(() => null);
+      throw new Error(
+        result?.message ?? `Revalidation failed with ${response.status}`,
+      );
     }
   },
 };

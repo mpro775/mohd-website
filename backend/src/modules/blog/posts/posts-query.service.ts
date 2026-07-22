@@ -12,6 +12,7 @@ import { MediaService } from '../../media/media.service';
 import { Category } from '../categories/schemas/category.schema';
 import { Tag } from '../tags/schemas/tag.schema';
 import { FilterPostDto } from './dto/filter-post.dto';
+import { PostOptionsDto } from './dto/post-options.dto';
 import { TaxonomyOptionsDto } from './dto/taxonomy-options.dto';
 import {
   mapPostToAdminDetail,
@@ -236,6 +237,57 @@ export class PostsQueryService {
       total,
       dto.page,
       dto.limit,
+    );
+  }
+
+  async postOptions(dto: PostOptionsDto) {
+    const page = Number(dto.page ?? 1);
+    const limit = Math.min(Number(dto.limit ?? 10), 100);
+    const query: Record<string, any> = { deletedAt: { $exists: false } };
+
+    if (dto.ids && dto.ids.length > 0) {
+      query._id = { $in: dto.ids };
+    } else {
+      if (dto.status) query.status = dto.status;
+      if (dto.excludeId) query._id = { $ne: dto.excludeId };
+      if (dto.search?.trim()) {
+        const regex = buildSafeRegex(dto.search.trim());
+        if (regex) query.$or = [{ title: regex }, { slug: regex }];
+      }
+    }
+
+    const [posts, total] = await Promise.all([
+      this.postModel
+        .find(query)
+        .select('title slug status featuredImageMediaId publishedAt')
+        .sort({ publishedAt: -1, updatedAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+      this.postModel.countDocuments(query),
+    ]);
+
+    const mediaMap = await this.mediaMap(posts);
+
+    return createPaginatedResponse(
+      posts.map((item) => {
+        const media = item.featuredImageMediaId
+          ? mediaMap.get(item.featuredImageMediaId.toString())
+          : null;
+        return {
+          id: item._id.toString(),
+          title: item.title,
+          slug: item.slug,
+          status: item.status,
+          featuredImage: media?.url ?? null,
+          publishedAt: item.publishedAt
+            ? new Date(item.publishedAt).toISOString()
+            : null,
+        };
+      }),
+      total,
+      page,
+      limit,
     );
   }
 

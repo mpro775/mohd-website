@@ -16,6 +16,7 @@ import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
 import { Post, PostStatus } from '../posts/schemas/post.schema';
 import { MergeTagsDto } from './dto/merge-tags.dto';
+import { PostsRevalidationService } from '../posts/posts-revalidation.service';
 
 @Injectable()
 export class TagsService {
@@ -23,11 +24,12 @@ export class TagsService {
     @InjectModel(Tag.name) private tagModel: Model<Tag>,
     @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly auditLogsService: AuditLogsService,
+    private readonly revalidation: PostsRevalidationService,
   ) {}
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
-    const existing = await this.tagModel.findOne({
-      slug,
+    const existing = await this.tagModel.exists({
+      $or: [{ slug }, { previousSlugs: slug }],
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     });
     if (existing) {
@@ -52,6 +54,8 @@ export class TagsService {
       after: saved.toObject(),
       request: req,
     });
+
+    await this.revalidation.revalidate(['blog', 'blog:list']);
 
     return saved;
   }
@@ -142,16 +146,22 @@ export class TagsService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  async findOnePublic(slug: string): Promise<Tag> {
-    const tag = await this.tagModel.findOne({
-      slug,
-      isActive: true,
-      deletedAt: { $exists: false },
-    });
+  async findOnePublic(requestedSlug: string): Promise<any> {
+    const tag = await this.tagModel
+      .findOne({
+        $or: [{ slug: requestedSlug }, { previousSlugs: requestedSlug }],
+        isActive: true,
+        deletedAt: { $exists: false },
+      })
+      .lean();
     if (!tag) {
       throw new NotFoundException('Tag not found');
     }
-    return tag;
+    return {
+      ...tag,
+      canonicalSlug: tag.slug,
+      redirectRequired: tag.slug !== requestedSlug,
+    };
   }
 
   async findOneAdmin(id: string): Promise<Tag> {
@@ -186,6 +196,12 @@ export class TagsService {
       after: tag.toObject(),
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:tag:${tag.slug}`,
+    ]);
 
     return tag;
   }
@@ -231,6 +247,10 @@ export class TagsService {
       request: req,
     });
 
+    const tags = ['blog', 'blog:list', `blog:tag:${tag.slug}`];
+    if (before.slug !== tag.slug) tags.push(`blog:tag:${before.slug}`);
+    await this.revalidation.revalidate(tags);
+
     return tag;
   }
 
@@ -259,6 +279,12 @@ export class TagsService {
       before,
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:tag:${oldTag.slug}`,
+    ]);
   }
 
   async merge(dto: MergeTagsDto, req?: any): Promise<Tag> {
@@ -292,9 +318,20 @@ export class TagsService {
         { $set: { tags }, $inc: { version: 1 } },
       );
     }
+
+    target.previousSlugs = [
+      ...new Set([
+        ...(target.previousSlugs ?? []),
+        source.slug,
+        ...(source.previousSlugs ?? []),
+      ]),
+    ];
+    await target.save();
+
     source.isActive = false;
     source.deletedAt = new Date();
     await source.save();
+
     await this.auditLogsService.log({
       action: 'tag.merged',
       resource: 'Tag',
@@ -305,6 +342,14 @@ export class TagsService {
       },
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:tag:${source.slug}`,
+      `blog:tag:${target.slug}`,
+    ]);
+
     return target;
   }
 }

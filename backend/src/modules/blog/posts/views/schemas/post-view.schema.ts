@@ -8,7 +8,7 @@ export type PostDeviceType =
   | 'bot'
   | 'unknown';
 
-@Schema({ timestamps: { createdAt: true, updatedAt: false } })
+@Schema({ collection: 'post_views_daily' })
 export class PostView extends Document {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Post', required: true })
   postId: Types.ObjectId;
@@ -22,6 +22,15 @@ export class PostView extends Document {
   @Prop({ required: true })
   dateKey: string;
 
+  @Prop({ default: 0 })
+  hits: number;
+
+  @Prop({ required: true })
+  firstSeenAt: Date;
+
+  @Prop({ required: true })
+  lastSeenAt: Date;
+
   @Prop()
   referrerDomain?: string;
 
@@ -30,8 +39,6 @@ export class PostView extends Document {
     default: 'unknown',
   })
   deviceType: PostDeviceType;
-
-  createdAt: Date;
 }
 
 export const PostViewSchema = SchemaFactory.createForClass(PostView);
@@ -39,4 +46,4 @@ PostViewSchema.index(
   { postId: 1, visitorHash: 1, dateKey: 1 },
   { unique: true },
 );
-PostViewSchema.index({ postId: 1, createdAt: -1 });
+PostViewSchema.index({ postId: 1, firstSeenAt: -1 });

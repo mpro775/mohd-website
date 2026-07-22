@@ -6,7 +6,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 import rehypeSanitize from "rehype-sanitize";
 import remarkDirective from "remark-directive";
 import remarkGfm from "remark-gfm";
-import GithubSlugger from "github-slugger";
+import rehypeSlug from "rehype-slug";
 import { AlertCircle, Info, Lightbulb, TriangleAlert } from "lucide-react";
 import { CopyCodeButton } from "@/features/blog/components/CodeBlock";
 
@@ -73,18 +73,17 @@ const icons = {
 
 export async function MarkdownRenderer({ content }: { content?: string }) {
   if (!content) return null;
-  const slugger = new GithubSlugger();
-  const heading = (Tag: "h2" | "h3") => {
-    function MarkdownHeading({ children, ...props }: any) {
-      const id = slugger.slug(textOf(children));
-      return <Tag id={id} className="scroll-mt-28" {...props}>{children}</Tag>;
-    }
-    MarkdownHeading.displayName = `Markdown${Tag.toUpperCase()}`;
-    return MarkdownHeading;
-  };
   const components = {
-    h2: heading("h2"),
-    h3: heading("h3"),
+    h2: ({ children, ...props }: any) => (
+      <h2 className="scroll-mt-28" {...props}>
+        {children}
+      </h2>
+    ),
+    h3: ({ children, ...props }: any) => (
+      <h3 className="scroll-mt-28" {...props}>
+        {children}
+      </h3>
+    ),
     a: ({ href = "", children, ...props }: any) => {
       if (href.startsWith("/") || href.startsWith("#")) return <Link href={href} {...props}>{children}</Link>;
       return <a href={href} target="_blank" rel="noopener noreferrer nofollow" {...props}>{children}</a>;
@@ -117,6 +116,7 @@ export async function MarkdownRenderer({ content }: { content?: string }) {
       <MarkdownAsync
         remarkPlugins={[remarkGfm, remarkDirective, remarkSafeDirectives]}
         rehypePlugins={[
+          rehypeSlug,
           [rehypeSanitize, sanitizeSchema],
           [rehypePrettyCode, { theme: "github-dark-dimmed", keepBackground: false }],
         ]}

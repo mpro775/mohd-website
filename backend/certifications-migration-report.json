@@ -1,8 +1,8 @@
 {
   "mode": "dry-run",
-  "startedAt": "2026-07-21T21:20:25.113Z",
-  "profilesFound": 1,
-  "legacyCertificatesFound": 1,
+  "startedAt": "2026-07-22T19:49:17.806Z",
+  "profilesFound": 0,
+  "legacyCertificatesFound": 0,
   "created": 0,
   "alreadyMigrated": 0,
   "skipped": 0,
@@ -11,15 +11,7 @@
   "invalidDates": [],
   "invalidUrls": [],
   "duplicates": [],
-  "mapping": [
-    {
-      "profileId": "6a1f85df77c3a1ddef6e06c5",
-      "legacyIndex": 0,
-      "slug": "تخصّص-entrepreneurship-launching-an-innovative-business",
-      "fingerprint": "تخصّص \"entrepreneurship: launching an innovative business\"|university of maryland, college park|2026-06-02T00:00:00.000Z|https://coursera.org/share/08ecd58d15f24f291788d5f66a5fd4d0",
-      "createdInThisRun": false
-    }
-  ],
+  "mapping": [],
   "errors": [],
-  "completedAt": "2026-07-21T21:20:28.016Z"
+  "completedAt": "2026-07-22T19:49:21.981Z"
 }

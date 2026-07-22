@@ -85,7 +85,7 @@ export function ServicesPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("services") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-    adminClient.revalidate(["services", "home"]);
+    adminClient.revalidate({ tags: ["services"], paths: ["/"] });
   };
 
   // 2. Mutations

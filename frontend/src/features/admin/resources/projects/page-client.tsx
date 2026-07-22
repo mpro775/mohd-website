@@ -89,7 +89,7 @@ export function ProjectsPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("projects") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-    adminClient.revalidate(["projects", "home"]);
+    adminClient.revalidate({ tags: ["projects"], paths: ["/"] });
   };
 
   // Create or Update
@@ -287,8 +287,7 @@ export function ProjectsPageClient() {
     onDelete: setDeletingId,
     onPublish: (id) => patchActionMutation.mutate({ id, action: "publish" }),
     onUnpublish: (id) => patchActionMutation.mutate({ id, action: "unpublish" }),
-    onArchive: (id) => patchActionMutation.mutate({ id, action: "archive" }),
-  }), [handleOpenEdit, patchActionMutation.mutate]);
+  }), [handleOpenEdit, patchActionMutation]);
 
   return (
     <div className="space-y-6 text-right" dir="rtl">

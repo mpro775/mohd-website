@@ -3,13 +3,13 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import Image from "next/image";
 import Link from "next/link";
-import type { Post } from "@/lib/api/types";
+import type { AdminPostListItem } from "@/lib/api/types";
 
 const statusLabels: Record<string, string> = { draft: "مسودة", in_review: "قيد المراجعة", changes_requested: "مطلوب تعديل", approved: "معتمد", scheduled: "مجدول", published: "منشور", archived: "مؤرشف" };
 
 export const postColumnLabels = { title: "العنوان", status: "الحالة", category: "التصنيف", updatedAt: "آخر تعديل", publishedAt: "النشر", viewCount: "المشاهدات", isFeatured: "مميز", actions: "الإجراءات" };
 
-export function createPostColumns({ onTrash, onRestore, onPermanent }: { onTrash: (id: string) => void; onRestore: (id: string) => void; onPermanent: (post: Post) => void }): ColumnDef<Post>[] {
+export function createPostColumns({ onTrash, onRestore, onPermanent }: { onTrash: (id: string) => void; onRestore: (id: string) => void; onPermanent: (post: AdminPostListItem) => void }): ColumnDef<AdminPostListItem>[] {
   return [
     { accessorKey: "title", header: "العنوان", cell: ({ row }) => <div className="flex min-w-[280px] items-center gap-3">{row.original.featuredImage ? <Image src={row.original.featuredImage} alt="" width={56} height={40} className="h-10 w-14 rounded object-cover" /> : <div className="h-10 w-14 rounded bg-muted" />}<div><Link href={`/admin/blog/posts/${row.original.id ?? row.original._id}/edit`} className="font-bold hover:text-primary">{row.original.title}</Link><p className="font-mono text-[10px] text-muted-foreground">{row.original.slug}</p></div></div> },
     { accessorKey: "status", header: "الحالة", cell: ({ row }) => <span className="rounded-full bg-muted px-2 py-1 text-xs">{statusLabels[row.original.status ?? "draft"]}</span> },

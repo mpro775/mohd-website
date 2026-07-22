@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
   extractInternalMediaUrls,
-  validateMarkdownContent,
+  validateMarkdownPublishingContent,
 } from '../../../common/utils/markdown-content.util';
 import { MediaService } from '../../media/media.service';
 import { Category } from '../categories/schemas/category.schema';
@@ -48,7 +48,7 @@ export class PostReadinessService {
     if (!post.summary || post.summary.trim().length < 20)
       block('SUMMARY_SHORT', 'الملخص أقصر من 20 حرفًا');
     try {
-      validateMarkdownContent(post.content);
+      validateMarkdownPublishingContent(post.content);
       if (post.content.trim().length < 100)
         block('CONTENT_SHORT', 'المحتوى قصير جدًا للنشر');
     } catch {

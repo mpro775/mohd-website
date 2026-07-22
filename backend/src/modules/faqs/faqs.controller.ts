@@ -1,3 +1,6 @@
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permission } from '../../common/auth/permissions.enum';
 import {
   Body,
   Controller,
@@ -18,9 +21,6 @@ import { FilterFaqDto } from './dto/filter-faq.dto';
 import { ReorderFaqsDto } from './dto/reorder-faqs.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 
 @Public()
@@ -47,8 +47,8 @@ export class PublicFaqsController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_PORTFOLIO)
 @Controller('admin/faqs')
 export class AdminFaqsController {
   constructor(private readonly faqsService: FaqsService) {}

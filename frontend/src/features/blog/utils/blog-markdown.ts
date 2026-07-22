@@ -1,21 +1,38 @@
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkGfm from "remark-gfm";
+import { visit } from "unist-util-visit";
+import { toString } from "mdast-util-to-string";
 import GithubSlugger from "github-slugger";
+import type { Heading, Root } from "mdast";
 
-export type TocHeading = { id: string; text: string; level: 2 | 3 };
+export type TocHeading = {
+  id: string;
+  text: string;
+  level: 2 | 3;
+};
 
 export function extractHeadings(content: string): TocHeading[] {
+  const tree = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .parse(content) as Root;
+
   const slugger = new GithubSlugger();
-  let inFence = false;
   const headings: TocHeading[] = [];
-  for (const line of content.replace(/\r\n?/g, "\n").split("\n")) {
-    if (/^\s*```/.test(line)) {
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) continue;
-    const match = /^(#{2,3})\s+(.+?)\s*#*\s*$/.exec(line);
-    if (!match) continue;
-    const text = match[2].replace(/[*_`~\[\]]/g, "").trim();
-    headings.push({ id: slugger.slug(text), text, level: match[1].length as 2 | 3 });
-  }
+
+  visit(tree, "heading", (node: Heading) => {
+    if (node.depth !== 2 && node.depth !== 3) return;
+
+    const text = toString(node).trim();
+    if (!text) return;
+
+    headings.push({
+      text,
+      id: slugger.slug(text),
+      level: node.depth,
+    });
+  });
+
   return headings;
 }

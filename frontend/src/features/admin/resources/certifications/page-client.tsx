@@ -57,7 +57,7 @@ export function CertificationsPageClient() {
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("certifications") });
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-    void adminClient.revalidate(["certifications", "home", "profile", "sitemap"]);
+    void adminClient.revalidate({ tags: ["certifications"], paths: ["/", "/about", "/certifications", "/sitemap.xml"] });
   };
 
   const save = useMutation({

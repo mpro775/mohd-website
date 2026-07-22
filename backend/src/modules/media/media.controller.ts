@@ -1,3 +1,6 @@
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permission } from '../../common/auth/permissions.enum';
 import {
   Body,
   Controller,
@@ -15,9 +18,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from './media.service';
 import type { RequestWithOptionalUser } from './media.service';
@@ -26,8 +26,8 @@ import { MediaQueryDto } from './dto/media-query.dto';
 import { UpdateMediaMetadataDto } from './dto/update-media-metadata.dto';
 import { CleanupUnusedMediaDto } from './dto/cleanup-unused-media.dto';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_MEDIA)
 @Controller('admin/media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
@@ -79,7 +79,7 @@ export class MediaController {
   }
 
   @Post('cleanup-unused')
-  @Roles(UserRole.ADMIN)
+  @Permissions(Permission.MANAGE_MEDIA)
   async cleanupUnused(@Body() dto: CleanupUnusedMediaDto, @Req() req: any) {
     return {
       message: 'Unused media cleaned successfully',
@@ -112,7 +112,7 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
+  @Permissions(Permission.MANAGE_MEDIA)
   async remove(@Param('id', ParseObjectIdPipe) id: string, @Req() req: any) {
     await this.mediaService.remove(id, req);
     return {

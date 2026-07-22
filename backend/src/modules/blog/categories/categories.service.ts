@@ -15,6 +15,7 @@ import { normalizeSlug } from '../../../common/utils/slug.util';
 import { buildSafeRegex } from '../../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
+import { PostsRevalidationService } from '../posts/posts-revalidation.service';
 
 @Injectable()
 export class CategoriesService {
@@ -22,11 +23,12 @@ export class CategoriesService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly auditLogsService: AuditLogsService,
+    private readonly revalidation: PostsRevalidationService,
   ) {}
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
-    const existing = await this.categoryModel.findOne({
-      slug,
+    const existing = await this.categoryModel.exists({
+      $or: [{ slug }, { previousSlugs: slug }],
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     });
     if (existing) {
@@ -56,6 +58,8 @@ export class CategoriesService {
       after: saved.toObject(),
       request: req,
     });
+
+    await this.revalidation.revalidate(['blog', 'blog:list']);
 
     return saved;
   }
@@ -147,16 +151,22 @@ export class CategoriesService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  async findOnePublic(slug: string): Promise<Category> {
-    const category = await this.categoryModel.findOne({
-      slug,
-      isActive: true,
-      deletedAt: { $exists: false },
-    });
+  async findOnePublic(requestedSlug: string): Promise<any> {
+    const category = await this.categoryModel
+      .findOne({
+        $or: [{ slug: requestedSlug }, { previousSlugs: requestedSlug }],
+        isActive: true,
+        deletedAt: { $exists: false },
+      })
+      .lean();
     if (!category) {
       throw new NotFoundException('Category not found');
     }
-    return category;
+    return {
+      ...category,
+      canonicalSlug: category.slug,
+      redirectRequired: category.slug !== requestedSlug,
+    };
   }
 
   async findOneAdmin(id: string): Promise<Category> {
@@ -191,6 +201,12 @@ export class CategoriesService {
       after: category.toObject(),
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:category:${category.slug}`,
+    ]);
 
     return category;
   }
@@ -238,6 +254,11 @@ export class CategoriesService {
       request: req,
     });
 
+    const tags = ['blog', 'blog:list', `blog:category:${category.slug}`];
+    if (before.slug !== category.slug)
+      tags.push(`blog:category:${before.slug}`);
+    await this.revalidation.revalidate(tags);
+
     return category;
   }
 
@@ -267,5 +288,11 @@ export class CategoriesService {
       before,
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:category:${oldCategory.slug}`,
+    ]);
   }
 }

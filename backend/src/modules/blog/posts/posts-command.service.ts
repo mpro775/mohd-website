@@ -11,7 +11,7 @@ import {
   calculateMarkdownReadTime,
   extractInternalMediaUrls,
   normalizeMarkdownContent,
-  validateMarkdownContent,
+  validateMarkdownDraftContent,
 } from '../../../common/utils/markdown-content.util';
 import { sanitizePlainText } from '../../../common/utils/sanitize-content.util';
 import { normalizeSlug } from '../../../common/utils/slug.util';
@@ -27,6 +27,8 @@ import { PostRevisionsService } from './post-revisions.service';
 import { PostsRevalidationService } from './posts-revalidation.service';
 import { PostSlugRedirect } from './redirects/schemas/post-slug-redirect.schema';
 import { Post, PostStatus } from './schemas/post.schema';
+import { PostRevision } from './revisions/schemas/post-revision.schema';
+import { PostView } from './views/schemas/post-view.schema';
 
 type RequestLike = { user?: { userId?: string; id?: string; _id?: string } };
 
@@ -38,6 +40,10 @@ export class PostsCommandService {
     @InjectModel(Tag.name) private readonly tagModel: Model<Tag>,
     @InjectModel(PostSlugRedirect.name)
     private readonly redirectModel: Model<PostSlugRedirect>,
+    @InjectModel(PostRevision.name)
+    private readonly revisionModel: Model<PostRevision>,
+    @InjectModel(PostView.name)
+    private readonly viewModel: Model<PostView>,
     private readonly mediaService: MediaService,
     private readonly revisions: PostRevisionsService,
     private readonly revalidation: PostsRevalidationService,
@@ -45,12 +51,13 @@ export class PostsCommandService {
   ) {}
 
   async create(dto: CreatePostDraftDto, authorId: string, req?: RequestLike) {
-    const slug = normalizeSlug(dto.slug || dto.title);
-    await this.assertSlugAvailable(slug);
+    const rawSlug = dto.slug || dto.title;
+    const slug = rawSlug ? normalizeSlug(rawSlug) : undefined;
+    if (slug) await this.assertSlugAvailable(slug);
     await this.validateRelations(dto.category, dto.tags, dto.relatedPostIds);
     await this.validateImages(dto);
     const content = normalizeMarkdownContent(dto.content);
-    validateMarkdownContent(content);
+    validateMarkdownDraftContent(content);
     const contentMediaIds = await this.resolveContentMediaIds(content);
     const editable = this.editablePayload({ ...dto, slug, content });
     const post = new this.postModel({
@@ -97,12 +104,10 @@ export class PostsCommandService {
       dto.content === undefined
         ? current.content
         : normalizeMarkdownContent(dto.content);
-    validateMarkdownContent(content);
-    const slug =
-      dto.title || dto.slug
-        ? normalizeSlug(dto.slug || dto.title || current.slug)
-        : current.slug;
-    if (slug !== current.slug) await this.assertSlugAvailable(slug, id);
+    validateMarkdownDraftContent(content);
+    const rawSlug = dto.slug || dto.title || current.slug;
+    const slug = rawSlug ? normalizeSlug(rawSlug) : undefined;
+    if (slug && slug !== current.slug) await this.assertSlugAvailable(slug, id);
     await this.validateRelations(
       dto.category,
       dto.tags,
@@ -130,7 +135,7 @@ export class PostsCommandService {
       },
       $inc: { version: 1, contentVersion: dto.content === undefined ? 0 : 1 },
     };
-    if (slug !== current.slug) {
+    if (slug && slug !== current.slug && current.slug) {
       update.$addToSet = { previousSlugs: current.slug };
     }
 
@@ -145,7 +150,7 @@ export class PostsCommandService {
     }
     const saved = post as Post;
 
-    if (slug !== current.slug) {
+    if (slug && slug !== current.slug && current.slug) {
       await this.redirectModel.findOneAndUpdate(
         { oldSlug: current.slug },
         {
@@ -203,8 +208,10 @@ export class PostsCommandService {
       );
     } else {
       await this.revalidation.revalidate([
-        `blog:post:${slug}`,
-        ...(slug !== current.slug ? [`blog:post:${current.slug}`] : []),
+        ...(slug ? [`blog:post:${slug}`] : []),
+        ...(current.slug && slug !== current.slug
+          ? [`blog:post:${current.slug}`]
+          : []),
       ]);
     }
     return saved;
@@ -278,6 +285,15 @@ export class PostsCommandService {
       resourceId: id,
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      'blog:sitemap',
+      'blog:rss',
+      `blog:post:${post.slug}`,
+    ]);
+
     return post;
   }
 
@@ -298,6 +314,12 @@ export class PostsCommandService {
     await Promise.all([
       this.postModel.deleteOne({ _id: id }),
       this.redirectModel.deleteMany({ postId: id }),
+      this.revisionModel.deleteMany({ postId: id }),
+      this.viewModel.deleteMany({ postId: id }),
+      this.postModel.updateMany(
+        { relatedPostIds: id },
+        { $pull: { relatedPostIds: id } as any },
+      ),
       this.mediaService.removeUsageForEntity('Post', id),
     ]);
     await this.audit.log({
@@ -330,6 +352,23 @@ export class PostsCommandService {
       metadata: { ids, valueId, modified: result.modifiedCount },
       request: req,
     });
+
+    const affectedPosts = await this.postModel
+      .find({ _id: { $in: ids } }, 'slug')
+      .lean();
+    const tagsToRevalidate = ['blog', 'blog:list', 'blog:sitemap', 'blog:rss'];
+    if (action === 'set-category') {
+      const category = await this.categoryModel
+        .findById(valueId, 'slug')
+        .lean();
+      if (category) tagsToRevalidate.push(`blog:category:${category.slug}`);
+    } else {
+      const tag = await this.tagModel.findById(valueId, 'slug').lean();
+      if (tag) tagsToRevalidate.push(`blog:tag:${tag.slug}`);
+    }
+    affectedPosts.forEach((p) => tagsToRevalidate.push(`blog:post:${p.slug}`));
+    await this.revalidation.revalidate(tagsToRevalidate);
+
     return { matched: result.matchedCount, modified: result.modifiedCount };
   }
 

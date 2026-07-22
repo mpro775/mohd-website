@@ -11,13 +11,13 @@ import { DataTable } from "@/components/admin/data-table/DataTable";
 import { adminClient, clientApiRequest } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { adminSearchParamsSchema } from "@/lib/api/admin-search-params";
-import type { Post } from "@/lib/api/types";
+import type { AdminPostListItem } from "@/lib/api/types";
 import { createPostColumns, postColumnLabels } from "./columns";
 
 export function PostsPageClient() {
   const [query, setQuery] = useQueryStates(adminSearchParamsSchema);
   const queryClient = useQueryClient();
-  const posts = useQuery({ queryKey: adminQueryKeys.resource("blog/posts", query), queryFn: () => adminClient.listResource<Post>("blog/posts", { page: query.page, limit: query.limit, search: query.search || undefined, status: query.status === "all" ? undefined : query.status, category: query.category || undefined, author: query.author || undefined, featured: query.isFeatured === "all" ? undefined : query.isFeatured === "true", trash: query.trash === "all" ? undefined : query.trash === "true", hasWarnings: query.hasWarnings === "all" ? undefined : query.hasWarnings === "true", dateFrom: query.dateFrom || undefined, dateTo: query.dateTo || undefined, sortBy: query.sortBy || "updatedAt", sortOrder: query.sortOrder || "desc" }) });
+  const posts = useQuery({ queryKey: adminQueryKeys.resource("blog/posts", query), queryFn: () => adminClient.listResource<AdminPostListItem>("blog/posts", { page: query.page, limit: query.limit, search: query.search || undefined, status: query.status === "all" ? undefined : query.status, category: query.category || undefined, author: query.author || undefined, featured: query.isFeatured === "all" ? undefined : query.isFeatured === "true", trash: query.trash === "all" ? undefined : query.trash === "true", hasWarnings: query.hasWarnings === "all" ? undefined : query.hasWarnings === "true", dateFrom: query.dateFrom || undefined, dateTo: query.dateTo || undefined, sortBy: query.sortBy || "updatedAt", sortOrder: query.sortOrder || "desc" }) });
   const invalidate = () => queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("blog/posts") });
   const trash = useMutation({ mutationFn: (id: string) => clientApiRequest(`/blog/posts/${id}/trash`, { method: "POST" }), onSuccess: () => { toast.success("تم نقل المقال إلى سلة المحذوفات"); invalidate(); }, onError: () => toast.error("تعذر نقل المقال") });
   const restore = useMutation({ mutationFn: (id: string) => clientApiRequest(`/blog/posts/${id}/restore`, { method: "POST" }), onSuccess: () => { toast.success("تمت استعادة المقال"); invalidate(); } });

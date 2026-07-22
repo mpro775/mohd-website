@@ -43,3 +43,8 @@ export const CategorySchema = SchemaFactory.createForClass(Category);
 CategorySchema.index({ name: 1, slug: 1 });
 CategorySchema.index({ isActive: 1, order: 1 });
 CategorySchema.index({ previousSlugs: 1 });
+CategorySchema.index({
+  isActive: 1,
+  deletedAt: 1,
+  updatedAt: -1,
+});

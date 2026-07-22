@@ -12,13 +12,14 @@ import {
 } from '@nestjs/common';
 import { BulkActionDto } from '../../../common/dto/bulk-action.dto';
 import { Public } from '../../../common/decorators/public.decorator';
-import { Roles } from '../../../common/decorators/roles.decorator';
+import { Permissions } from '../../../common/decorators/permissions.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../common/guards/roles.guard';
+import { PermissionsGuard } from '../../../common/guards/permissions.guard';
+import { Permission } from '../../../common/auth/permissions.enum';
 import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
-import { UserRole } from '../../users/schemas/user.schema';
 import { CreatePostDraftDto } from './dto/create-post.dto';
 import { FilterPostDto } from './dto/filter-post.dto';
+import { PostOptionsDto } from './dto/post-options.dto';
 import { RestoreRevisionDto } from './dto/restore-revision.dto';
 import { SchedulePostDto } from './dto/schedule-post.dto';
 import { TaxonomyOptionsDto } from './dto/taxonomy-options.dto';
@@ -95,8 +96,7 @@ export class PublicPostsController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('admin/blog/posts')
 export class AdminPostsController {
   constructor(
@@ -107,6 +107,7 @@ export class AdminPostsController {
     private readonly revisions: PostRevisionsService,
   ) {}
 
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
   @Get()
   async findAll(@Query() filter: FilterPostDto) {
     const result = await this.queries.findAllAdmin(filter);
@@ -117,6 +118,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.CREATE_POSTS)
   @Post()
   async create(@Request() req: any, @Body() dto: CreatePostDraftDto) {
     const post = await this.commands.create(dto, req.user.userId, req);
@@ -126,6 +128,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
   @Get(':id/readiness')
   async checkReadiness(
     @Param('id', ParseObjectIdPipe) id: string,
@@ -140,6 +143,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
   @Get(':id/revisions')
   async listRevisions(@Param('id', ParseObjectIdPipe) id: string) {
     return {
@@ -148,6 +152,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
   @Get(':id/revisions/:revisionId')
   async revision(
     @Param('id', ParseObjectIdPipe) id: string,
@@ -159,6 +164,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.EDIT_POSTS)
   @Post(':id/revisions/:revisionId/restore')
   async restoreRevision(
     @Request() req: any,
@@ -173,6 +179,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.DELETE_POSTS)
   @Post('bulk')
   async bulk(@Request() req: any, @Body() dto: BulkActionDto) {
     const results: Array<{ id: string; success: boolean; error?: string }> = [];
@@ -206,6 +213,18 @@ export class AdminPostsController {
     return { message: 'اكتمل الإجراء الجماعي', data: results };
   }
 
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
+  @Get('options')
+  async options(@Query() dto: PostOptionsDto) {
+    const result = await this.queries.postOptions(dto);
+    return {
+      message: 'تم تحميل الخيارات',
+      data: result.data,
+      meta: result.meta,
+    };
+  }
+
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
   @Get(':id')
   async findOne(@Param('id', ParseObjectIdPipe) id: string) {
     return {
@@ -214,6 +233,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.EDIT_POSTS)
   @Put(':id')
   async update(
     @Request() req: any,
@@ -227,6 +247,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.EDIT_POSTS)
   @Post(':id/autosave')
   async autosave(
     @Request() req: any,
@@ -244,6 +265,7 @@ export class AdminPostsController {
     };
   }
 
+  @Permissions(Permission.EDIT_POSTS)
   @Post(':id/submit-review')
   workflowSubmit(
     @Request() req: any,
@@ -257,6 +279,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.EDIT_POSTS)
   @Post(':id/request-changes')
   workflowChanges(
     @Request() req: any,
@@ -270,6 +293,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.PUBLISH_POSTS)
   @Post(':id/approve')
   workflowApprove(
     @Request() req: any,
@@ -283,6 +307,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.PUBLISH_POSTS)
   @Post(':id/publish')
   workflowPublish(
     @Request() req: any,
@@ -296,6 +321,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.PUBLISH_POSTS)
   @Post(':id/unpublish')
   workflowUnpublish(
     @Request() req: any,
@@ -309,6 +335,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.PUBLISH_POSTS)
   @Post(':id/schedule')
   workflowSchedule(
     @Request() req: any,
@@ -322,6 +349,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.PUBLISH_POSTS)
   @Post(':id/cancel-schedule')
   workflowCancel(
     @Request() req: any,
@@ -335,6 +363,7 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.PUBLISH_POSTS)
   @Post(':id/archive')
   workflowArchive(
     @Request() req: any,
@@ -348,12 +377,14 @@ export class AdminPostsController {
     );
   }
 
+  @Permissions(Permission.DELETE_POSTS)
   @Post(':id/trash')
   async trash(@Request() req: any, @Param('id', ParseObjectIdPipe) id: string) {
     await this.commands.trash(id, req);
     return { message: 'تم نقل المقال إلى سلة المحذوفات', data: null };
   }
 
+  @Permissions(Permission.DELETE_POSTS)
   @Post(':id/restore')
   async restore(
     @Request() req: any,
@@ -366,7 +397,7 @@ export class AdminPostsController {
     };
   }
 
-  @Roles(UserRole.ADMIN)
+  @Permissions(Permission.PERMANENT_DELETE_POSTS)
   @Delete(':id/permanent')
   async permanent(
     @Request() req: any,
@@ -387,12 +418,16 @@ export class AdminPostsController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('admin/blog')
 export class AdminBlogController {
   constructor(private readonly queries: PostsQueryService) {}
 
+  @Permissions(
+    Permission.MANAGE_TAXONOMY,
+    Permission.CREATE_POSTS,
+    Permission.EDIT_POSTS,
+  )
   @Get('taxonomy/options')
   async taxonomy(@Query() dto: TaxonomyOptionsDto) {
     const result = await this.queries.taxonomyOptions(dto);
@@ -403,6 +438,7 @@ export class AdminBlogController {
     };
   }
 
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
   @Get('overview')
   async overview() {
     return {

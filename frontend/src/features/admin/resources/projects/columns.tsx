@@ -2,7 +2,7 @@
 
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Edit, Trash2, Globe, Star, Ban, Archive } from "lucide-react";
+import { MoreHorizontal, Edit, Globe, Star, Ban, Archive } from "lucide-react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { cn } from "@/lib/utils";
 import type { Project } from "@/lib/api/types";
@@ -21,7 +21,6 @@ interface CreateColumnsProps {
   onDelete: (id: string) => void;
   onPublish?: (id: string) => void;
   onUnpublish?: (id: string) => void;
-  onArchive?: (id: string) => void;
 }
 
 export function createProjectColumns({
@@ -29,7 +28,6 @@ export function createProjectColumns({
   onDelete,
   onPublish,
   onUnpublish,
-  onArchive,
 }: CreateColumnsProps): ColumnDef<Project>[] {
   return [
     // 1. Selection Checkbox

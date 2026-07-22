@@ -39,3 +39,8 @@ export const TagSchema = SchemaFactory.createForClass(Tag);
 TagSchema.index({ name: 1, slug: 1 });
 TagSchema.index({ isActive: 1, order: 1 });
 TagSchema.index({ previousSlugs: 1 });
+TagSchema.index({
+  isActive: 1,
+  deletedAt: 1,
+  updatedAt: -1,
+});

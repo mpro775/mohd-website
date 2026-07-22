@@ -3,6 +3,11 @@ import { IsOptional, IsString, IsUrl, MaxLength } from 'class-validator';
 export class TrackPostViewDto {
   @IsOptional()
   @IsString()
+  @MaxLength(100)
+  eventId?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(200)
   sessionId?: string;
 
