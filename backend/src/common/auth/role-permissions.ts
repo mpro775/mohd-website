@@ -19,10 +19,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.MANAGE_TAXONOMY,
     Permission.MANAGE_MEDIA,
   ],
-  [UserRole.REVIEWER]: [
-    Permission.EDIT_POSTS,
-    Permission.MANAGE_MEDIA,
-  ],
+  [UserRole.REVIEWER]: [Permission.EDIT_POSTS, Permission.MANAGE_MEDIA],
   [UserRole.AUTHOR]: [
     Permission.CREATE_POSTS,
     Permission.EDIT_POSTS,

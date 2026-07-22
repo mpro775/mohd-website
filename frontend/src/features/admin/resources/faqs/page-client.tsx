@@ -8,7 +8,7 @@ import { useQueryStates } from "nuqs";
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
-import { adminClient, clientApiRequest } from "@/lib/api/admin-client";
+import { adminClient } from "@/lib/api/admin-client";
 import { adminQueryKeys } from "@/lib/api/admin-query-keys";
 import { handleAdminError, setFormErrors } from "@/lib/api/admin-errors";
 import { adminSearchParamsSchema } from "@/lib/api/admin-search-params";

@@ -68,7 +68,7 @@ export function useUnsavedChangesGuard(shouldBlock: boolean) {
 
   // Popstate interceptor for back button
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       if (!shouldBlock || bypassRef.current) return;
       
       // Prevent URL change by pushing the original path back

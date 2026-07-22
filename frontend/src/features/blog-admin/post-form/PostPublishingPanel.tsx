@@ -137,6 +137,7 @@ export function PostPublishingPanel({
               <input
                 type="datetime-local"
                 value={scheduleValue}
+                // eslint-disable-next-line react-hooks/purity
                 min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
                 onChange={(event) => onScheduleValue(event.target.value)}
                 className="w-full rounded-lg border border-border bg-background p-2 text-sm"

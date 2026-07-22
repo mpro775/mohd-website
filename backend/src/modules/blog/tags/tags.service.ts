@@ -29,10 +29,7 @@ export class TagsService {
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.tagModel.exists({
-      $or: [
-        { slug },
-        { previousSlugs: slug },
-      ],
+      $or: [{ slug }, { previousSlugs: slug }],
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     });
     if (existing) {
@@ -150,14 +147,13 @@ export class TagsService {
   }
 
   async findOnePublic(requestedSlug: string): Promise<any> {
-    const tag = await this.tagModel.findOne({
-      $or: [
-        { slug: requestedSlug },
-        { previousSlugs: requestedSlug },
-      ],
-      isActive: true,
-      deletedAt: { $exists: false },
-    }).lean();
+    const tag = await this.tagModel
+      .findOne({
+        $or: [{ slug: requestedSlug }, { previousSlugs: requestedSlug }],
+        isActive: true,
+        deletedAt: { $exists: false },
+      })
+      .lean();
     if (!tag) {
       throw new NotFoundException('Tag not found');
     }
@@ -201,7 +197,11 @@ export class TagsService {
       request: req,
     });
 
-    await this.revalidation.revalidate(['blog', 'blog:list', `blog:tag:${tag.slug}`]);
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:tag:${tag.slug}`,
+    ]);
 
     return tag;
   }
@@ -280,7 +280,11 @@ export class TagsService {
       request: req,
     });
 
-    await this.revalidation.revalidate(['blog', 'blog:list', `blog:tag:${oldTag.slug}`]);
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:tag:${oldTag.slug}`,
+    ]);
   }
 
   async merge(dto: MergeTagsDto, req?: any): Promise<Tag> {
@@ -314,7 +318,7 @@ export class TagsService {
         { $set: { tags }, $inc: { version: 1 } },
       );
     }
-    
+
     target.previousSlugs = [
       ...new Set([
         ...(target.previousSlugs ?? []),
@@ -327,7 +331,7 @@ export class TagsService {
     source.isActive = false;
     source.deletedAt = new Date();
     await source.save();
-    
+
     await this.auditLogsService.log({
       action: 'tag.merged',
       resource: 'Tag',
@@ -338,7 +342,7 @@ export class TagsService {
       },
       request: req,
     });
-    
+
     await this.revalidation.revalidate([
       'blog',
       'blog:list',

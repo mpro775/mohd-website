@@ -7,11 +7,21 @@ export class PostsRevalidationService {
 
   constructor(private readonly config: ConfigService) {}
 
-  async revalidate(tags: string[]): Promise<void> {
+  async revalidate(tags: string[], extraPaths: string[] = []): Promise<void> {
     const url = this.config.get<string>('FRONTEND_REVALIDATE_URL');
     const secret = this.config.get<string>('FRONTEND_REVALIDATE_SECRET');
     const uniqueTags = [...new Set(tags.filter(Boolean))];
-    if (!url || !secret || !uniqueTags.length) return;
+    if (!url || !secret || (!uniqueTags.length && !extraPaths.length)) return;
+
+    // Derive path revalidations from well-known tags
+    const paths = [...extraPaths];
+    if (uniqueTags.includes('blog:sitemap')) paths.push('/sitemap.xml');
+    if (uniqueTags.includes('blog:rss')) paths.push('/rss.xml');
+    const uniquePaths = [...new Set(paths.filter(Boolean))];
+
+    const payload: { tags?: string[]; paths?: string[] } = {};
+    if (uniqueTags.length) payload.tags = uniqueTags;
+    if (uniquePaths.length) payload.paths = uniquePaths;
 
     try {
       const response = await fetch(url, {
@@ -20,7 +30,7 @@ export class PostsRevalidationService {
           'content-type': 'application/json',
           'x-revalidation-secret': secret,
         },
-        body: JSON.stringify({ tags: uniqueTags }),
+        body: JSON.stringify(payload),
         signal: AbortSignal.timeout(5000),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -28,6 +38,7 @@ export class PostsRevalidationService {
         JSON.stringify({
           event: 'blog.revalidation.success',
           tags: uniqueTags,
+          paths: uniquePaths,
         }),
       );
     } catch (error) {
@@ -35,6 +46,7 @@ export class PostsRevalidationService {
         JSON.stringify({
           event: 'blog.revalidation.failure',
           tags: uniqueTags,
+          paths: uniquePaths,
           error: error instanceof Error ? error.message : 'unknown',
         }),
       );

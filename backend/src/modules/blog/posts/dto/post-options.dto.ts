@@ -13,7 +13,9 @@ export class PostOptionsDto extends PaginationDto {
   status?: PostStatus;
 
   @IsOptional()
-  @Transform(({ value }) => (Array.isArray(value) ? value : String(value).split(',').filter(Boolean)))
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value : String(value).split(',').filter(Boolean),
+  )
   @IsArray()
   @IsMongoId({ each: true })
   ids?: string[];

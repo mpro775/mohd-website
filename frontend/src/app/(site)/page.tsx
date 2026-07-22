@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUpLeft, Send, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowUpLeft, Send } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { LinkButton } from "@/components/common/Button";
@@ -21,7 +21,6 @@ import {
 } from "@/components/site/home/HeroSection";
 import { ScrollReveal } from "@/components/site/home/ScrollReveal";
 import { StatsGrid } from "@/components/site/home/StatsGrid";
-import { brand } from "@/config/brand";
 import { PostCard } from "@/features/blog/components/PostCard";
 import { FaqList } from "@/features/faqs/components/FaqList";
 import { ProjectCard } from "@/features/projects/components/ProjectCard";
@@ -193,7 +192,7 @@ export default async function HomePage() {
           <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
             {/* Left Column: Wording & Actions */}
             <HeroContent>
-              <HeroBadge text="Full-Stack • مطور" isAvailable={true} />
+              <HeroBadge text="Full-Stack • مطور" isAvailable={isAvailable} />
               <HeroTypingSubtitle />
 
               <h1 className="text-4xl font-extrabold leading-snug md:text-5xl lg:text-6xl text-foreground mt-4 text-right">

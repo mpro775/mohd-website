@@ -423,7 +423,11 @@ export class AdminPostsController {
 export class AdminBlogController {
   constructor(private readonly queries: PostsQueryService) {}
 
-  @Permissions(Permission.MANAGE_TAXONOMY, Permission.CREATE_POSTS, Permission.EDIT_POSTS)
+  @Permissions(
+    Permission.MANAGE_TAXONOMY,
+    Permission.CREATE_POSTS,
+    Permission.EDIT_POSTS,
+  )
   @Get('taxonomy/options')
   async taxonomy(@Query() dto: TaxonomyOptionsDto) {
     const result = await this.queries.taxonomyOptions(dto);

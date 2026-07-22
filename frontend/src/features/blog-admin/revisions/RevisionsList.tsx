@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { clientApiRequest } from "@/lib/api/admin-client";
-import type { Post, PostRevision, PostRevisionSnapshot } from "@/lib/api/types";
+import type { AdminPostDetail, PostRevision, PostRevisionSnapshot } from "@/lib/api/types";
 import { RevisionContentDiff } from "./RevisionContentDiff";
 import { RevisionMetadataDiff } from "./RevisionMetadataDiff";
 
 const reasons: Record<string, string> = { manual_save: "حفظ يدوي", autosave: "حفظ تلقائي", publish: "نشر", schedule: "جدولة", restore: "استعادة", migration: "ترحيل" };
 
 export function RevisionsList({ postId }: { postId: string }) {
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<AdminPostDetail | null>(null);
   const [items, setItems] = useState<PostRevision[]>([]);
   const [selected, setSelected] = useState<PostRevision | null>(null);
   const [baseId, setBaseId] = useState<string>("current");
@@ -19,7 +19,7 @@ export function RevisionsList({ postId }: { postId: string }) {
 
   useEffect(() => { 
     void Promise.all([
-      clientApiRequest<Post>(`/blog/posts/${postId}`), 
+      clientApiRequest<AdminPostDetail>(`/blog/posts/${postId}`), 
       clientApiRequest<PostRevision[]>(`/blog/posts/${postId}/revisions`)
     ]).then(([postResult, revisionResult]) => { 
       setPost(postResult.data); 
@@ -29,6 +29,7 @@ export function RevisionsList({ postId }: { postId: string }) {
 
   useEffect(() => {
     if (baseId === "current" || !baseId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBaseRevision(null);
     } else {
       clientApiRequest<PostRevision>(`/blog/posts/${postId}/revisions/${baseId}`)

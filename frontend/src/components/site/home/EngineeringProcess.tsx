@@ -187,29 +187,6 @@ function StepCard({
   );
 }
 
-/* ── Pipeline connector arrows (horizontal, desktop only) ── */
-function PipelineConnector({ index, color }: { index: number; color: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" });
-
-  return (
-    <div
-      ref={ref}
-      className="hidden lg:flex items-center justify-center col-span-1"
-    >
-      <motion.div
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={isInView ? { scaleX: 1, opacity: 1 } : undefined}
-        transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-        className="w-full h-[2px] origin-right"
-        style={{
-          background: `linear-gradient(270deg, ${color}, color-mix(in srgb, ${color} 20%, transparent))`,
-        }}
-      />
-    </div>
-  );
-}
-
 export function EngineeringProcess() {
   const sectionRef = useRef<HTMLElement>(null);
   const isInView = useInView(sectionRef, { once: true, margin: "-100px" });

@@ -29,6 +29,8 @@ export class PermissionsGuard implements CanActivate {
     const userRole = user.role as UserRole;
     const userPermissions = ROLE_PERMISSIONS[userRole] || [];
 
-    return requiredPermissions.some((permission) => userPermissions.includes(permission));
+    return requiredPermissions.some((permission) =>
+      userPermissions.includes(permission),
+    );
   }
 }

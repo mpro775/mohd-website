@@ -1,7 +1,7 @@
 export enum Permission {
   // Users & Roles
   MANAGE_USERS = 'manage_users',
-  
+
   // Settings & System
   MANAGE_SETTINGS = 'manage_settings',
   VIEW_AUDIT_LOGS = 'view_audit_logs',

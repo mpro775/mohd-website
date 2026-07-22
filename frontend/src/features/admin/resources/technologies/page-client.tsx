@@ -75,7 +75,7 @@ export function TechnologiesPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("technologies") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-    adminClient.revalidate(["technologies", "projects", "home"]);
+    adminClient.revalidate({ tags: ["technologies", "projects"], paths: ["/"] });
   };
 
   // 2. Save Mutation (Create/Update)

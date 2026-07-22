@@ -56,7 +56,7 @@ export function EducationPageClient() {
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("education") });
     void queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-    void adminClient.revalidate(["education", "home", "profile", "sitemap"]);
+    void adminClient.revalidate({ tags: ["education"], paths: ["/", "/about", "/education", "/sitemap.xml"] });
   };
 
   const save = useMutation({

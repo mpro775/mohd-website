@@ -87,6 +87,7 @@ export function PostEditorPage({ postId }: { postId?: string }) {
   const [scheduleValue, setScheduleValue] = useState("");
   const [recovery, setRecovery] = useState<ReturnType<typeof loadEditorDraft>>(null);
   const form = useForm<PostEditorValues>({ resolver: zodResolver(postEditorSchema), defaultValues: EMPTY_POST_VALUES });
+  // eslint-disable-next-line react-hooks/incompatible-library
   const values = form.watch();
   const fingerprint = useMemo(() => JSON.stringify(values), [values]);
   const storageKey = draftStorageKey(postId ?? "new");
@@ -148,7 +149,7 @@ export function PostEditorPage({ postId }: { postId?: string }) {
     const handler = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") { event.preventDefault(); void save("manual_save").then(autosave.markSaved).catch(() => undefined); } };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [save]);
+  }, [save, autosave.markSaved]);
 
   const action = async (name: string, payload?: any) => {
     if (!post) return;

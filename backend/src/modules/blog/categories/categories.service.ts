@@ -28,10 +28,7 @@ export class CategoriesService {
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
     const existing = await this.categoryModel.exists({
-      $or: [
-        { slug },
-        { previousSlugs: slug },
-      ],
+      $or: [{ slug }, { previousSlugs: slug }],
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     });
     if (existing) {
@@ -155,14 +152,13 @@ export class CategoriesService {
   }
 
   async findOnePublic(requestedSlug: string): Promise<any> {
-    const category = await this.categoryModel.findOne({
-      $or: [
-        { slug: requestedSlug },
-        { previousSlugs: requestedSlug },
-      ],
-      isActive: true,
-      deletedAt: { $exists: false },
-    }).lean();
+    const category = await this.categoryModel
+      .findOne({
+        $or: [{ slug: requestedSlug }, { previousSlugs: requestedSlug }],
+        isActive: true,
+        deletedAt: { $exists: false },
+      })
+      .lean();
     if (!category) {
       throw new NotFoundException('Category not found');
     }
@@ -206,7 +202,11 @@ export class CategoriesService {
       request: req,
     });
 
-    await this.revalidation.revalidate(['blog', 'blog:list', `blog:category:${category.slug}`]);
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:category:${category.slug}`,
+    ]);
 
     return category;
   }
@@ -255,7 +255,8 @@ export class CategoriesService {
     });
 
     const tags = ['blog', 'blog:list', `blog:category:${category.slug}`];
-    if (before.slug !== category.slug) tags.push(`blog:category:${before.slug}`);
+    if (before.slug !== category.slug)
+      tags.push(`blog:category:${before.slug}`);
     await this.revalidation.revalidate(tags);
 
     return category;
@@ -288,6 +289,10 @@ export class CategoriesService {
       request: req,
     });
 
-    await this.revalidation.revalidate(['blog', 'blog:list', `blog:category:${oldCategory.slug}`]);
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:category:${oldCategory.slug}`,
+    ]);
   }
 }

@@ -23,8 +23,14 @@ import {
   PostSlugRedirectSchema,
 } from './redirects/schemas/post-slug-redirect.schema';
 import { PostView, PostViewSchema } from './views/schemas/post-view.schema';
-import { PostVisitor, PostVisitorSchema } from './views/schemas/post-visitor.schema';
-import { PostViewEvent, PostViewEventSchema } from './views/schemas/post-view-event.schema';
+import {
+  PostVisitor,
+  PostVisitorSchema,
+} from './views/schemas/post-visitor.schema';
+import {
+  PostViewEvent,
+  PostViewEventSchema,
+} from './views/schemas/post-view-event.schema';
 import { PostsQueryService } from './posts-query.service';
 import { PostsCommandService } from './posts-command.service';
 import { PostWorkflowService } from './post-workflow.service';

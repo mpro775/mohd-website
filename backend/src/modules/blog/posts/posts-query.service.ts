@@ -271,14 +271,18 @@ export class PostsQueryService {
 
     return createPaginatedResponse(
       posts.map((item) => {
-        const media = item.featuredImageMediaId ? mediaMap.get(item.featuredImageMediaId.toString()) : null;
+        const media = item.featuredImageMediaId
+          ? mediaMap.get(item.featuredImageMediaId.toString())
+          : null;
         return {
           id: item._id.toString(),
           title: item.title,
           slug: item.slug,
           status: item.status,
           featuredImage: media?.url ?? null,
-          publishedAt: item.publishedAt ? new Date(item.publishedAt).toISOString() : null,
+          publishedAt: item.publishedAt
+            ? new Date(item.publishedAt).toISOString()
+            : null,
         };
       }),
       total,

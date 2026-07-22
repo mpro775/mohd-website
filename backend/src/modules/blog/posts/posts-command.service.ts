@@ -209,7 +209,9 @@ export class PostsCommandService {
     } else {
       await this.revalidation.revalidate([
         ...(slug ? [`blog:post:${slug}`] : []),
-        ...(current.slug && slug !== current.slug ? [`blog:post:${current.slug}`] : []),
+        ...(current.slug && slug !== current.slug
+          ? [`blog:post:${current.slug}`]
+          : []),
       ]);
     }
     return saved;
@@ -316,7 +318,7 @@ export class PostsCommandService {
       this.viewModel.deleteMany({ postId: id }),
       this.postModel.updateMany(
         { relatedPostIds: id },
-        { $pull: { relatedPostIds: id } as any }
+        { $pull: { relatedPostIds: id } as any },
       ),
       this.mediaService.removeUsageForEntity('Post', id),
     ]);
@@ -351,10 +353,14 @@ export class PostsCommandService {
       request: req,
     });
 
-    const affectedPosts = await this.postModel.find({ _id: { $in: ids } }, 'slug').lean();
+    const affectedPosts = await this.postModel
+      .find({ _id: { $in: ids } }, 'slug')
+      .lean();
     const tagsToRevalidate = ['blog', 'blog:list', 'blog:sitemap', 'blog:rss'];
     if (action === 'set-category') {
-      const category = await this.categoryModel.findById(valueId, 'slug').lean();
+      const category = await this.categoryModel
+        .findById(valueId, 'slug')
+        .lean();
       if (category) tagsToRevalidate.push(`blog:category:${category.slug}`);
     } else {
       const tag = await this.tagModel.findById(valueId, 'slug').lean();

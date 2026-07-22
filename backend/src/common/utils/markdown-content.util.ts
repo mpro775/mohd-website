@@ -38,7 +38,10 @@ export function validateMarkdownPublishingContent(content: string): void {
 }
 
 export function calculateMarkdownReadTime(content: string): number {
-  const withoutFences = content.replace(/(^|\n)[ \t]{0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n[ \t]*\2(?=\n|$)/g, ' ');
+  const withoutFences = content.replace(
+    /(^|\n)[ \t]{0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n[ \t]*\2(?=\n|$)/g,
+    ' ',
+  );
   const words = withoutFences
     .replace(/[#>*_`~[\](){}|:-]/g, ' ')
     .split(/\s+/u)

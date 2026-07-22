@@ -177,8 +177,9 @@ export class CertificationsService {
     if (expiresAt) payload.expiresAt = expiresAt;
     else delete payload.expiresAt;
 
+    let saved: Certification | null = null;
     try {
-      const saved = await new this.certificationModel(payload).save();
+      saved = await new this.certificationModel(payload).save();
       await this.syncMedia(saved);
       await this.auditLogsService.log({
         action: 'certification.created',
@@ -189,6 +190,12 @@ export class CertificationsService {
       });
       return saved;
     } catch (error) {
+      if (saved) {
+        await this.certificationModel
+          .findByIdAndDelete(saved._id)
+          .exec()
+          .catch(() => {});
+      }
       if (isDuplicateKeyError(error)) {
         throw new ConflictException('رابط الشهادة مستخدم بالفعل');
       }
@@ -348,8 +355,9 @@ export class CertificationsService {
     if (doesNotExpire) updateInput.expiresAt = null;
 
     const update = cleanUpdatePayload(updateInput);
+    let saved: Certification | null = null;
     try {
-      const saved = await this.certificationModel
+      saved = await this.certificationModel
         .findByIdAndUpdate(id, update, { new: true, runValidators: true })
         .exec();
       if (!saved) throw new NotFoundException('الشهادة غير موجودة');
@@ -364,6 +372,12 @@ export class CertificationsService {
       });
       return saved;
     } catch (error) {
+      if (saved) {
+        await this.certificationModel
+          .findByIdAndUpdate(id, current, { runValidators: false })
+          .exec()
+          .catch(() => {});
+      }
       if (isDuplicateKeyError(error)) {
         throw new ConflictException('رابط الشهادة مستخدم بالفعل');
       }
@@ -378,27 +392,42 @@ export class CertificationsService {
     request?: unknown,
   ): Promise<Certification> {
     const current = await this.findOneAdmin(id);
-    const saved = await this.certificationModel
-      .findByIdAndUpdate(id, { [field]: value }, { new: true })
-      .exec();
-    if (!saved) throw new NotFoundException('الشهادة غير موجودة');
-    const action =
-      field === 'isPublished'
-        ? value
-          ? 'certification.published'
-          : 'certification.unpublished'
-        : value
-          ? 'certification.featured'
-          : 'certification.unfeatured';
-    await this.auditLogsService.log({
-      action,
-      resource: 'Certification',
-      resourceId: id,
-      before: current.toObject(),
-      after: saved.toObject(),
-      request,
-    });
-    return saved;
+    let saved: Certification | null = null;
+    try {
+      saved = await this.certificationModel
+        .findByIdAndUpdate(id, { [field]: value }, { new: true })
+        .exec();
+      if (!saved) throw new NotFoundException('الشهادة غير موجودة');
+      const action =
+        field === 'isPublished'
+          ? value
+            ? 'certification.published'
+            : 'certification.unpublished'
+          : value
+            ? 'certification.featured'
+            : 'certification.unfeatured';
+      await this.auditLogsService.log({
+        action,
+        resource: 'Certification',
+        resourceId: id,
+        before: current.toObject(),
+        after: saved.toObject(),
+        request,
+      });
+      return saved;
+    } catch (error) {
+      if (saved) {
+        await this.certificationModel
+          .findByIdAndUpdate(
+            id,
+            { [field]: current[field] },
+            { runValidators: false },
+          )
+          .exec()
+          .catch(() => {});
+      }
+      throw error;
+    }
   }
 
   setPublished(id: string, value: boolean, request?: unknown) {
@@ -456,23 +485,31 @@ export class CertificationsService {
     if (dto.action === CertificationBulkAction.DELETE) {
       const existing = await this.certificationModel
         .find({ _id: { $in: ids } })
-        .select('_id')
         .lean<Certification[]>()
         .exec();
       matchedCount = existing.length;
-      const result = await this.certificationModel
-        .deleteMany({ _id: { $in: ids } })
-        .exec();
-      deletedCount = result.deletedCount;
-      modifiedCount = deletedCount;
-      await Promise.all(
-        existing.map((item) =>
-          this.mediaService.removeUsageForEntity(
-            'Certification',
-            item._id.toString(),
+      let deleted = false;
+      try {
+        const result = await this.certificationModel
+          .deleteMany({ _id: { $in: ids } })
+          .exec();
+        deletedCount = result.deletedCount;
+        modifiedCount = deletedCount;
+        deleted = deletedCount > 0;
+        await Promise.all(
+          existing.map((item) =>
+            this.mediaService.removeUsageForEntity(
+              'Certification',
+              item._id.toString(),
+            ),
           ),
-        ),
-      );
+        );
+      } catch (error) {
+        if (deleted) {
+          await this.certificationModel.insertMany(existing).catch(() => {});
+        }
+        throw error;
+      }
     } else {
       const update =
         dto.action === CertificationBulkAction.PUBLISH
@@ -496,6 +533,9 @@ export class CertificationsService {
       [CertificationBulkAction.UNFEATURE]: 'certification.bulk_unfeatured',
       [CertificationBulkAction.DELETE]: 'certification.bulk_deleted',
     };
+    // Note: We don't implement full compensational rollback for bulk actions since
+    // they affect multiple documents and we only log an audit record here.
+    // A bulk delete compensation is already handled inside the specific if-block.
     await this.auditLogsService.log({
       action: actionMap[dto.action],
       resource: 'Certification',
@@ -513,14 +553,23 @@ export class CertificationsService {
 
   async remove(id: string, request?: unknown): Promise<void> {
     const current = await this.findOneAdmin(id);
-    await this.certificationModel.findByIdAndDelete(id).exec();
-    await this.mediaService.removeUsageForEntity('Certification', id);
-    await this.auditLogsService.log({
-      action: 'certification.deleted',
-      resource: 'Certification',
-      resourceId: id,
-      before: current.toObject(),
-      request,
-    });
+    let deleted = false;
+    try {
+      await this.certificationModel.findByIdAndDelete(id).exec();
+      deleted = true;
+      await this.mediaService.removeUsageForEntity('Certification', id);
+      await this.auditLogsService.log({
+        action: 'certification.deleted',
+        resource: 'Certification',
+        resourceId: id,
+        before: current.toObject(),
+        request,
+      });
+    } catch (error) {
+      if (deleted) {
+        await new this.certificationModel(current).save().catch(() => {});
+      }
+      throw error;
+    }
   }
 }

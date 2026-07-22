@@ -152,11 +152,6 @@ export class SeoService {
 
     const total = result?.count?.[0]?.total ?? 0;
 
-    return createPaginatedResponse(
-      result?.data ?? [],
-      total,
-      page,
-      limit,
-    );
+    return createPaginatedResponse(result?.data ?? [], total, page, limit);
   }
 }

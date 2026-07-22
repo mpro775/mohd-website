@@ -18,9 +18,12 @@ type RequestLike = {
 export class PostViewsService {
   constructor(
     @InjectModel(Post.name) private readonly postModel: Model<Post>,
-    @InjectModel(PostView.name) private readonly dailyViewModel: Model<PostView>,
-    @InjectModel(PostVisitor.name) private readonly postVisitorModel: Model<PostVisitor>,
-    @InjectModel(PostViewEvent.name) private readonly postViewEventModel: Model<PostViewEvent>,
+    @InjectModel(PostView.name)
+    private readonly dailyViewModel: Model<PostView>,
+    @InjectModel(PostVisitor.name)
+    private readonly postVisitorModel: Model<PostVisitor>,
+    @InjectModel(PostViewEvent.name)
+    private readonly postViewEventModel: Model<PostViewEvent>,
     private readonly config: ConfigService,
   ) {}
 
@@ -53,12 +56,10 @@ export class PostViewsService {
       .trim();
     const ip = forwarded || req.ip || 'unknown';
     const visitorHash = this.hash(ip);
-    const sessionHash = dto.sessionId
-      ? this.hash(dto.sessionId)
-      : undefined;
+    const sessionHash = dto.sessionId ? this.hash(dto.sessionId) : undefined;
     const dateKey = new Date().toISOString().slice(0, 10);
     const now = new Date();
-    
+
     let referrerDomain: string | undefined;
     if (dto.referrer) {
       try {

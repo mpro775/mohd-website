@@ -73,7 +73,7 @@ export function LinksPageClient() {
   const invalidateKeys = () => {
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("links") });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
-    adminClient.revalidate(["links", "profile", "home"]);
+    adminClient.revalidate({ tags: ["links", "profile"], paths: ["/"] });
   };
 
   // 2. Save Mutation (Create/Update)
