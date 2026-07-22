@@ -11,4 +11,25 @@ describe("blog markdown", () => {
     const markdown = "```tsx\n<div className=\"card\">Hello</div>\n```\n\nArray<T> and x < y";
     expect(`${markdown}`).toBe(markdown);
   });
+
+  it("ignores headings inside backtick and tilde fences", () => {
+    const content = `
+## عنوان حقيقي
+
+\`\`\`md
+## ليس عنوانًا
+\`\`\`
+
+~~~md
+### ليس عنوانًا أيضًا
+~~~
+
+### عنوان فرعي
+`;
+
+    expect(extractHeadings(content).map((item) => item.text)).toEqual([
+      "عنوان حقيقي",
+      "عنوان فرعي",
+    ]);
+  });
 });

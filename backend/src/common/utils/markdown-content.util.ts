@@ -21,19 +21,24 @@ export function normalizeMarkdownContent(content: string): string {
   return content.replace(/\r\n?/g, '\n');
 }
 
-export function validateMarkdownContent(content: string): void {
+export function validateMarkdownDraftContent(content: string): void {
   if (content.length > MAX_MARKDOWN_LENGTH) {
     throw new BadRequestException(
       `المحتوى يتجاوز الحد الأقصى (${MAX_MARKDOWN_LENGTH} حرف)`,
     );
   }
+}
+
+export function validateMarkdownPublishingContent(content: string): void {
+  validateMarkdownDraftContent(content);
+
   if (!content.trim()) {
     throw new BadRequestException('محتوى المقال لا يمكن أن يكون فارغًا');
   }
 }
 
 export function calculateMarkdownReadTime(content: string): number {
-  const withoutFences = content.replace(/```[\s\S]*?```/g, ' ');
+  const withoutFences = content.replace(/(^|\n)[ \t]{0,3}(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n[ \t]*\2(?=\n|$)/g, ' ');
   const words = withoutFences
     .replace(/[#>*_`~[\](){}|:-]/g, ' ')
     .split(/\s+/u)

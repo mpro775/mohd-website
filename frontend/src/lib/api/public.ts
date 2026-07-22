@@ -6,7 +6,8 @@ import type {
   Education,
   Faq,
   LinkItem,
-  Post,
+  PublicPostListItem,
+  PublicPostDetail,
   Profile,
   Project,
   Service,
@@ -36,14 +37,14 @@ export const publicApi = {
       category: undefined,
       tag: undefined,
     };
-    const r = await apiRequest<Post[], import("./types").PaginationMeta>("/public/blog/posts", {
+    const r = await apiRequest<PublicPostListItem[], import("./types").PaginationMeta>("/public/blog/posts", {
       query: normalized,
       next: { revalidate: 120, tags: ["blog", "blog:list"] },
     });
-    return normalizePaginated<Post>(r.data, r.meta);
+    return normalizePaginated<PublicPostListItem>(r.data, r.meta);
   },
-  post: (slug: string) => apiRequest<Post>(`/public/blog/posts/${slug}`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data),
-  relatedPosts: (slug: string) => apiRequest<Post[]>(`/public/blog/posts/${slug}/related`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data ?? []),
+  post: (slug: string) => apiRequest<PublicPostDetail>(`/public/blog/posts/${slug}`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data),
+  relatedPosts: (slug: string) => apiRequest<PublicPostListItem[]>(`/public/blog/posts/${slug}/related`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data ?? []),
   postNavigation: (slug: string) => apiRequest<PostNavigation>(`/public/blog/posts/${slug}/navigation`, { next: { revalidate: 120, tags: ["blog", `blog:post:${slug}`] } }).then((r) => r.data),
   trackPostView: (id: string, body: { sessionId?: string; referrer?: string }) => apiRequest(`/public/blog/posts/${id}/view`, { method: "POST", body }),
   categories: () => apiRequest<Category[]>("/public/blog/categories", { next: { revalidate: 300, tags: ["blog", "blog:list"] } }).then((r) => r.data ?? []),

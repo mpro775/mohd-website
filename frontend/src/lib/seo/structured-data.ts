@@ -1,4 +1,4 @@
-import type { Certification, Education, Post, Profile, Project } from "@/lib/api/types";
+import type { Certification, Education, PublicPostDetail, Profile, Project } from "@/lib/api/types";
 import { absoluteUrl } from "@/lib/utils";
 
 export function personJsonLd(profile?: Profile, socialUrls: string[] = []) {
@@ -14,7 +14,7 @@ export function personJsonLd(profile?: Profile, socialUrls: string[] = []) {
   };
 }
 
-export function postJsonLd(post: Post) {
+export function postJsonLd(post: PublicPostDetail) {
   const canonical = post.canonicalUrl || absoluteUrl(`/blog/${post.slug}`);
   const authorName = typeof post.author === "object" ? post.author.name : undefined;
   const section = typeof post.category === "object" ? post.category.name : undefined;

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/site";
-import type { Post, SeoFields } from "@/lib/api/types";
+import type { PublicPostDetail, SeoFields } from "@/lib/api/types";
 import { absoluteUrl } from "@/lib/utils";
 
 export function buildMetadata(
@@ -37,7 +37,7 @@ export function buildMetadata(
   };
 }
 
-export function buildPostMetadata(post: Post): Metadata {
+export function buildPostMetadata(post: PublicPostDetail): Metadata {
   const resolvedTitle = post.seo?.metaTitle ?? post.title;
   const description = post.seo?.metaDescription ?? post.summary;
   const canonical = post.canonicalUrl || absoluteUrl(`/blog/${post.slug}`);

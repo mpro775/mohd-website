@@ -33,7 +33,6 @@ export class PostSeoDto {
 
 export class CreatePostDraftDto {
   @IsString()
-  @MinLength(3)
   @MaxLength(180)
   title: string;
 
@@ -43,7 +42,6 @@ export class CreatePostDraftDto {
   slug?: string;
 
   @IsString()
-  @MinLength(20)
   @MaxLength(500)
   summary: string;
 
@@ -53,7 +51,6 @@ export class CreatePostDraftDto {
   excerpt?: string;
 
   @IsString()
-  @MinLength(1)
   content: string;
 
   @IsOptional()
@@ -64,8 +61,9 @@ export class CreatePostDraftDto {
   @IsMongoId()
   coverImageMediaId?: string;
 
+  @IsOptional()
   @IsMongoId()
-  category: string;
+  category?: string;
 
   @IsOptional()
   @IsArray()

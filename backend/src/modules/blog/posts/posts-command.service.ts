@@ -11,7 +11,7 @@ import {
   calculateMarkdownReadTime,
   extractInternalMediaUrls,
   normalizeMarkdownContent,
-  validateMarkdownContent,
+  validateMarkdownDraftContent,
 } from '../../../common/utils/markdown-content.util';
 import { sanitizePlainText } from '../../../common/utils/sanitize-content.util';
 import { normalizeSlug } from '../../../common/utils/slug.util';
@@ -51,12 +51,13 @@ export class PostsCommandService {
   ) {}
 
   async create(dto: CreatePostDraftDto, authorId: string, req?: RequestLike) {
-    const slug = normalizeSlug(dto.slug || dto.title);
-    await this.assertSlugAvailable(slug);
+    const rawSlug = dto.slug || dto.title;
+    const slug = rawSlug ? normalizeSlug(rawSlug) : undefined;
+    if (slug) await this.assertSlugAvailable(slug);
     await this.validateRelations(dto.category, dto.tags, dto.relatedPostIds);
     await this.validateImages(dto);
     const content = normalizeMarkdownContent(dto.content);
-    validateMarkdownContent(content);
+    validateMarkdownDraftContent(content);
     const contentMediaIds = await this.resolveContentMediaIds(content);
     const editable = this.editablePayload({ ...dto, slug, content });
     const post = new this.postModel({
@@ -103,12 +104,10 @@ export class PostsCommandService {
       dto.content === undefined
         ? current.content
         : normalizeMarkdownContent(dto.content);
-    validateMarkdownContent(content);
-    const slug =
-      dto.title || dto.slug
-        ? normalizeSlug(dto.slug || dto.title || current.slug)
-        : current.slug;
-    if (slug !== current.slug) await this.assertSlugAvailable(slug, id);
+    validateMarkdownDraftContent(content);
+    const rawSlug = dto.slug || dto.title || current.slug;
+    const slug = rawSlug ? normalizeSlug(rawSlug) : undefined;
+    if (slug && slug !== current.slug) await this.assertSlugAvailable(slug, id);
     await this.validateRelations(
       dto.category,
       dto.tags,
@@ -136,7 +135,7 @@ export class PostsCommandService {
       },
       $inc: { version: 1, contentVersion: dto.content === undefined ? 0 : 1 },
     };
-    if (slug !== current.slug) {
+    if (slug && slug !== current.slug && current.slug) {
       update.$addToSet = { previousSlugs: current.slug };
     }
 
@@ -151,7 +150,7 @@ export class PostsCommandService {
     }
     const saved = post as Post;
 
-    if (slug !== current.slug) {
+    if (slug && slug !== current.slug && current.slug) {
       await this.redirectModel.findOneAndUpdate(
         { oldSlug: current.slug },
         {
@@ -209,8 +208,8 @@ export class PostsCommandService {
       );
     } else {
       await this.revalidation.revalidate([
-        `blog:post:${slug}`,
-        ...(slug !== current.slug ? [`blog:post:${current.slug}`] : []),
+        ...(slug ? [`blog:post:${slug}`] : []),
+        ...(current.slug && slug !== current.slug ? [`blog:post:${current.slug}`] : []),
       ]);
     }
     return saved;

@@ -14,12 +14,12 @@ import { ShareActions } from "@/features/blog/components/ShareActions";
 import { TableOfContents } from "@/features/blog/components/TableOfContents";
 import { extractHeadings } from "@/features/blog/utils/blog-markdown";
 import { publicApi } from "@/lib/api/public";
-import type { Post } from "@/lib/api/types";
+import type { PublicPostDetail } from "@/lib/api/types";
 import { buildPostMetadata } from "@/lib/seo/metadata";
 import { breadcrumbJsonLd, postJsonLd } from "@/lib/seo/structured-data";
 import { formatDate } from "@/lib/utils";
 
-function category(post: Post) { return typeof post.category === "object" ? post.category : null; }
+function category(post: PublicPostDetail) { return typeof post.category === "object" ? post.category : null; }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;

@@ -9,14 +9,14 @@ import { Eye, Save } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api/errors";
 import { clientApiRequest } from "@/lib/api/admin-client";
-import type { Post } from "@/lib/api/types";
+import type { AdminPostDetail } from "@/lib/api/types";
 import { BlogMarkdownEditor } from "../editor/BlogMarkdownEditor";
 import { EditorPreview } from "../editor/EditorPreview";
 import { EditorStatusBar } from "../editor/EditorStatusBar";
 import { usePostAutosave } from "../hooks/usePostAutosave";
 import { usePostConflict } from "../hooks/usePostConflict";
 import { usePostReadiness } from "../hooks/usePostReadiness";
-import { EMPTY_POST_VALUES, postEditorSchema, type PostEditorValues } from "../schemas/post-editor.schema";
+import { EMPTY_POST_VALUES, postDraftPersistenceSchema, postEditorSchema, type PostEditorValues } from "../schemas/post-editor.schema";
 import { clearEditorDraft, draftStorageKey, loadEditorDraft, saveEditorDraft } from "../utils/editor-draft-storage";
 import { datetimeLocalToUtc, utcToDatetimeLocal } from "../utils/post-date";
 import { PostBasicsPanel } from "./PostBasicsPanel";
@@ -33,7 +33,7 @@ function entityId(value: unknown): string {
   return String((value as { id?: string; _id?: string }).id ?? (value as { _id?: string })._id ?? "");
 }
 
-function valuesFromPost(post: Post): PostEditorValues {
+function valuesFromPost(post: AdminPostDetail): PostEditorValues {
   return {
     ...EMPTY_POST_VALUES,
     title: post.title,
@@ -63,7 +63,7 @@ function editablePayload(values: PostEditorValues) {
     summary: values.summary,
     excerpt: values.excerpt || undefined,
     content: values.content,
-    category: values.category,
+    category: values.category || undefined,
     tags: values.tags,
     relatedPostIds: values.relatedPostIds,
     featuredImageMediaId: values.featuredImageMediaId || undefined,
@@ -78,7 +78,7 @@ function editablePayload(values: PostEditorValues) {
 
 export function PostEditorPage({ postId }: { postId?: string }) {
   const router = useRouter();
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<AdminPostDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(postId));
   const [busy, setBusy] = useState(false);
   const [savedMarkdown, setSavedMarkdown] = useState("");
@@ -94,7 +94,7 @@ export function PostEditorPage({ postId }: { postId?: string }) {
 
   useEffect(() => {
     if (!postId) { setRecovery(loadEditorDraft(storageKey)); return; }
-    void clientApiRequest<Post>(`/blog/posts/${postId}`).then((result) => {
+    void clientApiRequest<AdminPostDetail>(`/blog/posts/${postId}`).then((result) => {
       setPost(result.data); const initial = valuesFromPost(result.data); form.reset(initial); setSavedMarkdown(initial.content);
       if (result.data.scheduledAt) setScheduleValue(utcToDatetimeLocal(result.data.scheduledAt as unknown as string));
       const local = loadEditorDraft(storageKey);
@@ -115,20 +115,23 @@ export function PostEditorPage({ postId }: { postId?: string }) {
   }, [form.formState.isDirty]);
 
   const save = useCallback(async (reason: "manual_save" | "autosave") => {
-    const valid = await form.trigger();
-    if (!valid) throw new Error("validation");
     const current = form.getValues();
+    const draftValidation = postDraftPersistenceSchema.safeParse(current);
+    if (!draftValidation.success) {
+      if (reason === "manual_save") toast.error("توجد بيانات غير صالحة للحفظ");
+      throw new Error("draft_validation");
+    }
     setBusy(true);
     try {
       const result = post
-        ? await clientApiRequest<Post>(`/blog/posts/${post.id ?? post._id}${reason === "autosave" ? "/autosave" : ""}`, { method: reason === "autosave" ? "POST" : "PUT", body: { ...editablePayload(current), expectedVersion: post.version, saveReason: reason } })
-        : await clientApiRequest<Post>("/blog/posts", { method: "POST", body: editablePayload(current) });
+        ? await clientApiRequest<AdminPostDetail>(`/blog/posts/${post.id ?? post._id}${reason === "autosave" ? "/autosave" : ""}`, { method: reason === "autosave" ? "POST" : "PUT", body: { ...editablePayload(current), expectedVersion: post.version, saveReason: reason } })
+        : await clientApiRequest<AdminPostDetail>("/blog/posts", { method: "POST", body: editablePayload(current) });
       setPost(result.data); setSavedMarkdown(current.content); form.reset(valuesFromPost(result.data)); clearEditorDraft(storageKey);
       if (!post) router.replace(`/admin/blog/posts/${result.data.id ?? result.data._id}/edit`);
       if (reason === "manual_save") toast.success("تم حفظ المقال");
     } catch (error) {
       if (error instanceof ApiError && error.statusCode === 409 && postId) {
-        const server = await clientApiRequest<Post>(`/blog/posts/${postId}`);
+        const server = await clientApiRequest<AdminPostDetail>(`/blog/posts/${postId}`);
         conflict.openConflict(server.data, current.content);
       }
       throw error;
@@ -159,7 +162,7 @@ export function PostEditorPage({ postId }: { postId?: string }) {
       if (payload) {
         body = { ...body, ...payload };
       }
-      const result = await clientApiRequest<Post>(`/blog/posts/${post.id ?? post._id}/${name}`, { method: "POST", body });
+      const result = await clientApiRequest<AdminPostDetail>(`/blog/posts/${post.id ?? post._id}/${name}`, { method: "POST", body });
       setPost(result.data); form.reset(valuesFromPost(result.data));
       if (result.data.scheduledAt) setScheduleValue(utcToDatetimeLocal(result.data.scheduledAt as unknown as string));
       toast.success(result.message);

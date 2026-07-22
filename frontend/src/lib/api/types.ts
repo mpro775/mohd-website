@@ -230,51 +230,70 @@ export type Category = {
 
 export type Tag = Category & { color?: string };
 
-export type Post = {
+export type PostStatus = "draft" | "in_review" | "changes_requested" | "approved" | "scheduled" | "published" | "archived";
+
+export type PostSummary = {
   id?: string;
   _id?: string;
   title: string;
   slug: string;
   summary: string;
   excerpt?: string;
-  content: string;
   featuredImageMediaId?: string;
   featuredImage?: string;
   featuredImageMedia?: ResolvedMedia;
+  category?: Category | string;
+  tags?: Array<Tag | string>;
+  author?: { id?: string; name?: string; title?: string; avatar?: string } | string;
+  publishedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  readTime?: number;
+  viewCount?: number;
+  uniqueViewCount?: number;
+  isFeatured?: boolean;
+  featuredOrder?: number;
+  seo?: SeoFields;
+};
+
+export type PublicPostListItem = PostSummary;
+
+export type PublicPostDetail = PostSummary & {
+  content: string;
+  contentFormat?: "markdown";
   coverImageMediaId?: string;
   coverImage?: string;
   coverImageMedia?: ResolvedMedia;
-  category?: Category | string;
-  tags?: Array<Tag | string>;
-  relatedPostIds?: string[];
-  previousSlugs?: string[];
-  contentFormat?: "markdown";
-  contentVersion?: number;
-  version?: number;
-  contentHash?: string;
-  contentMediaIds?: string[];
-  author?: { id?: string; name?: string; title?: string; avatar?: string } | string;
-  reviewer?: { id?: string; name?: string };
-  publisher?: { id?: string; name?: string };
-  firstPublishedAt?: string;
-  publishedAt?: string;
-  lastPublishedAt?: string;
-  scheduledAt?: string;
-  status?: "draft" | "in_review" | "changes_requested" | "approved" | "scheduled" | "published" | "archived";
-  viewCount?: number;
-  uniqueViewCount?: number;
-  readTime?: number;
-  isFeatured?: boolean;
-  featuredOrder?: number;
   allowIndexing?: boolean;
   canonicalUrl?: string;
-  seo?: SeoFields;
-  createdAt?: string;
-  updatedAt?: string;
-  deletedAt?: string;
   canonicalSlug?: string;
   redirectRequired?: boolean;
 };
+
+export type AdminPostListItem = PostSummary & {
+  status?: PostStatus;
+  version?: number;
+  scheduledAt?: string;
+  deletedAt?: string;
+};
+
+export type AdminPostDetail = PublicPostDetail & {
+  version?: number;
+  contentVersion?: number;
+  contentHash?: string;
+  previousSlugs?: string[];
+  relatedPostIds?: string[];
+  scheduledAt?: string;
+  status?: PostStatus;
+  contentMediaIds?: string[];
+  reviewer?: { id?: string; name?: string };
+  publisher?: { id?: string; name?: string };
+  firstPublishedAt?: string;
+  lastPublishedAt?: string;
+  deletedAt?: string;
+};
+
+export type PostRevisionSnapshot = Partial<AdminPostDetail>;
 
 export type PostRevision = {
   _id?: string;
@@ -282,7 +301,7 @@ export type PostRevision = {
   revisionNumber: number;
   version: number;
   reason: "manual_save" | "autosave" | "publish" | "schedule" | "restore" | "migration";
-  snapshot?: Partial<Post>;
+  snapshot?: PostRevisionSnapshot;
   contentHash: string;
   createdBy?: { name?: string; email?: string };
   createdAt: string;

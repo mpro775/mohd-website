@@ -19,22 +19,22 @@ export interface ISEO {
 
 @Schema({ timestamps: true })
 export class Post extends Document {
-  @Prop({ required: true, trim: true })
+  @Prop({ trim: true, default: '' })
   title: string;
 
-  @Prop({ required: true, lowercase: true, trim: true })
-  slug: string;
+  @Prop({ lowercase: true, trim: true })
+  slug?: string;
 
   @Prop({ type: [String], default: [] })
   previousSlugs: string[];
 
-  @Prop({ required: true })
+  @Prop({ trim: true, default: '' })
   summary: string;
 
   @Prop()
   excerpt: string;
 
-  @Prop({ required: true })
+  @Prop({ default: '' })
   content: string;
 
   @Prop({ type: String, enum: ['markdown'], default: 'markdown' })
@@ -59,7 +59,7 @@ export class Post extends Document {
   contentMediaIds: Types.ObjectId[];
 
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Category' })
-  category: Types.ObjectId;
+  category?: Types.ObjectId;
 
   @Prop({
     type: [{ type: MongooseSchema.Types.ObjectId, ref: 'Tag' }],
@@ -143,7 +143,15 @@ export class Post extends Document {
 
 export const PostSchema = SchemaFactory.createForClass(Post);
 
-PostSchema.index({ slug: 1 }, { unique: true });
+PostSchema.index(
+  { slug: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      slug: { $type: 'string' },
+    },
+  },
+);
 PostSchema.index({ previousSlugs: 1 });
 PostSchema.index({ status: 1, publishedAt: -1 });
 PostSchema.index({ status: 1, scheduledAt: 1 });

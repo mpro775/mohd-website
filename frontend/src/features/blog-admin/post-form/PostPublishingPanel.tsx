@@ -1,6 +1,6 @@
 "use client";
 
-import type { Post } from "@/lib/api/types";
+import type { AdminPostDetail } from "@/lib/api/types";
 
 const labels: Record<string, string> = {
   draft: "مسودة",
@@ -19,7 +19,7 @@ export function PostPublishingPanel({
   busy,
   onAction,
 }: {
-  post: Post | null;
+  post: AdminPostDetail | null;
   scheduleValue: string;
   onScheduleValue: (value: string) => void;
   busy: boolean;
