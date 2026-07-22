@@ -27,8 +27,11 @@ export class CategoriesService {
   ) {}
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
-    const existing = await this.categoryModel.findOne({
-      slug,
+    const existing = await this.categoryModel.exists({
+      $or: [
+        { slug },
+        { previousSlugs: slug },
+      ],
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     });
     if (existing) {
@@ -151,16 +154,23 @@ export class CategoriesService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  async findOnePublic(slug: string): Promise<Category> {
+  async findOnePublic(requestedSlug: string): Promise<any> {
     const category = await this.categoryModel.findOne({
-      slug,
+      $or: [
+        { slug: requestedSlug },
+        { previousSlugs: requestedSlug },
+      ],
       isActive: true,
       deletedAt: { $exists: false },
-    });
+    }).lean();
     if (!category) {
       throw new NotFoundException('Category not found');
     }
-    return category;
+    return {
+      ...category,
+      canonicalSlug: category.slug,
+      redirectRequired: category.slug !== requestedSlug,
+    };
   }
 
   async findOneAdmin(id: string): Promise<Category> {

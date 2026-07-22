@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { Category } from '../blog/categories/schemas/category.schema';
 import { Post, PostStatus } from '../blog/posts/schemas/post.schema';
@@ -24,61 +24,137 @@ export class SeoService {
   ) {}
 
   async getEntries(page: number, limit: number) {
+    const skip = (page - 1) * limit;
     const now = new Date();
-    const postFilter = {
-      status: PostStatus.PUBLISHED,
-      publishedAt: { $lte: now },
-      allowIndexing: { $ne: false },
-      deletedAt: { $exists: false },
-    };
-    const [posts, categories, tags, tagCounts] = await Promise.all([
-      this.postModel
-        .find(postFilter)
-        .select('slug title summary publishedAt updatedAt')
-        .sort({ publishedAt: -1 })
-        .lean(),
-      this.categoryModel
-        .find({ isActive: true, deletedAt: { $exists: false } })
-        .select('slug updatedAt')
-        .lean(),
-      this.tagModel
-        .find({ isActive: true, deletedAt: { $exists: false } })
-        .select('slug updatedAt')
-        .lean(),
-      this.postModel.aggregate([
-        { $match: postFilter },
-        { $unwind: '$tags' },
-        { $group: { _id: '$tags', count: { $sum: 1 } } },
-      ]),
-    ]);
-    const tagCountMap = new Map(
-      tagCounts.map((item) => [item._id.toString(), item.count]),
-    );
-    const entries: SeoEntry[] = [
-      ...posts.map((post) => ({
-        type: 'post' as const,
-        path: `/blog/${post.slug}`,
-        lastModified: post.updatedAt,
-        publishedAt: post.publishedAt,
-        title: post.title,
-        description: post.summary,
-      })),
-      ...categories.map((category) => ({
-        type: 'category' as const,
-        path: `/blog/category/${category.slug}`,
-        lastModified: category.updatedAt,
-      })),
-      ...tags
-        .filter((tag) => (tagCountMap.get(tag._id.toString()) ?? 0) >= 2)
-        .map((tag) => ({
-          type: 'tag' as const,
-          path: `/blog/tag/${tag.slug}`,
-          lastModified: tag.updatedAt,
-        })),
+
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          status: PostStatus.PUBLISHED,
+          publishedAt: { $lte: now },
+          allowIndexing: { $ne: false },
+          deletedAt: { $exists: false },
+        },
+      },
+      {
+        $project: {
+          type: { $literal: 'post' },
+          path: { $concat: ['/blog/', '$slug'] },
+          lastModified: '$updatedAt',
+          publishedAt: 1,
+          title: 1,
+          description: '$summary',
+          sortGroup: { $literal: 1 },
+        },
+      },
+      {
+        $unionWith: {
+          coll: 'categories',
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                deletedAt: { $exists: false },
+              },
+            },
+            {
+              $project: {
+                type: { $literal: 'category' },
+                path: {
+                  $concat: ['/blog/category/', '$slug'],
+                },
+                lastModified: '$updatedAt',
+                sortGroup: { $literal: 2 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $unionWith: {
+          coll: 'tags',
+          pipeline: [
+            {
+              $match: {
+                isActive: true,
+                deletedAt: { $exists: false },
+              },
+            },
+            {
+              $lookup: {
+                from: 'posts',
+                let: { tagId: '$_id' },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: {
+                        $and: [
+                          { $in: ['$$tagId', '$tags'] },
+                          { $eq: ['$status', 'published'] },
+                          { $lte: ['$publishedAt', now] },
+                          { $ne: ['$allowIndexing', false] },
+                          { $eq: [{ $type: '$deletedAt' }, 'missing'] },
+                        ],
+                      },
+                    },
+                  },
+                  { $limit: 2 },
+                ],
+                as: 'publishedPosts',
+              },
+            },
+            {
+              $match: {
+                $expr: {
+                  $gte: [{ $size: '$publishedPosts' }, 2],
+                },
+              },
+            },
+            {
+              $project: {
+                type: { $literal: 'tag' },
+                path: {
+                  $concat: ['/blog/tag/', '$slug'],
+                },
+                lastModified: '$updatedAt',
+                sortGroup: { $literal: 3 },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $sort: {
+          sortGroup: 1,
+          lastModified: -1,
+          _id: 1,
+        },
+      },
+      {
+        $facet: {
+          data: [
+            { $skip: skip },
+            { $limit: limit },
+            {
+              $project: {
+                _id: 0,
+                sortGroup: 0,
+                publishedPosts: 0,
+              },
+            },
+          ],
+          count: [{ $count: 'total' }],
+        },
+      },
     ];
+
+    const [result] = await this.postModel.aggregate(pipeline);
+
+    const total = result?.count?.[0]?.total ?? 0;
+
     return createPaginatedResponse(
-      entries.slice((page - 1) * limit, page * limit),
-      entries.length,
+      result?.data ?? [],
+      total,
       page,
       limit,
     );

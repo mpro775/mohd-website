@@ -19,6 +19,7 @@ import { Permission } from '../../../common/auth/permissions.enum';
 import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
 import { CreatePostDraftDto } from './dto/create-post.dto';
 import { FilterPostDto } from './dto/filter-post.dto';
+import { PostOptionsDto } from './dto/post-options.dto';
 import { RestoreRevisionDto } from './dto/restore-revision.dto';
 import { SchedulePostDto } from './dto/schedule-post.dto';
 import { TaxonomyOptionsDto } from './dto/taxonomy-options.dto';
@@ -210,6 +211,17 @@ export class AdminPostsController {
       }
     }
     return { message: 'اكتمل الإجراء الجماعي', data: results };
+  }
+
+  @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)
+  @Get('options')
+  async options(@Query() dto: PostOptionsDto) {
+    const result = await this.queries.postOptions(dto);
+    return {
+      message: 'تم تحميل الخيارات',
+      data: result.data,
+      meta: result.meta,
+    };
   }
 
   @Permissions(Permission.CREATE_POSTS, Permission.EDIT_POSTS)

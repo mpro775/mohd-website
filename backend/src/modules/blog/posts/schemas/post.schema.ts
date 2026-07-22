@@ -166,3 +166,10 @@ PostSchema.index(
     default_language: 'none',
   },
 );
+PostSchema.index({
+  status: 1,
+  allowIndexing: 1,
+  deletedAt: 1,
+  publishedAt: -1,
+  updatedAt: -1,
+});

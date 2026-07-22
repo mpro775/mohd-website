@@ -28,8 +28,11 @@ export class TagsService {
   ) {}
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
-    const existing = await this.tagModel.findOne({
-      slug,
+    const existing = await this.tagModel.exists({
+      $or: [
+        { slug },
+        { previousSlugs: slug },
+      ],
       ...(excludeId ? { _id: { $ne: excludeId } } : {}),
     });
     if (existing) {
@@ -146,16 +149,23 @@ export class TagsService {
     return createPaginatedResponse(data, total, page, limit);
   }
 
-  async findOnePublic(slug: string): Promise<Tag> {
+  async findOnePublic(requestedSlug: string): Promise<any> {
     const tag = await this.tagModel.findOne({
-      slug,
+      $or: [
+        { slug: requestedSlug },
+        { previousSlugs: requestedSlug },
+      ],
       isActive: true,
       deletedAt: { $exists: false },
-    });
+    }).lean();
     if (!tag) {
       throw new NotFoundException('Tag not found');
     }
-    return tag;
+    return {
+      ...tag,
+      canonicalSlug: tag.slug,
+      redirectRequired: tag.slug !== requestedSlug,
+    };
   }
 
   async findOneAdmin(id: string): Promise<Tag> {
@@ -304,9 +314,20 @@ export class TagsService {
         { $set: { tags }, $inc: { version: 1 } },
       );
     }
+    
+    target.previousSlugs = [
+      ...new Set([
+        ...(target.previousSlugs ?? []),
+        source.slug,
+        ...(source.previousSlugs ?? []),
+      ]),
+    ];
+    await target.save();
+
     source.isActive = false;
     source.deletedAt = new Date();
     await source.save();
+    
     await this.auditLogsService.log({
       action: 'tag.merged',
       resource: 'Tag',

@@ -226,6 +226,8 @@ export type Category = {
   imageMediaId?: string;
   order?: number;
   seo?: SeoFields;
+  canonicalSlug?: string;
+  redirectRequired?: boolean;
 };
 
 export type Tag = Category & { color?: string };

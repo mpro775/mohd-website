@@ -81,9 +81,13 @@ import { EducationModule } from './modules/education/education.module';
         R2_BUCKET: Joi.string().required(),
         R2_PUBLIC_URL: Joi.string().uri().required(),
         R2_REGION: Joi.string().default('auto'),
-        ANALYTICS_HASH_SALT: Joi.string()
-          .min(16)
-          .default('local-development-analytics-salt'),
+        ANALYTICS_HASH_SALT: Joi.when('NODE_ENV', {
+          is: 'production',
+          then: Joi.string().min(32).required(),
+          otherwise: Joi.string()
+            .min(16)
+            .default('development-only-analytics-salt'),
+        }),
         FRONTEND_REVALIDATE_URL: Joi.string().uri().allow('').default(''),
         FRONTEND_REVALIDATE_SECRET: Joi.string().allow('').default(''),
       }),

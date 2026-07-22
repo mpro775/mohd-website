@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import { createHmac } from 'crypto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
@@ -6,6 +6,8 @@ import { Model } from 'mongoose';
 import { TrackPostViewDto } from './dto/track-post-view.dto';
 import { Post, PostStatus } from './schemas/post.schema';
 import { PostDeviceType, PostView } from './views/schemas/post-view.schema';
+import { PostVisitor } from './views/schemas/post-visitor.schema';
+import { PostViewEvent } from './views/schemas/post-view-event.schema';
 
 type RequestLike = {
   ip?: string;
@@ -16,11 +18,24 @@ type RequestLike = {
 export class PostViewsService {
   constructor(
     @InjectModel(Post.name) private readonly postModel: Model<Post>,
-    @InjectModel(PostView.name) private readonly viewModel: Model<PostView>,
+    @InjectModel(PostView.name) private readonly dailyViewModel: Model<PostView>,
+    @InjectModel(PostVisitor.name) private readonly postVisitorModel: Model<PostVisitor>,
+    @InjectModel(PostViewEvent.name) private readonly postViewEventModel: Model<PostViewEvent>,
     private readonly config: ConfigService,
   ) {}
 
   async track(postId: string, dto: TrackPostViewDto, req: RequestLike) {
+    if (dto.eventId) {
+      try {
+        await this.postViewEventModel.create({ eventId: dto.eventId });
+      } catch (e: any) {
+        if (e.code === 11000) {
+          // duplicate eventId
+          return { recorded: false, reason: 'duplicate_event' };
+        }
+      }
+    }
+
     const post = await this.postModel.exists({
       _id: postId,
       status: PostStatus.PUBLISHED,
@@ -33,18 +48,17 @@ export class PostViewsService {
     const deviceType = this.deviceType(userAgent);
     if (deviceType === 'bot') return { recorded: false, reason: 'bot' };
 
-    const salt =
-      this.config.get<string>('ANALYTICS_HASH_SALT') ??
-      'local-development-analytics-salt';
     const forwarded = String(req.headers?.['x-forwarded-for'] ?? '')
       .split(',')[0]
       .trim();
     const ip = forwarded || req.ip || 'unknown';
-    const visitorHash = this.hash(`${salt}:${ip}`);
+    const visitorHash = this.hash(ip);
     const sessionHash = dto.sessionId
-      ? this.hash(`${salt}:${dto.sessionId}`)
+      ? this.hash(dto.sessionId)
       : undefined;
     const dateKey = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    
     let referrerDomain: string | undefined;
     if (dto.referrer) {
       try {
@@ -54,7 +68,22 @@ export class PostViewsService {
       }
     }
 
-    const result = await this.viewModel.updateOne(
+    const visitorResult = await this.postVisitorModel.updateOne(
+      { postId, visitorHash },
+      {
+        $setOnInsert: {
+          postId,
+          visitorHash,
+          firstSeenAt: now,
+        },
+        $set: {
+          lastSeenAt: now,
+        },
+      },
+      { upsert: true },
+    );
+
+    await this.dailyViewModel.updateOne(
       { postId, visitorHash, dateKey },
       {
         $setOnInsert: {
@@ -62,25 +91,38 @@ export class PostViewsService {
           visitorHash,
           sessionHash,
           dateKey,
+          firstSeenAt: now,
+        },
+        $set: {
+          lastSeenAt: now,
           referrerDomain,
           deviceType,
-          createdAt: new Date(),
+        },
+        $inc: {
+          hits: 1,
         },
       },
       { upsert: true },
     );
-    const recorded = result.upsertedCount === 1;
-    if (recorded) {
-      await this.postModel.updateOne(
-        { _id: postId },
-        { $inc: { viewCount: 1, uniqueViewCount: 1 } },
-      );
-    }
-    return { recorded };
+
+    const isNewVisitor = visitorResult.upsertedCount === 1;
+
+    await this.postModel.updateOne(
+      { _id: postId },
+      {
+        $inc: {
+          viewCount: 1,
+          uniqueViewCount: isNewVisitor ? 1 : 0,
+        },
+      },
+    );
+
+    return { recorded: true, newVisitor: isNewVisitor };
   }
 
   hash(value: string): string {
-    return createHash('sha256').update(value).digest('hex');
+    const salt = this.config.getOrThrow<string>('ANALYTICS_HASH_SALT');
+    return createHmac('sha256', salt).update(value).digest('hex');
   }
 
   deviceType(userAgent: string): PostDeviceType {
