@@ -35,6 +35,7 @@ export const POST_TRANSITIONS: Record<PostStatus, PostStatus[]> = {
     PostStatus.DRAFT,
     PostStatus.PUBLISHED,
     PostStatus.ARCHIVED,
+    PostStatus.SCHEDULED,
   ],
   [PostStatus.PUBLISHED]: [PostStatus.DRAFT, PostStatus.ARCHIVED],
   [PostStatus.ARCHIVED]: [PostStatus.DRAFT],

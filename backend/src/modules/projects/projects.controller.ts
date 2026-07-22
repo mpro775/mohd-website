@@ -1,3 +1,6 @@
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permission } from '../../common/auth/permissions.enum';
 import {
   Body,
   Controller,
@@ -18,9 +21,6 @@ import { FilterProjectDto } from './dto/filter-project.dto';
 import { BulkActionDto } from '../../common/dto/bulk-action.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
 import { TechnologiesService } from '../technologies/technologies.service';
@@ -68,8 +68,8 @@ export class PublicProjectsController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_PORTFOLIO)
 @Controller('admin/projects')
 export class AdminProjectsController {
   constructor(

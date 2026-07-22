@@ -1,3 +1,6 @@
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permission } from '../../common/auth/permissions.enum';
 import {
   Body,
   Controller,
@@ -12,12 +15,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import { MediaService } from '../media/media.service';
-import { UserRole } from '../users/schemas/user.schema';
 import { BulkCertificationActionDto } from './dto/bulk-certification-action.dto';
 import { CreateCertificationDto } from './dto/create-certification.dto';
 import { FilterCertificationDto } from './dto/filter-certification.dto';
@@ -59,8 +59,8 @@ export class PublicCertificationsController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_PORTFOLIO)
 @Controller('admin/certifications')
 export class AdminCertificationsController {
   constructor(

@@ -1,3 +1,6 @@
+import { Permissions } from '../../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../../common/guards/permissions.guard';
+import { Permission } from '../../../common/auth/permissions.enum';
 import {
   Body,
   Controller,
@@ -17,9 +20,6 @@ import { UpdateCategoryDto } from './dto/update-category.dto';
 import { FilterCategoryDto } from './dto/filter-category.dto';
 import { Public } from '../../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../../common/guards/roles.guard';
-import { Roles } from '../../../common/decorators/roles.decorator';
-import { UserRole } from '../../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../../common/pipes/parse-object-id.pipe';
 
 @Public()
@@ -46,8 +46,8 @@ export class PublicCategoriesController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_TAXONOMY)
 @Controller('admin/blog/categories')
 export class AdminCategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}

@@ -16,6 +16,7 @@ import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
 import { Post, PostStatus } from '../posts/schemas/post.schema';
 import { MergeTagsDto } from './dto/merge-tags.dto';
+import { PostsRevalidationService } from '../posts/posts-revalidation.service';
 
 @Injectable()
 export class TagsService {
@@ -23,6 +24,7 @@ export class TagsService {
     @InjectModel(Tag.name) private tagModel: Model<Tag>,
     @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly auditLogsService: AuditLogsService,
+    private readonly revalidation: PostsRevalidationService,
   ) {}
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
@@ -52,6 +54,8 @@ export class TagsService {
       after: saved.toObject(),
       request: req,
     });
+
+    await this.revalidation.revalidate(['blog', 'blog:list']);
 
     return saved;
   }
@@ -187,6 +191,8 @@ export class TagsService {
       request: req,
     });
 
+    await this.revalidation.revalidate(['blog', 'blog:list', `blog:tag:${tag.slug}`]);
+
     return tag;
   }
 
@@ -231,6 +237,10 @@ export class TagsService {
       request: req,
     });
 
+    const tags = ['blog', 'blog:list', `blog:tag:${tag.slug}`];
+    if (before.slug !== tag.slug) tags.push(`blog:tag:${before.slug}`);
+    await this.revalidation.revalidate(tags);
+
     return tag;
   }
 
@@ -259,6 +269,8 @@ export class TagsService {
       before,
       request: req,
     });
+
+    await this.revalidation.revalidate(['blog', 'blog:list', `blog:tag:${oldTag.slug}`]);
   }
 
   async merge(dto: MergeTagsDto, req?: any): Promise<Tag> {
@@ -305,6 +317,14 @@ export class TagsService {
       },
       request: req,
     });
+    
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      `blog:tag:${source.slug}`,
+      `blog:tag:${target.slug}`,
+    ]);
+
     return target;
   }
 }

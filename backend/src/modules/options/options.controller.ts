@@ -1,10 +1,10 @@
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permission } from '../../common/auth/permissions.enum';
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { OptionsService } from './options.service';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 
 @Public()
 @Controller('public/options')
@@ -20,8 +20,8 @@ export class PublicOptionsController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN, UserRole.EDITOR)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_SETTINGS)
 @Controller('admin/options')
 export class AdminOptionsController {
   constructor(private readonly optionsService: OptionsService) {}

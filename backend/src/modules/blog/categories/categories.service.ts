@@ -15,6 +15,7 @@ import { normalizeSlug } from '../../../common/utils/slug.util';
 import { buildSafeRegex } from '../../../common/utils/regex.util';
 import { createPaginatedResponse } from '../../../common/utils/pagination.util';
 import { IPaginatedResponse } from '../../../common/dto/pagination.dto';
+import { PostsRevalidationService } from '../posts/posts-revalidation.service';
 
 @Injectable()
 export class CategoriesService {
@@ -22,6 +23,7 @@ export class CategoriesService {
     @InjectModel(Category.name) private categoryModel: Model<Category>,
     @InjectModel(Post.name) private postModel: Model<Post>,
     private readonly auditLogsService: AuditLogsService,
+    private readonly revalidation: PostsRevalidationService,
   ) {}
 
   private async assertSlugIsAvailable(slug: string, excludeId?: string) {
@@ -56,6 +58,8 @@ export class CategoriesService {
       after: saved.toObject(),
       request: req,
     });
+
+    await this.revalidation.revalidate(['blog', 'blog:list']);
 
     return saved;
   }
@@ -192,6 +196,8 @@ export class CategoriesService {
       request: req,
     });
 
+    await this.revalidation.revalidate(['blog', 'blog:list', `blog:category:${category.slug}`]);
+
     return category;
   }
 
@@ -238,6 +244,10 @@ export class CategoriesService {
       request: req,
     });
 
+    const tags = ['blog', 'blog:list', `blog:category:${category.slug}`];
+    if (before.slug !== category.slug) tags.push(`blog:category:${before.slug}`);
+    await this.revalidation.revalidate(tags);
+
     return category;
   }
 
@@ -267,5 +277,7 @@ export class CategoriesService {
       before,
       request: req,
     });
+
+    await this.revalidation.revalidate(['blog', 'blog:list', `blog:category:${oldCategory.slug}`]);
   }
 }

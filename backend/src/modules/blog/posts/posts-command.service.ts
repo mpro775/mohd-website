@@ -27,6 +27,8 @@ import { PostRevisionsService } from './post-revisions.service';
 import { PostsRevalidationService } from './posts-revalidation.service';
 import { PostSlugRedirect } from './redirects/schemas/post-slug-redirect.schema';
 import { Post, PostStatus } from './schemas/post.schema';
+import { PostRevision } from './revisions/schemas/post-revision.schema';
+import { PostView } from './views/schemas/post-view.schema';
 
 type RequestLike = { user?: { userId?: string; id?: string; _id?: string } };
 
@@ -38,6 +40,10 @@ export class PostsCommandService {
     @InjectModel(Tag.name) private readonly tagModel: Model<Tag>,
     @InjectModel(PostSlugRedirect.name)
     private readonly redirectModel: Model<PostSlugRedirect>,
+    @InjectModel(PostRevision.name)
+    private readonly revisionModel: Model<PostRevision>,
+    @InjectModel(PostView.name)
+    private readonly viewModel: Model<PostView>,
     private readonly mediaService: MediaService,
     private readonly revisions: PostRevisionsService,
     private readonly revalidation: PostsRevalidationService,
@@ -278,6 +284,15 @@ export class PostsCommandService {
       resourceId: id,
       request: req,
     });
+
+    await this.revalidation.revalidate([
+      'blog',
+      'blog:list',
+      'blog:sitemap',
+      'blog:rss',
+      `blog:post:${post.slug}`,
+    ]);
+
     return post;
   }
 
@@ -298,6 +313,12 @@ export class PostsCommandService {
     await Promise.all([
       this.postModel.deleteOne({ _id: id }),
       this.redirectModel.deleteMany({ postId: id }),
+      this.revisionModel.deleteMany({ postId: id }),
+      this.viewModel.deleteMany({ postId: id }),
+      this.postModel.updateMany(
+        { relatedPostIds: id },
+        { $pull: { relatedPostIds: id } as any }
+      ),
       this.mediaService.removeUsageForEntity('Post', id),
     ]);
     await this.audit.log({
@@ -330,6 +351,19 @@ export class PostsCommandService {
       metadata: { ids, valueId, modified: result.modifiedCount },
       request: req,
     });
+
+    const affectedPosts = await this.postModel.find({ _id: { $in: ids } }, 'slug').lean();
+    const tagsToRevalidate = ['blog', 'blog:list', 'blog:sitemap', 'blog:rss'];
+    if (action === 'set-category') {
+      const category = await this.categoryModel.findById(valueId, 'slug').lean();
+      if (category) tagsToRevalidate.push(`blog:category:${category.slug}`);
+    } else {
+      const tag = await this.tagModel.findById(valueId, 'slug').lean();
+      if (tag) tagsToRevalidate.push(`blog:tag:${tag.slug}`);
+    }
+    affectedPosts.forEach((p) => tagsToRevalidate.push(`blog:post:${p.slug}`));
+    await this.revalidation.revalidate(tagsToRevalidate);
+
     return { matched: result.matchedCount, modified: result.modifiedCount };
   }
 

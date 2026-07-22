@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!(await authorized(request))) return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     const { tags } = await request.json() as { tags?: unknown };
-    if (!Array.isArray(tags) || !tags.length || tags.length > 100 || !tags.every((tag) => typeof tag === "string" && /^blog(?::[a-z0-9_-]+){0,2}$/i.test(tag))) return NextResponse.json({ success: false, message: "Invalid cache tags" }, { status: 400 });
+    if (!Array.isArray(tags) || !tags.length || tags.length > 100 || !tags.every((tag) => typeof tag === "string" && /^blog(?::[\p{L}\p{N}_-]+){0,2}$/u.test(tag))) return NextResponse.json({ success: false, message: "Invalid cache tags" }, { status: 400 });
     for (const tag of new Set(tags as string[])) revalidateTag(tag, {});
     if (tags.includes("blog:sitemap")) revalidatePath("/sitemap.xml");
     if (tags.includes("blog:rss")) revalidatePath("/rss.xml");

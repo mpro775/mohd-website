@@ -1,3 +1,6 @@
+import { Permissions } from '../../common/decorators/permissions.decorator';
+import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import { Permission } from '../../common/auth/permissions.enum';
 import {
   Body,
   Controller,
@@ -18,9 +21,6 @@ import { UpdateStatusDto } from './dto/update-status.dto';
 import { FilterContactMessageDto } from './dto/filter-contact-message.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 
 @Public()
@@ -43,8 +43,8 @@ export class PublicContactController {
   }
 }
 
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions(Permission.MANAGE_CONTACT_MESSAGES)
 @Controller('admin/contact/messages')
 export class AdminContactController {
   constructor(private readonly contactService: ContactService) {}

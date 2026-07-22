@@ -4,6 +4,9 @@ import { Document } from 'mongoose';
 export enum UserRole {
   ADMIN = 'admin',
   EDITOR = 'editor',
+  PUBLISHER = 'publisher',
+  REVIEWER = 'reviewer',
+  AUTHOR = 'author',
 }
 
 @Schema({

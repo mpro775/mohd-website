@@ -7,7 +7,7 @@ import { Test } from '@nestjs/testing';
 import { Types } from 'mongoose';
 import request from 'supertest';
 import { JwtAuthGuard } from '../src/common/guards/jwt-auth.guard';
-import { RolesGuard } from '../src/common/guards/roles.guard';
+import { PermissionsGuard } from '../src/common/guards/permissions.guard';
 import { CertificationType } from '../src/common/taxonomy/credential-taxonomy';
 import {
   AdminCertificationsController,
@@ -69,7 +69,7 @@ describe('Certifications controllers (e2e)', () => {
     })
       .overrideGuard(JwtAuthGuard)
       .useValue(jwt)
-      .overrideGuard(RolesGuard)
+      .overrideGuard(PermissionsGuard)
       .useValue(roles);
     const module = await builder.compile();
     const app = module.createNestApplication();
