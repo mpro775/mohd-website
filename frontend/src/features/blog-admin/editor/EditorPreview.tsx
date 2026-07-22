@@ -1,9 +1,12 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
-import remarkGfm from "remark-gfm";
+import { MarkdownRendererClient } from "@/components/common/MarkdownRendererClient";
 
 export function EditorPreview({ content }: { content: string }) {
-  return <article className="prose-tech min-h-[560px] rounded-xl border border-border bg-card p-6"><ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSanitize]}>{content}</ReactMarkdown></article>;
+  return (
+    <MarkdownRendererClient
+      content={content}
+      className="min-h-[560px] rounded-xl border border-border bg-card p-6"
+    />
+  );
 }

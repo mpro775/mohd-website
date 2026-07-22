@@ -56,6 +56,9 @@ const EMPTY_META: PaginationMeta = {
   hasPreviousPage: false,
 };
 
+const IMAGE_ACCEPT = "image/jpeg,image/png,image/webp,image/gif";
+const DOCUMENT_ACCEPT = "application/pdf";
+
 export function MediaPicker({
   isOpen,
   onClose,
@@ -110,7 +113,9 @@ export function MediaPicker({
       if (debouncedSearch) query.set("search", debouncedSearch);
       if (allowedType !== "all") query.set("type", allowedType);
 
-      const response = await fetch(`/api/admin-proxy/admin/media?${query.toString()}`);
+      const response = await fetch(
+        `/api/admin-proxy/admin/media?${query.toString()}`,
+      );
       if (!response.ok) throw new Error();
 
       const payload = await response.json();
@@ -175,7 +180,9 @@ export function MediaPicker({
   const handleItemClick = (item: MediaItem) => {
     if (allowMultiple) {
       setSelectedItems((prev) => {
-        const isSelected = prev.some((i) => (i._id || i.id) === (item._id || item.id));
+        const isSelected = prev.some(
+          (i) => (i._id || i.id) === (item._id || item.id),
+        );
         if (isSelected) {
           return prev.filter((i) => (i._id || i.id) !== (item._id || item.id));
         } else {
@@ -215,13 +222,24 @@ export function MediaPicker({
                 type="file"
                 id="picker-file"
                 className="hidden"
+                accept={
+                  allowedType === "image"
+                    ? IMAGE_ACCEPT
+                    : allowedType === "document"
+                      ? DOCUMENT_ACCEPT
+                      : `${IMAGE_ACCEPT},${DOCUMENT_ACCEPT}`
+                }
                 onChange={(event) => {
                   const selected = event.target.files?.[0] ?? null;
                   setFile(selected);
                   if (selected) {
                     if (selected.type.includes("pdf")) setFolder("cv");
                     else if (selected.type.startsWith("image/")) {
-                      if (defaultFolder && defaultFolder !== "misc" && defaultFolder !== "cv") {
+                      if (
+                        defaultFolder &&
+                        defaultFolder !== "misc" &&
+                        defaultFolder !== "cv"
+                      ) {
                         setFolder(defaultFolder);
                       } else {
                         setFolder("misc");
@@ -230,21 +248,33 @@ export function MediaPicker({
                   }
                 }}
               />
-              <label htmlFor="picker-file" className="block cursor-pointer space-y-2">
+              <label
+                htmlFor="picker-file"
+                className="block cursor-pointer space-y-2"
+              >
                 <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                <span className="block text-xs font-semibold text-primary">اختر ملفاً</span>
-                <span className="block text-[10px] text-muted-foreground">أقصى حجم: 5MB</span>
+                <span className="block text-xs font-semibold text-primary">
+                  اختر ملفاً
+                </span>
+                <span className="block text-[10px] text-muted-foreground">
+                  صور ثابتة 5MB · GIF/Animated WebP حتى 15MB · PDF حتى 10MB
+                </span>
               </label>
             </div>
 
             {file && (
               <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3">
-                <p className="truncate text-xs font-semibold text-foreground" dir="ltr">
+                <p
+                  className="truncate text-xs font-semibold text-foreground"
+                  dir="ltr"
+                >
                   {file.name}
                 </p>
 
                 <label className="block">
-                  <span className="mb-1 block text-[11px] text-muted-foreground">المجلد</span>
+                  <span className="mb-1 block text-[11px] text-muted-foreground">
+                    المجلد
+                  </span>
                   <select
                     value={folder}
                     onChange={(event) => setFolder(event.target.value)}
@@ -254,9 +284,15 @@ export function MediaPicker({
                     <option value="projects">projects (المشاريع)</option>
                     <option value="blog">blog (المدونة)</option>
                     <option value="services">services (الخدمات)</option>
-                    <option value="technologies">technologies (التقنيات)</option>
-                    <option value="certifications">certifications (الشهادات المهنية)</option>
-                    <option value="education">education (المؤهلات الأكاديمية)</option>
+                    <option value="technologies">
+                      technologies (التقنيات)
+                    </option>
+                    <option value="certifications">
+                      certifications (الشهادات المهنية)
+                    </option>
+                    <option value="education">
+                      education (المؤهلات الأكاديمية)
+                    </option>
                     <option value="links">links (الروابط)</option>
                     <option value="cv">cv (السيرة الذاتية)</option>
                     <option value="misc">misc (عام / أخرى)</option>
@@ -276,7 +312,11 @@ export function MediaPicker({
                   />
                 </label>
 
-                <Button onClick={handleUpload} disabled={uploading} className="h-8 w-full text-xs">
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  className="h-8 w-full text-xs"
+                >
                   {uploading ? "جاري الرفع..." : "رفع وحفظ"}
                 </Button>
               </div>
@@ -307,7 +347,9 @@ export function MediaPicker({
                     const isImage = item.mimeType.startsWith("image/");
                     const isSelected =
                       allowMultiple &&
-                      selectedItems.some((i) => (i._id || i.id) === (item._id || item.id));
+                      selectedItems.some(
+                        (i) => (i._id || i.id) === (item._id || item.id),
+                      );
                     return (
                       <div
                         key={item._id ?? item.id}
@@ -331,10 +373,15 @@ export function MediaPicker({
                           )}
                         </div>
                         <div className="border-t border-border bg-card/90 p-2">
-                          <p className="truncate text-xs font-semibold" dir="ltr">
+                          <p
+                            className="truncate text-xs font-semibold"
+                            dir="ltr"
+                          >
                             {item.originalName}
                           </p>
-                          <p className="mt-0.5 text-[10px] text-muted-foreground">{item.folder}</p>
+                          <p className="mt-0.5 text-[10px] text-muted-foreground">
+                            {item.folder}
+                          </p>
                         </div>
                       </div>
                     );
@@ -385,7 +432,8 @@ export function MediaPicker({
 
               <div className="flex items-center justify-between gap-3 sm:justify-end">
                 <span className="text-xs font-semibold text-foreground">
-                  الصفحة {meta.totalPages === 0 ? 0 : meta.page} من {meta.totalPages}
+                  الصفحة {meta.totalPages === 0 ? 0 : meta.page} من{" "}
+                  {meta.totalPages}
                 </span>
 
                 <div className="flex items-center gap-1" dir="rtl">
@@ -400,7 +448,9 @@ export function MediaPicker({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
+                    onClick={() =>
+                      setPage((current) => Math.max(1, current - 1))
+                    }
                     disabled={!meta.hasPreviousPage || loading}
                     className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                     title="الصفحة السابقة"
@@ -409,7 +459,11 @@ export function MediaPicker({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPage((current) => Math.min(meta.totalPages, current + 1))}
+                    onClick={() =>
+                      setPage((current) =>
+                        Math.min(meta.totalPages, current + 1),
+                      )
+                    }
                     disabled={!meta.hasNextPage || loading}
                     className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                     title="الصفحة التالية"

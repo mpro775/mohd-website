@@ -3,26 +3,26 @@
 import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { 
-  Trash2, 
-  ShieldAlert, 
-  RefreshCw, 
-  Search, 
-  Grid, 
-  List, 
-  Copy, 
-  Check, 
-  Image as ImageIcon, 
-  FileText, 
-  Info, 
-  X, 
-  HardDrive, 
+import {
+  Trash2,
+  ShieldAlert,
+  RefreshCw,
+  Search,
+  Grid,
+  List,
+  Copy,
+  Check,
+  Image as ImageIcon,
+  FileText,
+  Info,
+  X,
+  HardDrive,
   UploadCloud,
   ExternalLink,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
 } from "lucide-react";
 import { Button } from "@/components/common/Button";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
@@ -59,6 +59,9 @@ type UnusedMediaResponse = {
   olderThanDays: number;
   estimatedFreedBytes: number;
 };
+
+const MEDIA_FILE_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/gif,application/pdf";
 
 export function MediaAdmin() {
   const queryClient = useQueryClient();
@@ -105,7 +108,9 @@ export function MediaAdmin() {
 
   // Cleanup states
   const [olderThanDays, setOlderThanDays] = useState(7);
-  const [unusedMedia, setUnusedMedia] = useState<UnusedMediaResponse | null>(null);
+  const [unusedMedia, setUnusedMedia] = useState<UnusedMediaResponse | null>(
+    null,
+  );
   const [loadingUnused, setLoadingUnused] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
 
@@ -133,7 +138,12 @@ export function MediaAdmin() {
         search: queryParams.search || undefined,
         folder: queryParams.folder === "all" ? undefined : queryParams.folder,
         type: queryParams.type === "all" ? undefined : queryParams.type,
-        isUsed: queryParams.isUsed === "used" ? true : queryParams.isUsed === "unused" ? false : undefined,
+        isUsed:
+          queryParams.isUsed === "used"
+            ? true
+            : queryParams.isUsed === "unused"
+              ? false
+              : undefined,
         sortBy: queryParams.sortBy || "createdAt",
         sortOrder: queryParams.sortOrder || "desc",
       }),
@@ -151,7 +161,9 @@ export function MediaAdmin() {
 
   // 2. Mutations
   const invalidateKeys = () => {
-    queryClient.invalidateQueries({ queryKey: adminQueryKeys.resource("media") });
+    queryClient.invalidateQueries({
+      queryKey: adminQueryKeys.resource("media"),
+    });
     queryClient.invalidateQueries({ queryKey: adminQueryKeys.dashboard() });
   };
 
@@ -159,8 +171,12 @@ export function MediaAdmin() {
   const uploadMutation = useMutation({
     mutationFn: async () => {
       if (uploadFiles.length === 0) return;
-      const promises = uploadFiles.map(file => 
-        adminClient.uploadMedia<MediaItem>(file, uploadFolder, uploadAlt || undefined)
+      const promises = uploadFiles.map((file) =>
+        adminClient.uploadMedia<MediaItem>(
+          file,
+          uploadFolder,
+          uploadAlt || undefined,
+        ),
       );
       return Promise.all(promises);
     },
@@ -177,8 +193,22 @@ export function MediaAdmin() {
 
   // Update Alt/Folder Mutation
   const updateMutation = useMutation({
-    mutationFn: async ({ id, alt, folder, usage }: { id: string; alt: string; folder: string; usage?: string }) => {
-      return adminClient.patchResource<MediaItem>("media", id, { alt, folder, usage });
+    mutationFn: async ({
+      id,
+      alt,
+      folder,
+      usage,
+    }: {
+      id: string;
+      alt: string;
+      folder: string;
+      usage?: string;
+    }) => {
+      return adminClient.patchResource<MediaItem>("media", id, {
+        alt,
+        folder,
+        usage,
+      });
     },
     onSuccess: (res: any) => {
       toast.success(res?.message || "تم تحديث بيانات الملف بنجاح!");
@@ -237,7 +267,9 @@ export function MediaAdmin() {
   async function checkUnused() {
     setLoadingUnused(true);
     try {
-      const response = await fetch(`/api/admin-proxy/admin/media/unused?olderThanDays=${olderThanDays}`);
+      const response = await fetch(
+        `/api/admin-proxy/admin/media/unused?olderThanDays=${olderThanDays}`,
+      );
       if (!response.ok) throw new Error();
       const payload = await response.json();
       setUnusedMedia(payload.data ?? payload);
@@ -252,14 +284,17 @@ export function MediaAdmin() {
   async function performCleanup() {
     setCleaningUp(true);
     try {
-      const response = await fetch("/api/admin-proxy/admin/media/cleanup-unused", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          olderThanDays,
-          confirm: true
-        })
-      });
+      const response = await fetch(
+        "/api/admin-proxy/admin/media/cleanup-unused",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            olderThanDays,
+            confirm: true,
+          }),
+        },
+      );
       if (!response.ok) throw new Error();
       toast.success("تم تنظيف وتفريغ المساحة بنجاح!");
       setUnusedMedia(null);
@@ -286,13 +321,24 @@ export function MediaAdmin() {
     setSelectedItem(item);
     setEditAlt(item.alt || "");
     setEditFolder(item.folder || "misc");
-    setEditUsage(typeof item.usage === "string" ? item.usage : Array.isArray(item.usage) ? item.usage.join(", ") : "");
+    setEditUsage(
+      typeof item.usage === "string"
+        ? item.usage
+        : Array.isArray(item.usage)
+          ? item.usage.join(", ")
+          : "",
+    );
   };
 
   const handleSaveDetails = () => {
     if (!selectedItem) return;
     const id = selectedItem.id ?? selectedItem._id ?? "";
-    updateMutation.mutate({ id, alt: editAlt, folder: editFolder, usage: editUsage || undefined });
+    updateMutation.mutate({
+      id,
+      alt: editAlt,
+      folder: editFolder,
+      usage: editUsage || undefined,
+    });
   };
 
   // Filtering is handled server-side via queryParams
@@ -306,7 +352,8 @@ export function MediaAdmin() {
             مكتبة الوسائط
           </h1>
           <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-            قم برفع الصور والملفات وتصنيفها، ونسخ روابط التضمين بشكل آمن ومحسّن لمحركات البحث.
+            قم برفع الصور والملفات وتصنيفها، ونسخ روابط التضمين بشكل آمن ومحسّن
+            لمحركات البحث.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -316,10 +363,12 @@ export function MediaAdmin() {
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer transition select-none disabled:opacity-50"
             title="تحديث البيانات"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`}
+            />
             <span>تحديث</span>
           </button>
-          
+
           <button
             onClick={() => setIsCleanupOpen(true)}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/5 px-3.5 text-xs font-bold text-red-400 hover:bg-red-500/10 cursor-pointer transition select-none shadow-sm"
@@ -332,12 +381,11 @@ export function MediaAdmin() {
 
       {/* Main Grid: Upload & Library */}
       <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
-        
         {/* Right side: Dropzone and Settings */}
         <div className="space-y-6">
           <div className="rounded-xl border border-border bg-card/60 backdrop-blur-md p-5 shadow-sm space-y-4">
             <h2 className="text-sm font-bold text-foreground">رفع ملف جديد</h2>
-            
+
             {/* Drag and Drop Zone */}
             <div
               onDragOver={handleDragOver}
@@ -345,45 +393,68 @@ export function MediaAdmin() {
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[140px] ${
-                isDragging 
-                  ? "border-primary bg-primary/5 scale-[0.98]" 
-                  : uploadFiles.length > 0 
-                  ? "border-green-500/40 bg-green-500/5 hover:bg-green-500/10" 
-                  : "border-border hover:border-primary/50 hover:bg-muted/10"
+                isDragging
+                  ? "border-primary bg-primary/5 scale-[0.98]"
+                  : uploadFiles.length > 0
+                    ? "border-green-500/40 bg-green-500/5 hover:bg-green-500/10"
+                    : "border-border hover:border-primary/50 hover:bg-muted/10"
               }`}
             >
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
+                accept={MEDIA_FILE_ACCEPT}
                 onChange={(e) => {
                   if (e.target.files) {
-                    setUploadFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+                    setUploadFiles((prev) => [
+                      ...prev,
+                      ...Array.from(e.target.files!),
+                    ]);
                   }
                   if (fileInputRef.current) fileInputRef.current.value = "";
                 }}
                 className="hidden"
               />
-              
+
               {uploadFiles.length > 0 ? (
-                <div className="space-y-2 max-h-[200px] overflow-y-auto w-full px-2" onClick={(e) => e.stopPropagation()}>
-                  <div className="text-xs font-bold mb-2 text-foreground">تم تحديد {uploadFiles.length} ملفات:</div>
+                <div
+                  className="space-y-2 max-h-[200px] overflow-y-auto w-full px-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="text-xs font-bold mb-2 text-foreground">
+                    تم تحديد {uploadFiles.length} ملفات:
+                  </div>
                   {uploadFiles.map((file, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-background/50 p-2 rounded border border-border">
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between bg-background/50 p-2 rounded border border-border"
+                    >
                       <div className="flex items-center gap-2 overflow-hidden">
                         <div className="h-6 w-6 rounded-full bg-green-500/10 text-green-400 flex items-center justify-center shrink-0">
-                          {file.type.startsWith("image/") ? <ImageIcon className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+                          {file.type.startsWith("image/") ? (
+                            <ImageIcon className="h-3.5 w-3.5" />
+                          ) : (
+                            <FileText className="h-3.5 w-3.5" />
+                          )}
                         </div>
-                        <p className="text-[10px] font-bold truncate text-foreground max-w-[120px]" dir="ltr">
+                        <p
+                          className="text-[10px] font-bold truncate text-foreground max-w-[120px]"
+                          dir="ltr"
+                        >
                           {file.name}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[9px] text-muted-foreground">{formatBytes(file.size)}</span>
+                        <span className="text-[9px] text-muted-foreground">
+                          {formatBytes(file.size)}
+                        </span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            setUploadFiles(prev => prev.filter((_, i) => i !== idx));
+                            setUploadFiles((prev) =>
+                              prev.filter((_, i) => i !== idx),
+                            );
                           }}
                           className="text-[10px] text-red-400 hover:text-red-300 cursor-pointer p-1"
                         >
@@ -422,7 +493,8 @@ export function MediaAdmin() {
                     اسحب وألقِ الملف هنا، أو انقر للتصفح
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    يدعم الصور والملفات المضغوطة والسير الذاتية
+                    JPEG/PNG/WebP حتى 5MB · الصور المتحركة حتى 15MB · PDF حتى
+                    10MB
                   </p>
                 </div>
               )}
@@ -430,22 +502,27 @@ export function MediaAdmin() {
 
             {/* Folder Selection */}
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground font-semibold">مجلد الحفظ</label>
+              <label className="text-xs text-muted-foreground font-semibold">
+                مجلد الحفظ
+              </label>
               <select
                 value={uploadFolder}
                 onChange={(e) => setUploadFolder(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary transition"
               >
                 {folders.map((f) => (
-                  <option key={f.value} value={f.value}>{f.label}</option>
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
                 ))}
               </select>
-
             </div>
 
             {/* Alt Text Description */}
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground font-semibold">النص البديل لمحرّكات البحث (Alt Text)</label>
+              <label className="text-xs text-muted-foreground font-semibold">
+                النص البديل لمحرّكات البحث (Alt Text)
+              </label>
               <input
                 type="text"
                 value={uploadAlt}
@@ -483,13 +560,21 @@ export function MediaAdmin() {
             </h3>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div className="rounded-lg bg-muted/30 border border-border p-3 text-center">
-                <span className="text-[10px] text-muted-foreground block font-semibold">إجمالي الملفات</span>
-                <span className="text-lg font-bold text-foreground mt-0.5 block">{meta.total}</span>
+                <span className="text-[10px] text-muted-foreground block font-semibold">
+                  إجمالي الملفات
+                </span>
+                <span className="text-lg font-bold text-foreground mt-0.5 block">
+                  {meta.total}
+                </span>
               </div>
               <div className="rounded-lg bg-muted/30 border border-border p-3 text-center">
-                <span className="text-[10px] text-muted-foreground block font-semibold">حجم الصفحة الحالية</span>
+                <span className="text-[10px] text-muted-foreground block font-semibold">
+                  حجم الصفحة الحالية
+                </span>
                 <span className="text-xs font-bold text-foreground mt-1.5 block">
-                  {formatBytes(mediaItems.reduce((acc, curr) => acc + (curr.size || 0), 0))}
+                  {formatBytes(
+                    mediaItems.reduce((acc, curr) => acc + (curr.size || 0), 0),
+                  )}
                 </span>
               </div>
             </div>
@@ -498,7 +583,6 @@ export function MediaAdmin() {
 
         {/* Left side: Search, Filters and Gallery Grid */}
         <div className="space-y-4">
-          
           {/* Controls Bar */}
           <div className="rounded-xl border border-border bg-card/60 backdrop-blur-md p-4 shadow-sm flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap flex-1 items-center gap-2 min-w-[240px]">
@@ -512,21 +596,34 @@ export function MediaAdmin() {
                   className="w-full rounded-lg border border-border bg-background py-2 pl-3 pr-9 text-xs outline-none focus:border-primary transition"
                 />
               </div>
-              
+
               <select
                 value={queryParams.folder || "all"}
-                onChange={(e) => setQueryParams({ folder: e.target.value === "all" ? undefined : e.target.value, page: 1 })}
+                onChange={(e) =>
+                  setQueryParams({
+                    folder:
+                      e.target.value === "all" ? undefined : e.target.value,
+                    page: 1,
+                  })
+                }
                 className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
               >
                 <option value="all">كل المجلدات</option>
                 {folders.map((f) => (
-                  <option key={f.value} value={f.value}>{f.value}</option>
+                  <option key={f.value} value={f.value}>
+                    {f.value}
+                  </option>
                 ))}
               </select>
 
               <select
                 value={queryParams.type || "all"}
-                onChange={(e) => setQueryParams({ type: e.target.value === "all" ? undefined : e.target.value, page: 1 })}
+                onChange={(e) =>
+                  setQueryParams({
+                    type: e.target.value === "all" ? undefined : e.target.value,
+                    page: 1,
+                  })
+                }
                 className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
               >
                 <option value="all">كل الأنواع</option>
@@ -536,7 +633,13 @@ export function MediaAdmin() {
 
               <select
                 value={queryParams.isUsed || "all"}
-                onChange={(e) => setQueryParams({ isUsed: e.target.value === "all" ? undefined : e.target.value, page: 1 })}
+                onChange={(e) =>
+                  setQueryParams({
+                    isUsed:
+                      e.target.value === "all" ? undefined : e.target.value,
+                    page: 1,
+                  })
+                }
                 className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
               >
                 <option value="all">كل الملفات (مستعمل/مهمل)</option>
@@ -545,7 +648,9 @@ export function MediaAdmin() {
               </select>
               <select
                 value={queryParams.sortBy || "createdAt"}
-                onChange={(e) => setQueryParams({ sortBy: e.target.value, page: 1 })}
+                onChange={(e) =>
+                  setQueryParams({ sortBy: e.target.value, page: 1 })
+                }
                 className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
               >
                 <option value="createdAt">الأحدث إضافة</option>
@@ -559,7 +664,9 @@ export function MediaAdmin() {
 
               <select
                 value={queryParams.sortOrder || "desc"}
-                onChange={(e) => setQueryParams({ sortOrder: e.target.value, page: 1 })}
+                onChange={(e) =>
+                  setQueryParams({ sortOrder: e.target.value, page: 1 })
+                }
                 className="rounded-lg border border-border bg-background px-3 py-2 text-xs outline-none focus:border-primary transition font-semibold"
               >
                 <option value="desc">تنازلي</option>
@@ -590,31 +697,35 @@ export function MediaAdmin() {
           {isLoading ? (
             <div className="rounded-xl border border-border bg-card p-12 text-center">
               <RefreshCw className="h-8 w-8 animate-spin mx-auto text-primary" />
-              <p className="mt-3 text-xs text-muted-foreground font-semibold">جاري جلب ملفات الوسائط...</p>
+              <p className="mt-3 text-xs text-muted-foreground font-semibold">
+                جاري جلب ملفات الوسائط...
+              </p>
             </div>
           ) : mediaItems.length === 0 ? (
             <div className="rounded-xl border border-border bg-card p-12 text-center space-y-3">
               <div className="h-12 w-12 rounded-full bg-muted text-muted-foreground flex items-center justify-center mx-auto">
                 <Search className="h-6 w-6" />
               </div>
-              <h3 className="text-sm font-bold text-foreground">لم يتم العثور على أية ملفات وسائط</h3>
+              <h3 className="text-sm font-bold text-foreground">
+                لم يتم العثور على أية ملفات وسائط
+              </h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                لم نجد أية ملفات تطابق معايير البحث والفرز الحالية. يمكنك تعديل البحث أو رفع ملف جديد.
+                لم نجد أية ملفات تطابق معايير البحث والفرز الحالية. يمكنك تعديل
+                البحث أو رفع ملف جديد.
               </p>
             </div>
           ) : viewMode === "grid" ? (
-            
             // Grid Gallery View
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {mediaItems.map((item) => {
-                const isImage = item.mimeType?.startsWith("image/") || item.type === "image";
+                const isImage =
+                  item.mimeType?.startsWith("image/") || item.type === "image";
                 return (
                   <div
                     key={item.id ?? item._id}
                     onClick={() => handleOpenDetails(item)}
                     className="group relative rounded-xl border border-border bg-card overflow-hidden cursor-pointer hover:border-primary/50 hover:shadow-md transition duration-300"
                   >
-                    
                     {/* Media Body */}
                     <div className="aspect-square bg-muted flex items-center justify-center relative overflow-hidden">
                       {isImage ? (
@@ -631,7 +742,7 @@ export function MediaAdmin() {
                           </span>
                         </div>
                       )}
-                      
+
                       {/* Hover action overlay */}
                       <div className="absolute inset-0 bg-background/80 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center gap-1.5">
                         <button
@@ -642,7 +753,11 @@ export function MediaAdmin() {
                           className="p-1.5 rounded-lg bg-card border border-border text-foreground hover:bg-muted transition"
                           title="نسخ الرابط"
                         >
-                          {copiedUrl === item.url ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedUrl === item.url ? (
+                            <Check className="h-3.5 w-3.5 text-green-400" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
                         </button>
                         <button
                           onClick={(e) => {
@@ -664,7 +779,10 @@ export function MediaAdmin() {
 
                     {/* Metadata Footer */}
                     <div className="p-2 border-t border-border bg-card/50">
-                      <p className="text-[10px] font-bold truncate text-foreground text-right" dir="ltr">
+                      <p
+                        className="text-[10px] font-bold truncate text-foreground text-right"
+                        dir="ltr"
+                      >
                         {item.originalName}
                       </p>
                       <p className="text-[9px] text-muted-foreground mt-0.5 font-medium">
@@ -676,7 +794,6 @@ export function MediaAdmin() {
               })}
             </div>
           ) : (
-            
             // List View Table
             <div className="overflow-x-auto rounded-xl border border-border bg-card shadow-sm">
               <table className="w-full min-w-[640px] text-sm text-right">
@@ -692,9 +809,14 @@ export function MediaAdmin() {
                 </thead>
                 <tbody className="divide-y divide-border">
                   {mediaItems.map((item) => {
-                    const isImage = item.mimeType?.startsWith("image/") || item.type === "image";
+                    const isImage =
+                      item.mimeType?.startsWith("image/") ||
+                      item.type === "image";
                     return (
-                      <tr key={item.id ?? item._id} className="hover:bg-muted/10 transition">
+                      <tr
+                        key={item.id ?? item._id}
+                        className="hover:bg-muted/10 transition"
+                      >
                         <td className="p-3 font-semibold">
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
@@ -709,8 +831,18 @@ export function MediaAdmin() {
                               )}
                             </div>
                             <div className="truncate max-w-[200px]">
-                              <p className="text-xs font-bold text-foreground truncate" dir="ltr">{item.originalName}</p>
-                              <p className="text-[10px] text-muted-foreground font-mono truncate" dir="ltr">{item.url}</p>
+                              <p
+                                className="text-xs font-bold text-foreground truncate"
+                                dir="ltr"
+                              >
+                                {item.originalName}
+                              </p>
+                              <p
+                                className="text-[10px] text-muted-foreground font-mono truncate"
+                                dir="ltr"
+                              >
+                                {item.url}
+                              </p>
                             </div>
                           </div>
                         </td>
@@ -726,7 +858,11 @@ export function MediaAdmin() {
                           {formatBytes(item.size)}
                         </td>
                         <td className="p-3 text-xs text-muted-foreground max-w-[150px] truncate">
-                          {item.alt || <span className="italic text-muted-foreground/50">بلا وصف</span>}
+                          {item.alt || (
+                            <span className="italic text-muted-foreground/50">
+                              بلا وصف
+                            </span>
+                          )}
                         </td>
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1.5">
@@ -735,7 +871,11 @@ export function MediaAdmin() {
                               className="p-1 rounded-md border border-border bg-card text-foreground hover:bg-muted transition cursor-pointer"
                               title="نسخ الرابط"
                             >
-                              {copiedUrl === item.url ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                              {copiedUrl === item.url ? (
+                                <Check className="h-3.5 w-3.5 text-green-400" />
+                              ) : (
+                                <Copy className="h-3.5 w-3.5" />
+                              )}
                             </button>
                             <button
                               onClick={() => handleOpenDetails(item)}
@@ -745,7 +885,9 @@ export function MediaAdmin() {
                               <Info className="h-3.5 w-3.5" />
                             </button>
                             <button
-                              onClick={() => setDeletingId(item.id ?? item._id ?? null)}
+                              onClick={() =>
+                                setDeletingId(item.id ?? item._id ?? null)
+                              }
                               className="p-1 rounded-md border border-red-500/20 bg-red-500/5 text-red-400 hover:bg-red-500/15 transition cursor-pointer"
                               title="حذف"
                             >
@@ -763,17 +905,24 @@ export function MediaAdmin() {
 
           {/* Pagination Controls */}
           {meta.totalPages > 1 && (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 py-3 select-none border-t border-border mt-6 animate-in fade-in duration-200" dir="rtl">
+            <div
+              className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 py-3 select-none border-t border-border mt-6 animate-in fade-in duration-200"
+              dir="rtl"
+            >
               <div className="flex-1 text-sm text-muted-foreground text-right font-semibold">
                 <span>إجمالي الملفات: {meta.total}</span>
               </div>
               <div className="flex flex-wrap items-center gap-4 sm:gap-6 lg:gap-8 justify-end">
                 {/* Page size selector */}
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold text-muted-foreground">عدد العناصر المعروضة:</p>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    عدد العناصر المعروضة:
+                  </p>
                   <select
                     value={meta.limit}
-                    onChange={(e) => setQueryParams({ limit: Number(e.target.value), page: 1 })}
+                    onChange={(e) =>
+                      setQueryParams({ limit: Number(e.target.value), page: 1 })
+                    }
                     className="h-8 rounded-lg border border-border bg-card px-2 text-xs font-semibold outline-none focus:border-primary cursor-pointer transition"
                   >
                     {[10, 20, 30, 50, 100].map((size) => (
@@ -785,7 +934,10 @@ export function MediaAdmin() {
                 </div>
 
                 {/* Current page indicator */}
-                <div className="flex items-center justify-center text-xs font-bold text-foreground" dir="ltr">
+                <div
+                  className="flex items-center justify-center text-xs font-bold text-foreground"
+                  dir="ltr"
+                >
                   <span>
                     الصفحة {meta.page} من {meta.totalPages}
                   </span>
@@ -839,10 +991,11 @@ export function MediaAdmin() {
       {selectedItem && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="rounded-xl border border-border bg-card/95 backdrop-blur-md max-w-lg w-full overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-200">
-            
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-border bg-muted/20">
-              <h3 className="text-sm font-bold text-foreground">تفاصيل وبيانات الملف</h3>
+              <h3 className="text-sm font-bold text-foreground">
+                تفاصيل وبيانات الملف
+              </h3>
               <button
                 onClick={() => setSelectedItem(null)}
                 className="h-7 w-7 rounded-lg border border-border flex items-center justify-center hover:bg-muted transition text-muted-foreground hover:text-foreground cursor-pointer"
@@ -853,10 +1006,10 @@ export function MediaAdmin() {
 
             {/* Modal Body */}
             <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
-              
               {/* Media Preview Box */}
               <div className="rounded-lg border border-border bg-muted/30 aspect-video flex items-center justify-center overflow-hidden">
-                {selectedItem.mimeType?.startsWith("image/") || selectedItem.type === "image" ? (
+                {selectedItem.mimeType?.startsWith("image/") ||
+                selectedItem.type === "image" ? (
                   <img
                     src={selectedItem.url}
                     alt={selectedItem.alt || ""}
@@ -865,7 +1018,9 @@ export function MediaAdmin() {
                 ) : (
                   <div className="text-center">
                     <FileText className="h-12 w-12 text-primary/70 mx-auto" />
-                    <p className="text-xs text-muted-foreground mt-2 uppercase font-mono">{selectedItem.mimeType}</p>
+                    <p className="text-xs text-muted-foreground mt-2 uppercase font-mono">
+                      {selectedItem.mimeType}
+                    </p>
                   </div>
                 )}
               </div>
@@ -873,15 +1028,26 @@ export function MediaAdmin() {
               {/* Readonly Specs */}
               <div className="grid grid-cols-2 gap-3 text-xs rounded-lg border border-border bg-muted/20 p-3.5">
                 <div className="space-y-0.5">
-                  <span className="text-muted-foreground block">اسم الملف الأصلي</span>
-                  <span className="font-bold text-foreground truncate block" dir="ltr">{selectedItem.originalName}</span>
+                  <span className="text-muted-foreground block">
+                    اسم الملف الأصلي
+                  </span>
+                  <span
+                    className="font-bold text-foreground truncate block"
+                    dir="ltr"
+                  >
+                    {selectedItem.originalName}
+                  </span>
                 </div>
                 <div className="space-y-0.5">
                   <span className="text-muted-foreground block">حجم الملف</span>
-                  <span className="font-bold text-foreground block">{formatBytes(selectedItem.size)}</span>
+                  <span className="font-bold text-foreground block">
+                    {formatBytes(selectedItem.size)}
+                  </span>
                 </div>
                 <div className="space-y-0.5 col-span-2">
-                  <span className="text-muted-foreground block">رابط التضمين المباشر</span>
+                  <span className="text-muted-foreground block">
+                    رابط التضمين المباشر
+                  </span>
                   <div className="flex gap-1.5 mt-1">
                     <input
                       type="text"
@@ -895,7 +1061,11 @@ export function MediaAdmin() {
                       className="px-2 border border-border rounded bg-background hover:bg-muted text-foreground flex items-center transition shrink-0 cursor-pointer"
                       title="نسخ الرابط"
                     >
-                      {copiedUrl === selectedItem.url ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+                      {copiedUrl === selectedItem.url ? (
+                        <Check className="h-3 w-3 text-green-400" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
                     </button>
                     <a
                       href={selectedItem.url}
@@ -913,20 +1083,26 @@ export function MediaAdmin() {
               {/* Edit Fields */}
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground font-semibold">مجلد الحفظ</label>
+                  <label className="text-xs text-muted-foreground font-semibold">
+                    مجلد الحفظ
+                  </label>
                   <select
                     value={editFolder}
                     onChange={(e) => setEditFolder(e.target.value)}
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-primary transition"
                   >
                     {folders.map((f) => (
-                      <option key={f.value} value={f.value}>{f.label}</option>
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground font-semibold">الوصف البديل للـ SEO (Alt text)</label>
+                  <label className="text-xs text-muted-foreground font-semibold">
+                    الوصف البديل للـ SEO (Alt text)
+                  </label>
                   <textarea
                     value={editAlt}
                     onChange={(e) => setEditAlt(e.target.value)}
@@ -937,7 +1113,9 @@ export function MediaAdmin() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground font-semibold">الاستخدام (Usage)</label>
+                  <label className="text-xs text-muted-foreground font-semibold">
+                    الاستخدام (Usage)
+                  </label>
                   <input
                     type="text"
                     value={editUsage}
@@ -966,14 +1144,15 @@ export function MediaAdmin() {
                 إلغاء التراجع
               </Button>
               <button
-                onClick={() => setDeletingId(selectedItem.id ?? selectedItem._id ?? null)}
+                onClick={() =>
+                  setDeletingId(selectedItem.id ?? selectedItem._id ?? null)
+                }
                 className="mr-auto text-xs font-bold text-red-400 hover:text-red-300 hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>حذف الملف نهائياً</span>
               </button>
             </div>
-
           </div>
         </div>
       )}
@@ -982,12 +1161,13 @@ export function MediaAdmin() {
       {isCleanupOpen && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="rounded-xl border border-red-500/20 bg-card/95 backdrop-blur-md max-w-lg w-full overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-200">
-            
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-border bg-red-500/5">
               <div className="flex items-center gap-2 text-red-400">
                 <ShieldAlert className="h-5 w-5" />
-                <h3 className="text-sm font-bold">تنظيف وتحرير المساحة التخزينية</h3>
+                <h3 className="text-sm font-bold">
+                  تنظيف وتحرير المساحة التخزينية
+                </h3>
               </div>
               <button
                 onClick={() => {
@@ -1003,19 +1183,28 @@ export function MediaAdmin() {
             {/* Modal Body */}
             <div className="p-5 space-y-4">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                يقوم محرك الخادم بفحص ملفات مكتبة الوسائط التي تم رفعها ولكنها **غير مستخدمة** حالياً في أي مقال مدونة، أو مشروع، أو بيانات ملف شخصي، أو خدمة، ويتيح حذفها لتحرير سعة القرص.
+                يقوم محرك الخادم بفحص ملفات مكتبة الوسائط التي تم رفعها ولكنها
+                **غير مستخدمة** حالياً في أي مقال مدونة، أو مشروع، أو بيانات ملف
+                شخصي، أو خدمة، ويتيح حذفها لتحرير سعة القرص.
               </p>
 
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground font-semibold">فحص الملفات غير النشطة منذ (بالأيام):</label>
+                <label className="text-xs text-muted-foreground font-semibold">
+                  فحص الملفات غير النشطة منذ (بالأيام):
+                </label>
                 <input
                   type="number"
                   min={7}
                   value={olderThanDays}
-                  onChange={(e) => setOlderThanDays(Math.max(7, Number(e.target.value)))}
+                  onChange={(e) =>
+                    setOlderThanDays(Math.max(7, Number(e.target.value)))
+                  }
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold outline-none focus:border-red-500/30 transition"
                 />
-                <span className="text-[10px] text-muted-foreground block mt-0.5">الحد الأدنى للفحص هو 7 أيام لتفادي حذف الملفات المرفوعة حديثاً.</span>
+                <span className="text-[10px] text-muted-foreground block mt-0.5">
+                  الحد الأدنى للفحص هو 7 أيام لتفادي حذف الملفات المرفوعة
+                  حديثاً.
+                </span>
               </div>
 
               <Button
@@ -1024,7 +1213,9 @@ export function MediaAdmin() {
                 disabled={loadingUnused}
                 className="w-full border-red-500/20 text-red-400 hover:bg-red-500/5 flex items-center justify-center gap-2 text-xs font-bold"
               >
-                <RefreshCw className={`h-4 w-4 ${loadingUnused ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${loadingUnused ? "animate-spin" : ""}`}
+                />
                 <span>بدء الفحص عن الملحقات المهملة</span>
               </Button>
 
@@ -1033,19 +1224,29 @@ export function MediaAdmin() {
                 <div className="p-4 rounded-lg border border-red-500/10 bg-red-500/5 space-y-3">
                   <div className="grid grid-cols-2 gap-3 text-center">
                     <div className="p-2 bg-background/50 rounded border border-border">
-                      <span className="text-[10px] text-muted-foreground block font-semibold">الملفات غير المستخدمة</span>
-                      <span className="text-base font-bold text-foreground mt-0.5 block">{unusedMedia.total} ملفات</span>
+                      <span className="text-[10px] text-muted-foreground block font-semibold">
+                        الملفات غير المستخدمة
+                      </span>
+                      <span className="text-base font-bold text-foreground mt-0.5 block">
+                        {unusedMedia.total} ملفات
+                      </span>
                     </div>
                     <div className="p-2 bg-background/50 rounded border border-border">
-                      <span className="text-[10px] text-muted-foreground block font-semibold">المساحة القابلة للتحرير</span>
-                      <span className="text-base font-bold text-green-400 mt-0.5 block">{formatBytes(unusedMedia.estimatedFreedBytes)}</span>
+                      <span className="text-[10px] text-muted-foreground block font-semibold">
+                        المساحة القابلة للتحرير
+                      </span>
+                      <span className="text-base font-bold text-green-400 mt-0.5 block">
+                        {formatBytes(unusedMedia.estimatedFreedBytes)}
+                      </span>
                     </div>
                   </div>
 
                   {unusedMedia.total > 0 ? (
                     <div className="space-y-2">
                       <p className="text-[10px] text-red-300 text-center leading-relaxed">
-                        ⚠️ تحذير: الضغط على زر التطهير سيقوم بمسح هذه الملفات نهائياً من الـ Cloud Storage والقرص الصلب بدون إمكانية للاسترجاع.
+                        ⚠️ تحذير: الضغط على زر التطهير سيقوم بمسح هذه الملفات
+                        نهائياً من الـ Cloud Storage والقرص الصلب بدون إمكانية
+                        للاسترجاع.
                       </p>
                       <Button
                         onClick={performCleanup}
@@ -1068,7 +1269,8 @@ export function MediaAdmin() {
                     </div>
                   ) : (
                     <p className="text-xs text-green-400 text-center font-semibold">
-                      رائع! لا توجد أية ملفات مهملة في الخادم منذ {olderThanDays} أيام.
+                      رائع! لا توجد أية ملفات مهملة في الخادم منذ{" "}
+                      {olderThanDays} أيام.
                     </p>
                   )}
                 </div>
@@ -1088,7 +1290,6 @@ export function MediaAdmin() {
                 إغلاق النافذة
               </Button>
             </div>
-
           </div>
         </div>
       )}
