@@ -90,6 +90,11 @@ export default function BlogMarkdownEditorClient({
     event.target.value = "";
     if (!file) return;
 
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("حجم ملف Markdown كبير جدًا");
+      return;
+    }
+
     const current = ref.current?.getMarkdown() ?? markdown;
     if (
       current.trim() &&
@@ -106,6 +111,13 @@ export default function BlogMarkdownEditorClient({
         toast.error("محتوى ملف Markdown غير صالح");
         return;
       }
+
+      const MAX_MARKDOWN_LENGTH = 500_000;
+      if (reader.result.length > MAX_MARKDOWN_LENGTH) {
+        toast.error("ملف Markdown يتجاوز الحد الأقصى المسموح");
+        return;
+      }
+
       ref.current?.setMarkdown(reader.result);
       onChange(reader.result);
       toast.success("تم استيراد ملف Markdown");

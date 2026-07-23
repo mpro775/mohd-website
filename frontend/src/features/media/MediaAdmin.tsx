@@ -259,7 +259,28 @@ export function MediaAdmin() {
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      setUploadFiles((prev) => [...prev, ...Array.from(files)]);
+      const allowedTypes = new Set([
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "application/pdf",
+      ]);
+      const fileArray = Array.from(files);
+      const acceptedFiles = fileArray.filter((file) =>
+        allowedTypes.has(file.type),
+      );
+      const rejectedFilesCount = fileArray.length - acceptedFiles.length;
+
+      if (rejectedFilesCount > 0) {
+        toast.error(
+          `تم تجاهل ${rejectedFilesCount} ملف/ملفات غير مدعومة. يسمح فقط بالصور و PDF.`,
+        );
+      }
+
+      if (acceptedFiles.length > 0) {
+        setUploadFiles((prev) => [...prev, ...acceptedFiles]);
+      }
     }
   };
 
