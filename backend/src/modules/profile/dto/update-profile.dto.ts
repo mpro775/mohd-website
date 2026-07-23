@@ -19,6 +19,20 @@ class LanguageDto {
   level?: string;
 }
 
+class HeroStatDto {
+  @IsString()
+  label: string;
+
+  @IsNumber()
+  value: number;
+
+  @IsString()
+  suffix: string;
+
+  @IsString()
+  iconName: string;
+}
+
 class ProfileSeoDto {
   @IsOptional()
   @IsString()
@@ -92,6 +106,12 @@ export class UpdateProfileDto {
   @ValidateNested({ each: true })
   @Type(() => LanguageDto)
   languages?: LanguageDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HeroStatDto)
+  heroStats?: HeroStatDto[];
 
   @IsOptional()
   @ValidateNested()

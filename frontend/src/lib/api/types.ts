@@ -70,6 +70,12 @@ export type Profile = {
   availableForWork: boolean;
   languages: { name: string; level?: string }[];
   yearsOfExperience?: number;
+  heroStats?: {
+    label: string;
+    value: number;
+    suffix: string;
+    iconName: string;
+  }[];
   seo?: SeoFields;
 };
 
@@ -430,4 +436,19 @@ export type MediaItem = {
   usage?: string;
   isUsed?: boolean;
   createdAt?: string;
+};
+
+export type Client = {
+  id?: string;
+  _id?: string;
+  name: string;
+  arabicName: string;
+  englishName: string;
+  logoMediaId?: string;
+  logoMedia?: ResolvedMedia;
+  url?: string;
+  isPublished?: boolean;
+  order?: number;
+  createdAt?: string;
+  updatedAt?: string;
 };

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, AnchorHTMLAttributes, ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-
+import StarBorder from "./StarBorder";
 const variants = {
   primary: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-[0_4px_16px_-4px_rgba(55,211,153,0.3)]",
   secondary: "border border-border bg-card text-foreground hover:border-primary/50 hover:shadow-[0_4px_16px_-4px_rgba(55,211,153,0.1)]",
@@ -28,14 +28,21 @@ export function Button({
   size = "md",
   ...props
 }: ButtonProps) {
+  const containerClasses = cn(
+    "inline-flex items-center justify-center rounded-md transition-all duration-200 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    className
+  );
+  const innerClasses = cn(
+    "w-full h-full font-semibold rounded-[inherit]",
+    variants[variant],
+    sizes[size]
+  );
+
   return (
-    <button
-      className={cn(
-        "inline-flex items-center justify-center rounded-md font-semibold transition-all duration-200 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        variants[variant],
-        sizes[size],
-        className
-      )}
+    <StarBorder
+      as="button"
+      className={containerClasses}
+      innerClassName={innerClasses}
       {...props}
     />
   );
@@ -56,18 +63,25 @@ export function LinkButton({
   size = "md",
   ...props
 }: LinkButtonProps) {
+  const containerClasses = cn(
+    "inline-flex items-center justify-center rounded-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    className
+  );
+  const innerClasses = cn(
+    "w-full h-full font-semibold rounded-[inherit]",
+    variants[variant],
+    sizes[size]
+  );
+
   return (
-    <Link
+    <StarBorder
+      as={Link}
       href={href}
-      className={cn(
-        "inline-flex items-center justify-center rounded-md font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        variants[variant],
-        sizes[size],
-        className
-      )}
+      className={containerClasses}
+      innerClassName={innerClasses}
       {...props}
     >
       {children}
-    </Link>
+    </StarBorder>
   );
 }

@@ -62,6 +62,7 @@ export const publicApi = {
   links: () => apiRequest<LinkItem[]>("/public/links", { next: { revalidate: 300, tags: ["links"] } }).then((r) => r.data ?? []),
   link: (slug: string) => apiRequest<LinkItem>(`/public/links/${slug}`, { next: { revalidate: 300, tags: ["links"] } }).then((r) => r.data),
   trackLink: (id: string) => apiRequest(`/public/links/${id}/click`, { method: "POST" }),
+  clients: () => apiRequest<import("./types").Client[]>("/public/clients", { next: { revalidate: 300, tags: ["clients"] } }).then((r) => r.data ?? []),
   faqs: async (query?: ListQuery) => {
     const r = await apiRequest<Faq[], import("./types").PaginationMeta>("/public/faqs", { query, next: { revalidate: 300, tags: ["faqs"] } });
     return normalizePaginated<Faq>(r.data, r.meta);

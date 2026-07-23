@@ -33,6 +33,7 @@ import { SeoModule } from './modules/seo/seo.module';
 import { OptionsModule } from './modules/options/options.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
 import { EducationModule } from './modules/education/education.module';
+import { ClientsModule } from './modules/clients/clients.module';
 
 @Module({
   imports: [
@@ -119,6 +120,7 @@ import { EducationModule } from './modules/education/education.module';
     OptionsModule,
     CertificationsModule,
     EducationModule,
+    ClientsModule,
   ],
   controllers: [AppController, DeprecatedController],
   providers: [

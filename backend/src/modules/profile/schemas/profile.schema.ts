@@ -22,6 +22,21 @@ export class ProfileSeo {
   ogImageMediaId?: Types.ObjectId;
 }
 
+@Schema({ _id: false })
+export class HeroStat {
+  @Prop({ required: true })
+  label: string;
+
+  @Prop({ required: true })
+  value: number;
+
+  @Prop({ required: true })
+  suffix: string;
+
+  @Prop({ required: true })
+  iconName: string;
+}
+
 @Schema({ timestamps: true })
 export class Profile extends Document {
   @Prop({ required: true, trim: true })
@@ -65,6 +80,9 @@ export class Profile extends Document {
 
   @Prop({ type: Number, default: 0 })
   yearsOfExperience?: number;
+
+  @Prop({ type: [SchemaFactory.createForClass(HeroStat)], default: [] })
+  heroStats: HeroStat[];
 
   @Prop({ type: SchemaFactory.createForClass(ProfileSeo), default: {} })
   seo: ProfileSeo;
