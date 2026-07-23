@@ -60,6 +60,12 @@ interface DataTableProps<TData, TValue> {
   sortOrder?: "asc" | "desc";
   onSortChange?: (sortBy: string, sortOrder: "asc" | "desc") => void;
   serverSortableColumns?: string[];
+  renderMobileItem?: (
+    item: TData,
+    selected: boolean,
+    onToggleSelected: () => void,
+  ) => React.ReactNode;
+  hideToolbarSearch?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -91,6 +97,8 @@ export function DataTable<TData, TValue>({
   sortOrder = "desc",
   onSortChange,
   serverSortableColumns,
+  renderMobileItem,
+  hideToolbarSearch = false,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -156,6 +164,7 @@ export function DataTable<TData, TValue>({
           onSearchChange={onSearchChange}
           filtersValue={filtersValue}
           onFilterChange={onFilterChange}
+          hideSearch={hideToolbarSearch}
         />
       )}
 
@@ -268,6 +277,17 @@ export function DataTable<TData, TValue>({
             <EmptyState title={emptyTitle} description={emptyDescription} className="border-none py-12" />
           ) : (
             table.getRowModel().rows.map((row) => {
+              if (renderMobileItem) {
+                return (
+                  <React.Fragment key={row.id}>
+                    {renderMobileItem(
+                      row.original,
+                      row.getIsSelected(),
+                      () => row.toggleSelected(),
+                    )}
+                  </React.Fragment>
+                );
+              }
               const cells = row.getVisibleCells();
               // Extract selection and action cells if present
               const selectCell = cells.find((c) => c.column.id === "select");

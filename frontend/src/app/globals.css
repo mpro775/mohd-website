@@ -809,3 +809,38 @@ html {
     transition-duration: 0.001ms !important;
   }
 }
+/* Blog writing studio: Arabic prose remains RTL while technical tokens stay LTR. */
+.blog-writing-editor {
+  direction: rtl;
+  text-align: right;
+}
+
+.blog-writing-editor [contenteditable="true"],
+.blog-writing-editor .mdxeditor-rich-text-editor {
+  min-height: calc(100vh - 300px);
+  direction: rtl;
+  text-align: right;
+}
+
+.blog-writing-editor pre,
+.blog-writing-editor code,
+.blog-writing-editor .cm-editor,
+.blog-writing-editor .cm-content {
+  direction: ltr;
+  text-align: left;
+}
+
+.blog-writing-editor a,
+.blog-writing-editor [data-url] {
+  unicode-bidi: plaintext;
+}
+
+.blog-writing-editor [role="toolbar"] {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  scrollbar-width: thin;
+}
+
+.blog-writing-editor table {
+  direction: inherit;
+}

@@ -32,6 +32,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AdminLayoutModeContext } from "./AdminLayoutModeContext";
 
 // Icon mapping helper
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -107,6 +108,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [focusMode, setFocusMode] = useState(false);
 
   // Command input ref
   const commandInputRef = useRef<HTMLInputElement>(null);
@@ -241,13 +243,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const breadcrumbs = getBreadcrumbs();
 
   return (
+    <AdminLayoutModeContext.Provider value={{ focusMode, setFocusMode }}>
     <div className="min-h-screen bg-background text-foreground flex flex-col md:flex-row relative">
       
       {/* 1. Sidebar for Desktop */}
       <aside
         className={cn(
           "hidden md:flex flex-col border-l border-border bg-card transition-all duration-300 shrink-0 sticky top-0 h-screen select-none",
-          isCollapsed ? "w-20" : "w-64"
+          isCollapsed ? "w-20" : "w-64",
+          focusMode && "!hidden",
         )}
       >
         {/* Sidebar Header */}
@@ -445,7 +449,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* 3. Main Dashboard Wrapper */}
       <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 sticky top-0 z-40 select-none shadow-sm">
+        <header className={cn("h-16 border-b border-border bg-card flex items-center justify-between px-4 sticky top-0 z-40 select-none shadow-sm", focusMode && "hidden")}>
           
           {/* Breadcrumbs & Mobile Trigger */}
           <div className="flex items-center gap-3">
@@ -522,7 +526,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Content Area */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto bg-background/50 custom-scrollbar">
+        <main className={cn("flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto bg-background/50 custom-scrollbar", focusMode && "!p-0")}>
           {children}
         </main>
       </div>
@@ -604,5 +608,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </DialogPrimitive.Root>
 
     </div>
+    </AdminLayoutModeContext.Provider>
   );
 }

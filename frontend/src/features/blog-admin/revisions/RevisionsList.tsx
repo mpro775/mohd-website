@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { clientApiRequest } from "@/lib/api/admin-client";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import type { AdminPostDetail, PostRevision, PostRevisionSnapshot } from "@/lib/api/types";
 import { RevisionContentDiff } from "./RevisionContentDiff";
 import { RevisionMetadataDiff } from "./RevisionMetadataDiff";
@@ -16,6 +17,7 @@ export function RevisionsList({ postId }: { postId: string }) {
   const [selected, setSelected] = useState<PostRevision | null>(null);
   const [baseId, setBaseId] = useState<string>("current");
   const [baseRevision, setBaseRevision] = useState<PostRevision | null>(null);
+  const [restoreOpen, setRestoreOpen] = useState(false);
 
   useEffect(() => { 
     void Promise.all([
@@ -45,7 +47,7 @@ export function RevisionsList({ postId }: { postId: string }) {
   };
   
   const restore = async () => { 
-    if (!selected || !post || !window.confirm("استعادة هذا الإصدار وإنشاء إصدار جديد؟")) return; 
+    if (!selected || !post) return;
     const id = selected.id ?? selected._id; 
     await clientApiRequest(`/blog/posts/${postId}/revisions/${id}/restore`, { method: "POST", body: { expectedVersion: post.version } }); 
     toast.success("تمت استعادة الإصدار"); 
@@ -116,7 +118,7 @@ export function RevisionsList({ postId }: { postId: string }) {
                     </select>
                   </div>
                 </div>
-                <button onClick={() => void restore()} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90">
+                <button onClick={() => setRestoreOpen(true)} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90">
                   استعادة الإصدار {selected.revisionNumber}
                 </button>
               </div>
@@ -146,6 +148,15 @@ export function RevisionsList({ postId }: { postId: string }) {
           )}
         </main>
       </div>
+      <ConfirmDialog
+        isOpen={restoreOpen}
+        onClose={() => setRestoreOpen(false)}
+        onConfirm={restore}
+        title="استعادة هذا الإصدار"
+        description="سيتم إنشاء إصدار جديد من النسخة المحددة مع الاحتفاظ بسجل الإصدارات الحالي."
+        confirmText="استعادة الإصدار"
+        variant="warning"
+      />
     </div>
   );
 }
