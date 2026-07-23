@@ -1,10 +1,8 @@
 "use client";
 
-import type { AutosaveState } from "../hooks/usePostAutosave";
-
-const labels: Record<AutosaveState, string> = { idle: "محفوظ", dirty: "تغييرات غير محفوظة", saving: "جارٍ الحفظ…", saved: "تم الحفظ", error: "فشل الحفظ", conflict: "تعارض نسخة" };
-
-export function EditorStatusBar({ state, savedAt, content }: { state: AutosaveState; savedAt: Date | null; content: string }) {
+export function EditorStatusBar({ content }: { content: string }) {
   const words = content.split(/\s+/).filter(Boolean).length;
-  return <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2 text-xs text-muted-foreground"><span className={state === "error" || state === "conflict" ? "text-danger" : ""}>{labels[state]}{savedAt ? ` · ${savedAt.toLocaleTimeString("ar-SA", { hour: "2-digit", minute: "2-digit" })}` : ""}</span><span>{words} كلمة · {Math.max(1, Math.ceil(words / 200))} دقيقة قراءة</span></div>;
+  const characters = content.length;
+  const headings = content.split("\n").filter((line) => /^#{1,6}\s/.test(line)).length;
+  return <div className="flex flex-wrap items-center justify-center gap-2 border-t border-border px-4 py-3 text-xs text-muted-foreground"><span>{words.toLocaleString("ar-SA")} كلمة</span><span aria-hidden>·</span><span>{characters.toLocaleString("ar-SA")} حرفًا</span><span aria-hidden>·</span><span>{Math.max(1, Math.ceil(words / 200))} دقائق قراءة</span><span aria-hidden>·</span><span>{headings} عناوين</span></div>;
 }

@@ -12,6 +12,7 @@ export function BlogMarkdownEditor(props: {
   markdown: string;
   savedMarkdown: string;
   exportFileName?: string;
+  mode?: "rich-text" | "source" | "diff";
   onChange: (value: string) => void;
 }) {
   return <ClientEditor {...props} />;

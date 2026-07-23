@@ -1,18 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, Save } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api/errors";
 import { clientApiRequest } from "@/lib/api/admin-client";
 import type { AdminPostDetail } from "@/lib/api/types";
-import { BlogMarkdownEditor } from "../editor/BlogMarkdownEditor";
-import { EditorPreview } from "../editor/EditorPreview";
-import { EditorStatusBar } from "../editor/EditorStatusBar";
 import { usePostAutosave } from "../hooks/usePostAutosave";
 import { usePostConflict } from "../hooks/usePostConflict";
 import { usePostReadiness } from "../hooks/usePostReadiness";
@@ -20,13 +16,9 @@ import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 import { EMPTY_POST_VALUES, postDraftPersistenceSchema, postEditorSchema, type PostEditorValues } from "../schemas/post-editor.schema";
 import { clearEditorDraft, draftStorageKey, loadEditorDraft, saveEditorDraft } from "../utils/editor-draft-storage";
 import { datetimeLocalToUtc, utcToDatetimeLocal } from "../utils/post-date";
-import { PostBasicsPanel } from "./PostBasicsPanel";
-import { PostMediaPanel } from "./PostMediaPanel";
-import { PostPublishingPanel } from "./PostPublishingPanel";
-import { PostReadinessPanel } from "./PostReadinessPanel";
-import { PostRelatedPanel } from "./PostRelatedPanel";
-import { PostSeoPanel } from "./PostSeoPanel";
-import { PostTaxonomyPanel } from "./PostTaxonomyPanel";
+import { BlogConflictDialog } from "../writing-studio/BlogConflictDialog";
+import { BlogUnsavedChangesDialog } from "../writing-studio/BlogUnsavedChangesDialog";
+import { BlogWritingStudio } from "../writing-studio/BlogWritingStudio";
 
 function entityId(value: unknown): string {
   if (!value) return "";
@@ -81,9 +73,9 @@ export function PostEditorPage({ postId }: { postId?: string }) {
   const router = useRouter();
   const [post, setPost] = useState<AdminPostDetail | null>(null);
   const [loading, setLoading] = useState(Boolean(postId));
+  const [loadError, setLoadError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [savedMarkdown, setSavedMarkdown] = useState("");
-  const [tab, setTab] = useState<"edit" | "preview">("edit");
   const [scheduleValue, setScheduleValue] = useState("");
   const [recovery, setRecovery] = useState<ReturnType<typeof loadEditorDraft>>(null);
   const form = useForm<PostEditorValues>({ resolver: zodResolver(postEditorSchema), defaultValues: EMPTY_POST_VALUES });
@@ -101,7 +93,7 @@ export function PostEditorPage({ postId }: { postId?: string }) {
       if (result.data.scheduledAt) setScheduleValue(utcToDatetimeLocal(result.data.scheduledAt as unknown as string));
       const local = loadEditorDraft(storageKey);
       if (local && local.timestamp > new Date(result.data.updatedAt ?? 0).getTime()) setRecovery(local);
-    }).catch(() => toast.error("تعذر تحميل المقال")).finally(() => setLoading(false));
+    }).catch(() => { setLoadError(true); toast.error("تعذر تحميل المقال"); }).finally(() => setLoading(false));
   }, [form, postId, storageKey]);
 
   useEffect(() => {
@@ -155,11 +147,6 @@ export function PostEditorPage({ postId }: { postId?: string }) {
     if (!post) return;
     setBusy(true);
     try {
-      if (name === "publish" || name === "schedule") {
-        const checked = await readiness.refresh();
-        if (!checked?.ready) { toast.error("عالج موانع النشر أولاً"); return; }
-        if (checked.warnings.length && !window.confirm(`يوجد ${checked.warnings.length} تحذيرات. هل تريد المتابعة؟`)) return;
-      }
       let body: any = { expectedVersion: post.version };
       if (name === "schedule") {
         body = { expectedVersion: post.version, scheduledAt: datetimeLocalToUtc(scheduleValue), sourceTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone };
@@ -175,8 +162,48 @@ export function PostEditorPage({ postId }: { postId?: string }) {
     finally { setBusy(false); }
   };
 
-  if (loading) return <div className="p-10 text-center text-muted-foreground">جارٍ تحميل المحرر…</div>;
-  return <div className="space-y-5 pb-16" dir="rtl"><nav className="text-xs text-muted-foreground"><Link href="/admin/blog/posts">المقالات</Link><span className="mx-2">/</span><span>{post ? "تحرير" : "مقال جديد"}</span></nav><header className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/95 py-3 backdrop-blur"><div><h1 className="text-2xl font-bold">{post ? `تحرير: ${post.title}` : "إنشاء مقال جديد"}</h1><p className="text-xs text-muted-foreground">الحالة: {post?.status ?? "مسودة جديدة"} · الإصدار {post?.version ?? 0}</p></div><div className="flex gap-2">{post ? <Link href={`/admin/blog/posts/${post.id ?? post._id}/preview`} target="_blank" className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm"><Eye className="h-4 w-4" />معاينة</Link> : null}<button type="button" disabled={busy} onClick={() => void save("manual_save").then(autosave.markSaved).catch(() => toast.error("تعذر حفظ المقال"))} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="h-4 w-4" />حفظ</button></div></header>{recovery ? <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm"><span>توجد نسخة محلية أحدث من نسخة الخادم.</span><div className="flex gap-2"><button onClick={() => { form.reset(recovery.values); setRecovery(null); }} className="rounded border border-border px-3 py-1">استعادة</button><button onClick={() => { clearEditorDraft(storageKey); setRecovery(null); }} className="rounded border border-border px-3 py-1">تجاهل</button></div></div> : null}<div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]"><main className="min-w-0 space-y-5"><PostBasicsPanel form={form} /><div className="premium-card overflow-hidden"><div className="flex gap-2 border-b border-border p-3"><button type="button" onClick={() => setTab("edit")} className={`rounded px-3 py-1 text-sm ${tab === "edit" ? "bg-primary text-primary-foreground" : ""}`}>تحرير / Source / Diff</button><button type="button" onClick={() => setTab("preview")} className={`rounded px-3 py-1 text-sm ${tab === "preview" ? "bg-primary text-primary-foreground" : ""}`}>معاينة</button></div>{tab === "edit" ? <BlogMarkdownEditor markdown={values.content} savedMarkdown={savedMarkdown} onChange={(content) => form.setValue("content", content, { shouldDirty: true, shouldValidate: true })} /> : <EditorPreview content={values.content} />}<EditorStatusBar state={autosave.state} savedAt={autosave.savedAt} content={values.content} /></div></main><aside className="space-y-4 xl:sticky xl:top-24 xl:self-start"><PostPublishingPanel post={post} scheduleValue={scheduleValue} onScheduleValue={setScheduleValue} busy={busy} onAction={(name, payload) => void action(name, payload)} /><PostTaxonomyPanel form={form} /><PostMediaPanel form={form} /><section className="premium-card p-4"><label className="flex items-center gap-2 text-sm font-bold"><input type="checkbox" {...form.register("isFeatured")} />مقال مميز</label>{values.isFeatured ? <label className="mt-3 block text-xs font-bold">ترتيب الظهور<input type="number" {...form.register("featuredOrder", { valueAsNumber: true })} className="mt-1 w-full rounded-lg border border-border bg-background p-2" /></label> : null}</section><PostRelatedPanel form={form} postId={post?.id ?? post?._id} /><PostSeoPanel form={form} /><PostReadinessPanel result={readiness.result} loading={readiness.loading} onRefresh={() => void readiness.refresh()} />{post ? <Link href={`/admin/blog/posts/${post.id ?? post._id}/revisions`} className="block rounded-xl border border-border p-4 text-center text-sm font-bold">سجل الإصدارات</Link> : null}</aside></div>{conflict.serverPost ? <div className="fixed inset-0 z-[80] grid place-items-center bg-black/70 p-4"><div className="w-full max-w-3xl rounded-xl border border-border bg-card p-5"><h2 className="text-xl font-bold text-danger">تعارض نسخة</h2><p className="mt-2 text-sm text-muted-foreground">عُدّل المقال من جلسة أخرى. لن تتم الكتابة فوقه تلقائيًا.</p><div className="mt-4 grid gap-3 md:grid-cols-2"><textarea readOnly value={conflict.localContent} rows={12} className="rounded border border-border bg-background p-3 text-xs" /><textarea readOnly value={conflict.serverPost.content} rows={12} className="rounded border border-border bg-background p-3 text-xs" /></div><div className="mt-4 flex flex-wrap justify-end gap-2"><button onClick={() => navigator.clipboard.writeText(conflict.localContent)} className="rounded border border-border px-3 py-2 text-sm">نسخ المحتوى المحلي</button><button onClick={() => { form.reset(valuesFromPost(conflict.serverPost!)); setPost(conflict.serverPost); conflict.closeConflict(); }} className="rounded bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">تحميل نسخة الخادم</button><button onClick={conflict.closeConflict} className="rounded border border-border px-3 py-2 text-sm">فتح Diff لاحقًا</button></div></div></div> : null}
-{guard.dialogOpen ? <div className="fixed inset-0 z-[100] grid place-items-center bg-black/70 p-4"><div className="w-full max-w-sm rounded-xl border border-border bg-card p-5"><h2 className="text-xl font-bold">تغييرات غير محفوظة</h2><p className="mt-2 text-sm text-muted-foreground">لديك تغييرات لم يتم حفظها. ماذا تريد أن تفعل؟</p><div className="mt-5 flex flex-col gap-2"><button onClick={() => { save("manual_save").then(() => guard.confirmNavigation()).catch(() => undefined); }} className="rounded bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">حفظ ومغادرة</button><button onClick={() => guard.confirmNavigation()} className="rounded border border-danger text-danger px-3 py-2 text-sm font-bold">مغادرة دون حفظ</button><button onClick={() => guard.cancelNavigation()} className="rounded border border-border px-3 py-2 text-sm font-bold">البقاء في الصفحة</button></div></div></div> : null}
-</div>;
+  if (loading) return <div className="grid gap-6 py-8 xl:grid-cols-[1fr_340px]" dir="rtl"><div className="space-y-5"><div className="h-16 animate-pulse rounded-xl bg-muted" /><div className="mx-auto h-28 max-w-3xl animate-pulse rounded-xl bg-muted" /><div className="h-[560px] animate-pulse rounded-2xl bg-muted" /></div><div className="hidden h-[70vh] animate-pulse rounded-2xl bg-muted xl:block" /></div>;
+  if (loadError) return <div className="mx-auto max-w-lg rounded-2xl border border-danger/30 bg-card p-8 text-center" dir="rtl"><AlertCircle className="mx-auto h-9 w-9 text-danger" /><h1 className="mt-3 text-xl font-bold">تعذر تحميل المقال</h1><p className="mt-2 text-sm text-muted-foreground">تحقق من الاتصال ثم أعد المحاولة.</p><div className="mt-5 flex justify-center gap-2"><button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">إعادة المحاولة</button><button type="button" onClick={() => router.push("/admin/blog/posts")} className="rounded-lg border border-border px-4 py-2 text-sm font-bold">العودة للمقالات</button></div></div>;
+  return (
+    <>
+      {recovery ? <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm" dir="rtl"><span>توجد نسخة محلية أحدث من نسخة الخادم.</span><div className="flex gap-2"><button type="button" onClick={() => { form.reset(recovery.values); setRecovery(null); }} className="rounded border border-border px-3 py-1">استعادة</button><button type="button" onClick={() => { clearEditorDraft(storageKey); setRecovery(null); }} className="rounded border border-border px-3 py-1">تجاهل</button></div></div> : null}
+      <BlogWritingStudio
+        form={form}
+        post={post}
+        busy={busy}
+        savedMarkdown={savedMarkdown}
+        autosaveState={autosave.state}
+        savedAt={autosave.savedAt}
+        scheduleValue={scheduleValue}
+        readiness={readiness}
+        onScheduleValue={setScheduleValue}
+        onSave={async () => {
+          try {
+            await save("manual_save");
+            autosave.markSaved();
+          } catch {
+            toast.error("تعذر حفظ المقال");
+          }
+        }}
+        onAction={action}
+      />
+      <BlogConflictDialog
+        serverPost={conflict.serverPost}
+        localContent={conflict.localContent}
+        onClose={conflict.closeConflict}
+        onLoadServer={() => {
+          if (!conflict.serverPost) return;
+          form.reset(valuesFromPost(conflict.serverPost));
+          setPost(conflict.serverPost);
+          conflict.closeConflict();
+        }}
+      />
+      <BlogUnsavedChangesDialog
+        open={guard.dialogOpen}
+        onSaveAndLeave={() => { void save("manual_save").then(() => guard.confirmNavigation()).catch(() => undefined); }}
+        onLeave={guard.confirmNavigation}
+        onStay={guard.cancelNavigation}
+      />
+    </>
+  );
 }

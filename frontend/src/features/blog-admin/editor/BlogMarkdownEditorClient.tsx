@@ -7,7 +7,6 @@ import {
   BoldItalicUnderlineToggles,
   CodeToggle,
   CreateLink,
-  DiffSourceToggleWrapper,
   InsertAdmonition,
   InsertCodeBlock,
   InsertTable,
@@ -34,6 +33,7 @@ import {
 import "@mdxeditor/editor/style.css";
 import { Download, ImagePlus, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { EditorMediaDialog } from "./EditorMediaDialog";
 
 const languages = {
@@ -59,6 +59,7 @@ type BlogMarkdownEditorClientProps = {
   markdown: string;
   savedMarkdown: string;
   exportFileName?: string;
+  mode?: "rich-text" | "source" | "diff";
   onChange: (value: string) => void;
 };
 
@@ -74,31 +75,24 @@ export default function BlogMarkdownEditorClient({
   markdown,
   savedMarkdown,
   exportFileName,
+  mode = "rich-text",
   onChange,
 }: BlogMarkdownEditorClientProps) {
   const ref = useRef<MDXEditorMethods>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
   const [mediaOpen, setMediaOpen] = useState(false);
+  const [pendingImport, setPendingImport] = useState<File | null>(null);
 
   useEffect(() => {
     if (ref.current && ref.current.getMarkdown() !== markdown)
       ref.current.setMarkdown(markdown);
   }, [markdown]);
 
-  const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    const current = ref.current?.getMarkdown() ?? markdown;
-    if (
-      current.trim() &&
-      !window.confirm(
-        "سيستبدل الاستيراد محتوى المقال الحالي. هل تريد المتابعة؟",
-      )
-    )
+  const importFile = (file: File) => {
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("حجم ملف Markdown كبير جدًا");
       return;
-
+    }
     const reader = new FileReader();
     reader.onerror = () => toast.error("تعذّرت قراءة ملف Markdown");
     reader.onload = () => {
@@ -106,11 +100,30 @@ export default function BlogMarkdownEditorClient({
         toast.error("محتوى ملف Markdown غير صالح");
         return;
       }
+
+      const MAX_MARKDOWN_LENGTH = 500_000;
+      if (reader.result.length > MAX_MARKDOWN_LENGTH) {
+        toast.error("ملف Markdown يتجاوز الحد الأقصى المسموح");
+        return;
+      }
+
       ref.current?.setMarkdown(reader.result);
       onChange(reader.result);
       toast.success("تم استيراد ملف Markdown");
     };
     reader.readAsText(file, "UTF-8");
+  };
+
+  const handleImport = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    const current = ref.current?.getMarkdown() ?? markdown;
+    if (current.trim()) {
+      setPendingImport(file);
+      return;
+    }
+    importFile(file);
   };
 
   const handleExport = () => {
@@ -128,8 +141,8 @@ export default function BlogMarkdownEditorClient({
 
   return (
     <div
-      className="overflow-hidden rounded-xl border border-border bg-background text-left"
-      dir="ltr"
+      className="blog-writing-editor overflow-hidden rounded-2xl border border-border bg-card"
+      dir="rtl"
     >
       <div
         className="flex flex-wrap items-center justify-end gap-2 border-b border-border p-2"
@@ -168,10 +181,11 @@ export default function BlogMarkdownEditorClient({
         </button>
       </div>
       <MDXEditor
+        key={mode}
         ref={ref}
         markdown={markdown}
         onChange={onChange}
-        contentEditableClassName="prose-tech min-h-[560px] max-w-none px-6 py-5"
+        contentEditableClassName="prose-tech mdxeditor-rich-text-editor mx-auto min-h-[560px] max-w-[820px] px-5 py-8 md:px-10"
         plugins={[
           headingsPlugin(),
           listsPlugin(),
@@ -188,14 +202,12 @@ export default function BlogMarkdownEditorClient({
           }),
           diffSourcePlugin({
             diffMarkdown: savedMarkdown,
-            viewMode: "rich-text",
+            viewMode: mode,
           }),
           markdownShortcutPlugin(),
           toolbarPlugin({
             toolbarContents: () => (
-              <DiffSourceToggleWrapper
-                options={["rich-text", "source", "diff"]}
-              >
+              <div className="flex min-w-max items-center gap-2 px-1" dir="ltr">
                 <UndoRedo />
                 <BlockTypeSelect />
                 <BoldItalicUnderlineToggles />
@@ -206,7 +218,7 @@ export default function BlogMarkdownEditorClient({
                 <InsertTable />
                 <InsertThematicBreak />
                 <InsertAdmonition />
-              </DiffSourceToggleWrapper>
+              </div>
             ),
           }),
         ]}
@@ -218,6 +230,18 @@ export default function BlogMarkdownEditorClient({
           ref.current?.insertMarkdown(value);
           onChange(ref.current?.getMarkdown() ?? markdown);
         }}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(pendingImport)}
+        onClose={() => setPendingImport(null)}
+        onConfirm={() => {
+          if (pendingImport) importFile(pendingImport);
+          setPendingImport(null);
+        }}
+        title="استبدال محتوى المقال"
+        description="سيستبدل ملف Markdown المحتوى الحالي بالكامل. لا يمكن التراجع عن ذلك بعد الحفظ."
+        confirmText="استيراد واستبدال"
+        variant="warning"
       />
     </div>
   );

@@ -15,15 +15,19 @@ const labels: Record<string, string> = {
 export function PostPublishingPanel({
   post,
   scheduleValue,
-  onScheduleValue,
   busy,
   onAction,
+  onRequestChanges,
+  onArchive,
+  onScheduleOpen,
 }: {
   post: AdminPostDetail | null;
   scheduleValue: string;
-  onScheduleValue: (value: string) => void;
   busy: boolean;
   onAction: (action: string, payload?: any) => void;
+  onRequestChanges: () => void;
+  onArchive: () => void;
+  onScheduleOpen: () => void;
 }) {
   const status = post?.status ?? "draft";
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -62,10 +66,7 @@ export function PostPublishingPanel({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => {
-                  const msg = window.prompt("اكتب رسالة التعديلات المطلوبة:");
-                  if (msg) onAction("request-changes", { message: msg });
-                }}
+                onClick={onRequestChanges}
                 className="w-full rounded-lg border border-border p-2 text-sm font-bold text-amber-600"
               >
                 طلب تعديل
@@ -110,11 +111,7 @@ export function PostPublishingPanel({
             <button
               type="button"
               disabled={busy}
-              onClick={() => {
-                if (window.confirm("هل أنت متأكد من أرشفة المقال؟")) {
-                  onAction("archive");
-                }
-              }}
+              onClick={onArchive}
               className="w-full rounded-lg border border-border p-2 text-sm font-bold text-danger"
             >
               أرشفة المقال
@@ -134,24 +131,14 @@ export function PostPublishingPanel({
 
           {["draft", "approved", "scheduled"].includes(status) ? (
             <div className="space-y-2 border-t border-border pt-3">
-              <input
-                type="datetime-local"
-                value={scheduleValue}
-                // eslint-disable-next-line react-hooks/purity
-                min={new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}
-                onChange={(event) => onScheduleValue(event.target.value)}
-                className="w-full rounded-lg border border-border bg-background p-2 text-sm"
-              />
-              <p className="text-[11px] text-muted-foreground">
-                سيتم النشر بتوقيت {timezone}
-              </p>
+              {scheduleValue ? <p className="rounded-lg bg-muted p-2 text-xs">{new Date(scheduleValue).toLocaleString("ar-SA")} · {timezone}</p> : null}
               <button
                 type="button"
-                disabled={busy || !scheduleValue}
-                onClick={() => onAction("schedule")}
+                disabled={busy}
+                onClick={onScheduleOpen}
                 className="w-full rounded-lg border border-border p-2 text-sm font-bold"
               >
-                {status === "scheduled" ? "تحديث الجدولة" : "جدولة"}
+                {status === "scheduled" ? "إدارة الجدولة" : "جدولة النشر"}
               </button>
             </div>
           ) : null}

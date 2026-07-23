@@ -2,7 +2,7 @@ import {
   calculateContentHash,
   calculateMarkdownReadTime,
   normalizeMarkdownContent,
-  validateMarkdownContent,
+  validateMarkdownDraftContent,
 } from './markdown-content.util';
 
 describe('markdown-content utilities', () => {
@@ -35,7 +35,7 @@ describe('markdown-content utilities', () => {
 
   it('validates content and calculates stable values', () => {
     const normalized = normalizeMarkdownContent(technicalMarkdown);
-    expect(() => validateMarkdownContent(normalized)).not.toThrow();
+    expect(() => validateMarkdownDraftContent(normalized)).not.toThrow();
     expect(calculateMarkdownReadTime(normalized)).toBeGreaterThanOrEqual(1);
     expect(calculateContentHash({ content: normalized })).toBe(
       calculateContentHash({ content: normalized }),

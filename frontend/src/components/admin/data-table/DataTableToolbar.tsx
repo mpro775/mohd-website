@@ -35,6 +35,7 @@ interface DataTableToolbarProps<TData> {
   onSearchChange?: (value: string) => void;
   filtersValue?: Record<string, string>;
   onFilterChange?: (key: string, value: string) => void;
+  hideSearch?: boolean;
 }
 
 export function DataTableToolbar<TData>({
@@ -52,6 +53,7 @@ export function DataTableToolbar<TData>({
   onSearchChange,
   filtersValue = {},
   onFilterChange,
+  hideSearch = false,
 }: DataTableToolbarProps<TData>) {
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const hasSelection = selectedRows.length > 0;
@@ -155,7 +157,7 @@ export function DataTableToolbar<TData>({
     >
       {/* Search and Filters */}
       <div className="flex flex-1 flex-wrap items-center gap-2">
-        <div className="relative w-full sm:max-w-xs">
+        {!hideSearch ? <div className="relative w-full sm:max-w-xs">
           <Search className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
@@ -172,7 +174,7 @@ export function DataTableToolbar<TData>({
               <X className="h-3.5 w-3.5" />
             </button>
           )}
-        </div>
+        </div> : null}
 
         {/* Dynamic Filters */}
         {filterOptions.map((filter) => {
