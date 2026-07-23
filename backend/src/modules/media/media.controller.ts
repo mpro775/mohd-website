@@ -19,7 +19,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
-import { MediaService } from './media.service';
+import { MAX_UPLOAD_FILE_SIZE, MediaService } from './media.service';
 import type { RequestWithOptionalUser } from './media.service';
 import { UploadMediaDto } from './dto/upload-media.dto';
 import { MediaQueryDto } from './dto/media-query.dto';
@@ -33,7 +33,12 @@ export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_UPLOAD_FILE_SIZE },
+    }),
+  )
   async upload(
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: UploadMediaDto,

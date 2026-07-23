@@ -24,9 +24,23 @@ import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { createPaginatedResponse } from '../../common/utils/pagination.util';
 import { buildSafeRegex } from '../../common/utils/regex.util';
 
-const ALLOWED_IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_IMAGE_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
 const ALLOWED_DOC_MIMES = ['application/pdf'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit enforced
+const STATIC_IMAGE_MAX_FILE_SIZE = 5 * 1024 * 1024;
+const DOCUMENT_MAX_FILE_SIZE = 10 * 1024 * 1024;
+export const MAX_UPLOAD_FILE_SIZE = 15 * 1024 * 1024;
+
+const SHARP_FORMAT_BY_MIME: Record<string, string> = {
+  'image/jpeg': 'jpeg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+};
 
 export interface RequestWithOptionalUser {
   user?: {
@@ -98,19 +112,27 @@ export class MediaService {
       throw new BadRequestException('يجب تحديد مجلد الرفع');
     }
 
-    // 1. Enforce size limits (5MB)
-    if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(
-        'حجم الملف يتجاوز الحد الأقصى المسموح به وهو 5 ميجابايت',
-      );
-    }
-
     const isImage = ALLOWED_IMAGE_MIMES.includes(file.mimetype);
     const isPdf = ALLOWED_DOC_MIMES.includes(file.mimetype);
 
     if (!isImage && !isPdf) {
       throw new BadRequestException(
-        'نوع الملف غير مدعوم. الأنواع المسموحة هي: jpeg, png, webp, pdf',
+        'نوع الملف غير مدعوم. الأنواع المسموحة هي: jpeg, png, webp, gif, pdf',
+      );
+    }
+
+    const initialSizeLimit = isPdf
+      ? DOCUMENT_MAX_FILE_SIZE
+      : file.mimetype === 'image/gif' || file.mimetype === 'image/webp'
+        ? MAX_UPLOAD_FILE_SIZE
+        : STATIC_IMAGE_MAX_FILE_SIZE;
+    if (file.size > initialSizeLimit) {
+      throw new BadRequestException(
+        isPdf
+          ? 'حجم ملف PDF يتجاوز الحد الأقصى المسموح به وهو 10 ميجابايت'
+          : file.mimetype === 'image/gif' || file.mimetype === 'image/webp'
+            ? 'حجم الصورة المتحركة يتجاوز الحد الأقصى المسموح به وهو 15 ميجابايت'
+            : 'حجم الصورة الثابتة يتجاوز الحد الأقصى المسموح به وهو 5 ميجابايت',
       );
     }
 
@@ -128,33 +150,56 @@ export class MediaService {
       }
     } else if (isImage) {
       try {
-        // Enforce Sharp validation & exif auto-rotation
-        const image = sharp(file.buffer).rotate();
-        const metadata = await image.metadata();
+        // Read every frame for reliable animated GIF/WebP detection.
+        const metadata = await sharp(file.buffer, {
+          animated: true,
+        }).metadata();
 
-        const allowedSharpFormats = ['jpeg', 'png', 'webp'];
-        if (
-          !metadata.format ||
-          !allowedSharpFormats.includes(metadata.format)
-        ) {
+        if (metadata.format !== SHARP_FORMAT_BY_MIME[file.mimetype]) {
           throw new BadRequestException('محتوى الصورة غير صالح أو غير مدعوم');
         }
 
-        // Convert JPEG/PNG to WebP format
-        if (metadata.format !== 'webp') {
-          fileBuffer = await image.webp({ quality: 82 }).toBuffer();
-          finalMimeType = 'image/webp';
-          extension = '.webp';
-        } else {
-          // It is webp, optimize/save it
-          fileBuffer = await image.webp({ quality: 82 }).toBuffer();
-          finalMimeType = 'image/webp';
-          extension = '.webp';
+        const isAnimated = (metadata.pages ?? 1) > 1;
+        if (metadata.format === 'png' && isAnimated) {
+          throw new BadRequestException(
+            'PNG المتحرك غير مدعوم. استخدم GIF أو Animated WebP',
+          );
         }
 
-        width = metadata.width;
-        height = metadata.height;
-      } catch {
+        if (
+          metadata.format === 'webp' &&
+          !isAnimated &&
+          file.size > STATIC_IMAGE_MAX_FILE_SIZE
+        ) {
+          throw new BadRequestException(
+            'حجم الصورة الثابتة يتجاوز الحد الأقصى المسموح به وهو 5 ميجابايت',
+          );
+        }
+
+        const preserveOriginal =
+          metadata.format === 'gif' ||
+          (metadata.format === 'webp' && isAnimated);
+
+        if (preserveOriginal) {
+          fileBuffer = file.buffer;
+          finalMimeType = `image/${metadata.format}`;
+          extension = `.${metadata.format}`;
+          width = metadata.width;
+          height = metadata.pageHeight ?? metadata.height;
+        } else {
+          // Static JPEG, PNG and WebP files are normalized and optimized as WebP.
+          fileBuffer = await sharp(file.buffer)
+            .rotate()
+            .webp({ quality: 82 })
+            .toBuffer();
+          finalMimeType = 'image/webp';
+          extension = '.webp';
+          const outputMetadata = await sharp(fileBuffer).metadata();
+          width = outputMetadata.width;
+          height = outputMetadata.height;
+        }
+      } catch (error) {
+        if (error instanceof BadRequestException) throw error;
         throw new BadRequestException('محتوى ملف الصورة غير صالح');
       }
     }
