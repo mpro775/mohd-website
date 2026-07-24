@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Children, isValidElement, type ReactNode } from "react";
 import Link from "next/link";
 import type { Components } from "react-markdown";
 import { defaultSchema } from "hast-util-sanitize";
@@ -9,18 +9,22 @@ import remarkDirective from "remark-directive";
 import remarkGfm from "remark-gfm";
 import type { PluggableList } from "unified";
 import { AlertCircle, Info, Lightbulb, TriangleAlert } from "lucide-react";
-import { CopyCodeButton } from "@/features/blog/components/CodeBlock";
 import { MermaidDiagram } from "@/features/blog/components/MermaidDiagram";
+import { BlogInlineText } from "@/features/blog/components/BlogInlineText";
+import { BlogKeyboardKey } from "@/features/blog/components/BlogKeyboardKey";
+import { BlogTextBlock } from "@/features/blog/components/BlogTextBlock";
+import { EnhancedCodeBlock } from "@/features/blog/components/EnhancedCodeBlock";
+import {
+  blogCodeMetaForPrettyCode,
+  normalizeBlogCodeMeta,
+} from "@/features/blog/markdown/blog-code-meta";
+import {
+  CALLOUT_TYPES,
+  remarkBlogDirectives,
+} from "@/features/blog/markdown/blog-directives";
+import type { BlogMarkdownNode } from "@/features/blog/markdown/blog-markdown-types";
 
-type HastNode = {
-  type?: string;
-  tagName?: string;
-  value?: string;
-  properties?: Record<string, unknown>;
-  children?: HastNode[];
-};
-
-const calloutTypes = new Set(["note", "tip", "warning", "danger"]);
+type HastNode = BlogMarkdownNode;
 
 function allowedMediaSource(src: string): boolean {
   const configured = process.env.NEXT_PUBLIC_MEDIA_URL;
@@ -30,50 +34,38 @@ function allowedMediaSource(src: string): boolean {
   );
 }
 
-function remarkSafeDirectives() {
-  return (tree: HastNode) => {
-    const visit = (node: HastNode) => {
-      if (node?.type === "containerDirective") {
-        const directive = node as HastNode & {
-          name?: string;
-          attributes?: Record<string, unknown>;
-          data?: Record<string, unknown>;
-        };
-        if (directive.name && calloutTypes.has(directive.name)) {
-          directive.data = {
-            ...(directive.data ?? {}),
-            hName: "aside",
-            hProperties: { "data-callout": directive.name },
-          };
-        } else if (directive.name === "figure") {
-          const { src, alt } = directive.attributes ?? {};
-          if (
-            typeof src === "string" &&
-            typeof alt === "string" &&
-            alt.trim()
-          ) {
-            directive.data = {
-              ...(directive.data ?? {}),
-              hName: "figure",
-              hProperties: { "data-src": src, "data-alt": alt },
-            };
-          } else {
-            directive.type = "paragraph";
-          }
-        } else {
-          directive.type = "paragraph";
-          delete directive.data;
-        }
-      }
-      for (const child of node?.children ?? []) visit(child);
-    };
-    visit(tree);
-  };
-}
-
 function hastText(node: HastNode): string {
   if (node.type === "text") return node.value ?? "";
   return (node.children ?? []).map(hastText).join("");
+}
+
+/** Preserve validated fence metadata on the outer figure created by Shiki. */
+export function rehypeCaptureBlogCodeMeta() {
+  return (tree: HastNode) => {
+    const visit = (node: HastNode) => {
+      if (node.type === "element" && node.tagName === "pre") {
+        const code = node.children?.[0];
+        const rawMeta =
+          typeof code?.data?.meta === "string" ? code.data.meta : "";
+        const classNames = Array.isArray(code?.properties?.className)
+          ? code.properties.className
+          : [];
+        const languageClass = classNames.find((value) =>
+          String(value).startsWith("language-"),
+        );
+        const language = languageClass
+          ? String(languageClass).slice("language-".length)
+          : "";
+        node.properties = {
+          ...(node.properties ?? {}),
+          dataBlogCodeMeta: normalizeBlogCodeMeta(rawMeta, language),
+          dataBlogCodeLanguage: language,
+        };
+      }
+      for (const child of node.children ?? []) visit(child);
+    };
+    visit(tree);
+  };
 }
 
 /** Extract Mermaid fences before Shiki sees them. */
@@ -123,6 +115,9 @@ const sanitizeSchema = {
     "figure",
     "figcaption",
     "mermaid-diagram",
+    "blog-text",
+    "blog-inline-text",
+    "blog-kbd",
   ],
   attributes: {
     ...defaultSchema.attributes,
@@ -130,6 +125,25 @@ const sanitizeSchema = {
     aside: ["dataCallout"],
     figure: ["dataSrc", "dataAlt"],
     code: [...(defaultSchema.attributes?.code ?? []), "className"],
+    pre: [
+      ...(defaultSchema.attributes?.pre ?? []),
+      "dataBlogCodeMeta",
+      "dataBlogCodeLanguage",
+    ],
+    "blog-text": [
+      "dataDir",
+      "dataAlign",
+      "dataSize",
+      "data-dir",
+      "data-align",
+      "data-size",
+    ],
+    "blog-inline-text": [
+      "dataMark",
+      "dataSize",
+      "data-mark",
+      "data-size",
+    ],
   },
   protocols: {
     ...defaultSchema.protocols,
@@ -156,14 +170,22 @@ const icons = {
 export const markdownRemarkPlugins: PluggableList = [
   remarkGfm,
   remarkDirective,
-  remarkSafeDirectives,
+  remarkBlogDirectives,
 ];
 
 export const markdownRehypePlugins: PluggableList = [
   rehypeSlug,
+  rehypeCaptureBlogCodeMeta,
   rehypeMermaidCodeBlocks,
   [rehypeSanitize, sanitizeSchema],
-  [rehypePrettyCode, { theme: "github-dark-dimmed", keepBackground: false }],
+  [
+    rehypePrettyCode,
+    {
+      theme: "github-dark-dimmed",
+      keepBackground: false,
+      filterMetaString: blogCodeMetaForPrettyCode,
+    },
+  ],
 ];
 
 export const markdownComponents = {
@@ -205,20 +227,16 @@ export const markdownComponents = {
         {...props}
       />
     ) : null,
-  pre: ({ children, ...props }: any) => (
-    <div className="code-block group relative my-6 overflow-hidden rounded-xl border border-border bg-zinc-950">
-      <CopyCodeButton code={textOf(children).replace(/\n$/, "")} />
-      <pre
-        dir="ltr"
-        className="overflow-x-auto p-5 text-left text-sm"
-        {...props}
-      >
+  pre: ({ children, node, ...props }: any) => {
+    void node;
+    return (
+      <pre dir="ltr" data-blog-highlighted-pre {...props}>
         {children}
       </pre>
-    </div>
-  ),
+    );
+  },
   aside: ({ children, "data-callout": type = "note", ...props }: any) => {
-    const safeType = calloutTypes.has(type)
+    const safeType = CALLOUT_TYPES.has(type)
       ? (type as keyof typeof icons)
       : "note";
     const Icon = icons[safeType];
@@ -242,22 +260,74 @@ export const markdownComponents = {
       </aside>
     );
   },
-  figure: ({ children, "data-src": src, "data-alt": alt, ...props }: any) => (
-    <figure className="my-8" {...props}>
-      {src && allowedMediaSource(src) ? (
-        <img
-          src={src}
-          alt={alt || ""}
-          loading="lazy"
-          className="mx-auto max-h-[720px] rounded-xl object-contain"
-        />
-      ) : null}
-      {children ? (
-        <figcaption className="mt-2 text-center text-sm text-muted-foreground">
-          {children}
-        </figcaption>
-      ) : null}
-    </figure>
+  figure: ({
+    children,
+    "data-src": src,
+    "data-alt": alt,
+    "data-rehype-pretty-code-figure": prettyCode,
+    "data-blog-code-meta": meta = "",
+    "data-blog-code-language": language = "",
+    node,
+    ...props
+  }: any) => {
+    if (prettyCode !== undefined) {
+      const preNode = (node?.children ?? []).find(
+        (child: HastNode) => child.tagName === "pre",
+      );
+      const highlightedPre = Children.toArray(children).find(
+        (child) =>
+          isValidElement(child) &&
+          "data-blog-highlighted-pre" in (child.props as Record<string, unknown>),
+      );
+      return (
+        <EnhancedCodeBlock
+          code={preNode ? hastText(preNode).replace(/\n$/, "") : ""}
+          language={String(language)}
+          meta={String(meta)}
+        >
+          {highlightedPre ?? children}
+        </EnhancedCodeBlock>
+      );
+    }
+    return (
+      <figure className="my-8" {...props}>
+        {src && allowedMediaSource(src) ? (
+          <img
+            src={src}
+            alt={alt || ""}
+            loading="lazy"
+            className="mx-auto max-h-[720px] rounded-xl object-contain"
+          />
+        ) : null}
+        {children ? (
+          <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+            {children}
+          </figcaption>
+        ) : null}
+      </figure>
+    );
+  },
+  "blog-text": ({
+    children,
+    "data-dir": dir,
+    "data-align": align,
+    "data-size": size,
+  }: any) => (
+    <BlogTextBlock dir={dir} align={align} size={size}>
+      {children}
+    </BlogTextBlock>
+  ),
+  "blog-inline-text": ({
+    children,
+    "data-mark": mark,
+    "data-size": size,
+  }: any) => (
+    <BlogInlineText mark={mark} size={size}>
+      {children}
+    </BlogInlineText>
+  ),
+  "blog-kbd": ({ children }: any) => (
+    <BlogKeyboardKey>{children}</BlogKeyboardKey>
   ),
   "mermaid-diagram": ({ children }: any) => (
     <MermaidDiagram chart={textOf(children)} />

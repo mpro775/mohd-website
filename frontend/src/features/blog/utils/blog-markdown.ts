@@ -1,6 +1,7 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
 import remarkGfm from "remark-gfm";
+import remarkDirective from "remark-directive";
 import { visit } from "unist-util-visit";
 import { toString } from "mdast-util-to-string";
 import GithubSlugger from "github-slugger";
@@ -16,6 +17,7 @@ export function extractHeadings(content: string): TocHeading[] {
   const tree = unified()
     .use(remarkParse)
     .use(remarkGfm)
+    .use(remarkDirective)
     .parse(content) as Root;
 
   const slugger = new GithubSlugger();

@@ -13,6 +13,7 @@ import {
   InsertThematicBreak,
   ListsToggle,
   MDXEditor,
+  StrikeThroughSupSubToggles,
   type MDXEditorMethods,
   UndoRedo,
   codeBlockPlugin,
@@ -34,26 +35,18 @@ import "@mdxeditor/editor/style.css";
 import { Download, ImagePlus, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
+import { BLOG_CODE_LANGUAGES } from "@/features/blog/markdown/blog-code-languages";
 import { EditorMediaDialog } from "./EditorMediaDialog";
-
-const languages = {
-  ts: "TypeScript",
-  tsx: "TSX",
-  js: "JavaScript",
-  jsx: "JSX",
-  json: "JSON",
-  bash: "Bash",
-  powershell: "PowerShell",
-  dart: "Dart",
-  php: "PHP",
-  python: "Python",
-  sql: "SQL",
-  yaml: "YAML",
-  dockerfile: "Dockerfile",
-  html: "HTML",
-  css: "CSS",
-  mermaid: "Mermaid",
-};
+import { BlogCodeBlockEditorDescriptor } from "./extensions/BlogCodeBlockEditor";
+import { BlogInlineTextDirectiveDescriptor } from "./extensions/BlogInlineTextDirectiveDescriptor";
+import { BlogKbdDirectiveDescriptor } from "./extensions/BlogKbdDirectiveDescriptor";
+import { BlogTextDirectiveDescriptor } from "./extensions/BlogTextDirectiveDescriptor";
+import { BlogAlignmentControls } from "./toolbar/BlogAlignmentControls";
+import { BlogClearFormattingButton } from "./toolbar/BlogClearFormattingButton";
+import { BlogDirectionControls } from "./toolbar/BlogDirectionControls";
+import { BlogInlineFormatControls } from "./toolbar/BlogInlineFormatControls";
+import { BlogTextSizeControls } from "./toolbar/BlogTextSizeControls";
+import { BlogToolbarSeparator } from "./toolbar/BlogToolbarSeparator";
 
 type BlogMarkdownEditorClientProps = {
   markdown: string;
@@ -195,10 +188,19 @@ export default function BlogMarkdownEditorClient({
           linkDialogPlugin(),
           tablePlugin(),
           imagePlugin(),
-          codeBlockPlugin({ defaultCodeBlockLanguage: "ts" }),
-          codeMirrorPlugin({ codeBlockLanguages: languages }),
+          codeBlockPlugin({
+            defaultCodeBlockLanguage: "ts",
+            codeBlockEditorDescriptors: [BlogCodeBlockEditorDescriptor],
+          }),
+          codeMirrorPlugin({ codeBlockLanguages: BLOG_CODE_LANGUAGES }),
           directivesPlugin({
-            directiveDescriptors: [AdmonitionDirectiveDescriptor],
+            directiveDescriptors: [
+              AdmonitionDirectiveDescriptor,
+              BlogTextDirectiveDescriptor,
+              BlogInlineTextDirectiveDescriptor,
+              BlogKbdDirectiveDescriptor,
+            ],
+            escapeUnknownTextDirectives: true,
           }),
           diffSourcePlugin({
             diffMarkdown: savedMarkdown,
@@ -207,17 +209,31 @@ export default function BlogMarkdownEditorClient({
           markdownShortcutPlugin(),
           toolbarPlugin({
             toolbarContents: () => (
-              <div className="flex min-w-max items-center gap-2 px-1" dir="ltr">
+              <div
+                className="flex min-w-max items-center gap-1 px-1"
+                dir="ltr"
+                aria-label="أدوات تنسيق المقال"
+              >
                 <UndoRedo />
                 <BlockTypeSelect />
+                <BlogToolbarSeparator />
                 <BoldItalicUnderlineToggles />
+                <StrikeThroughSupSubToggles options={["Strikethrough"]} />
+                <BlogInlineFormatControls />
                 <CodeToggle />
+                <BlogToolbarSeparator />
+                <BlogTextSizeControls />
+                <BlogDirectionControls />
+                <BlogAlignmentControls />
+                <BlogClearFormattingButton />
+                <BlogToolbarSeparator />
                 <ListsToggle options={["bullet", "number", "check"]} />
                 <CreateLink />
-                <InsertCodeBlock />
                 <InsertTable />
                 <InsertThematicBreak />
                 <InsertAdmonition />
+                <BlogToolbarSeparator />
+                <InsertCodeBlock />
               </div>
             ),
           }),

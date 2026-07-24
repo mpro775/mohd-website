@@ -32,4 +32,24 @@ describe("blog markdown", () => {
       "عنوان فرعي",
     ]);
   });
+
+  it("extracts headings nested inside text directives", () => {
+    const content = [
+      ':::text{dir="rtl" align="justify"}',
+      "## عنوان داخل فقرة منسقة",
+      ":::",
+      "",
+      "```md",
+      "## عنوان داخل الكود",
+      "```",
+    ].join("\n");
+
+    expect(extractHeadings(content)).toEqual([
+      {
+        id: "عنوان-داخل-فقرة-منسقة",
+        level: 2,
+        text: "عنوان داخل فقرة منسقة",
+      },
+    ]);
+  });
 });

@@ -41,4 +41,27 @@ describe('markdown-content utilities', () => {
       calculateContentHash({ content: normalized }),
     );
   });
+
+  it('preserves advanced Markdown directives and code metadata', () => {
+    const advancedMarkdown = [
+      ':::text{dir="rtl" align="justify" size="lead"}',
+      'فقرة عربية :text[مهمة]{mark="true" size="lg"} مع :kbd[Ctrl + K].',
+      ':::',
+      '',
+      '```tsx title="User Card.tsx" maxHeight="320" wrap="true" lineNumbers="true" highlight="2,4-6"',
+      'export const UserCard = () => <article>User</article>;',
+      '```',
+    ].join('\r\n');
+
+    const normalized = normalizeMarkdownContent(advancedMarkdown);
+    expect(normalized).toContain(
+      ':::text{dir="rtl" align="justify" size="lead"}',
+    );
+    expect(normalized).toContain(':text[مهمة]{mark="true" size="lg"}');
+    expect(normalized).toContain(':kbd[Ctrl + K]');
+    expect(normalized).toContain(
+      'title="User Card.tsx" maxHeight="320" wrap="true" lineNumbers="true" highlight="2,4-6"',
+    );
+    expect(normalized).not.toContain('\r');
+  });
 });

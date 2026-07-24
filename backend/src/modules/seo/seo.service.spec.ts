@@ -1,34 +1,25 @@
 import { SeoService } from './seo.service';
 import { PostStatus } from '../blog/posts/schemas/post.schema';
 
-function findChain(value: any[]) {
-  const chain: any = { select: jest.fn(), sort: jest.fn(), lean: jest.fn() };
-  chain.select.mockReturnValue(chain);
-  chain.sort.mockReturnValue(chain);
-  chain.lean.mockResolvedValue(value);
-  return chain;
-}
-
 describe('SeoService entries', () => {
   it('requests only published, indexable, non-deleted posts', async () => {
-    const posts = findChain([
+    const entries = [
       {
-        _id: 'p1',
-        slug: 'post',
+        type: 'post',
+        path: '/blog/post',
         title: 'Post',
-        summary: 'Summary',
+        description: 'Summary',
         publishedAt: new Date(),
-        updatedAt: new Date(),
+        lastModified: new Date(),
       },
-    ]);
-    const categories = findChain([]);
-    const tags = findChain([]);
+    ];
     const postModel = {
-      find: jest.fn().mockReturnValue(posts),
-      aggregate: jest.fn().mockResolvedValue([]),
+      aggregate: jest
+        .fn()
+        .mockResolvedValue([{ data: entries, count: [{ total: 1 }] }]),
     };
-    const categoryModel = { find: jest.fn().mockReturnValue(categories) };
-    const tagModel = { find: jest.fn().mockReturnValue(tags) };
+    const categoryModel = {};
+    const tagModel = {};
     const service = new SeoService(
       postModel as any,
       categoryModel as any,
@@ -37,13 +28,15 @@ describe('SeoService entries', () => {
 
     const result = await service.getEntries(1, 100);
 
-    expect(postModel.find).toHaveBeenCalledWith(
-      expect.objectContaining({
+    const pipeline = postModel.aggregate.mock.calls[0][0];
+    expect(pipeline[0]).toEqual({
+      $match: expect.objectContaining({
         status: PostStatus.PUBLISHED,
+        publishedAt: { $lte: expect.any(Date) },
         allowIndexing: { $ne: false },
         deletedAt: { $exists: false },
       }),
-    );
+    });
     expect(result.data[0]).toEqual(
       expect.objectContaining({ type: 'post', path: '/blog/post' }),
     );

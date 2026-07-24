@@ -10,7 +10,16 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "@next/next/no-img-element": "off",
-    }
+    },
+  },
+  {
+    // SplashCursor is a vendored WebGL implementation kept byte-compatible
+    // with its upstream JavaScript source.
+    files: ["src/components/common/SplashCursor.tsx"],
+    rules: {
+      "@typescript-eslint/ban-ts-comment": "off",
+      "prefer-const": "off",
+    },
   },
   // Override default ignores of eslint-config-next.
   globalIgnores([
