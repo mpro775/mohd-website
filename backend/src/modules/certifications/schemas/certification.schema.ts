@@ -102,11 +102,14 @@ CertificationSchema.index({ platform: 1, isPublished: 1 });
 CertificationSchema.index({ issuer: 1, isPublished: 1 });
 CertificationSchema.index({ issuedAt: -1 });
 CertificationSchema.index({ createdAt: -1 });
-CertificationSchema.index({
-  title: 'text',
-  issuer: 'text',
-  platform: 'text',
-  description: 'text',
-  credentialId: 'text',
-  skills: 'text',
-});
+CertificationSchema.index(
+  {
+    title: 'text',
+    issuer: 'text',
+    platform: 'text',
+    description: 'text',
+    credentialId: 'text',
+    skills: 'text',
+  },
+  { language_override: 'dummy_language_override' },
+);

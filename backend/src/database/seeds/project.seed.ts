@@ -1,6 +1,7 @@
 import { Model } from 'mongoose';
 import {
   Project,
+  ProjectCategory,
   ProjectStatus,
 } from '../../modules/projects/schemas/project.schema';
 
@@ -12,9 +13,9 @@ export const projectsData = [
       'منصة SaaS متعددة المتاجر تتيح للتجار إنشاء وإدارة متاجرهم الإلكترونية بسهولة.',
     detailedDescription:
       'كليم ستورز هي منصة تجارة إلكترونية متعددة المستأجرين (Multi-Tenant SaaS) تتيح للتجار إنشاء متاجر إلكترونية احترافية وإدارة المنتجات والطلبات والمخزون والعملاء والشحن والمدفوعات من خلال لوحة تحكم متكاملة. تم تصميم المنصة لتكون قابلة للتوسع وتدعم الباقات والاشتراكات والنطاقات المخصصة.',
-    technologies: ['NestJS', 'React', 'TypeScript', 'MongoDB', 'Docker'],
+    technologySlugs: ['nestjs', 'react', 'typescript', 'mongodb', 'docker'],
     status: ProjectStatus.IN_PROGRESS,
-    category: 'SaaS Platform',
+    category: ProjectCategory.SAAS,
     featured: true,
     order: 1,
     role: 'Founder & Full Stack Engineer',
@@ -24,6 +25,7 @@ export const projectsData = [
       'تطوير منصة SaaS متكاملة تتيح للتجار إنشاء وإدارة متاجرهم بسهولة.',
     results: 'بناء بنية متعددة العملاء قابلة للتوسع والنمو.',
     views: 0,
+    isPublished: true,
   },
   {
     title: 'كليم AI',
@@ -32,9 +34,9 @@ export const projectsData = [
       'منصة ذكاء اصطناعي متعددة القنوات للشركات والمتاجر الإلكترونية.',
     detailedDescription:
       'منصة متخصصة في بناء المساعدات الذكية للشركات والمتاجر، تدعم إدارة قواعد المعرفة والبحث الدلالي وتكاملات واتساب وتليجرام والمواقع الإلكترونية، مع دعم النماذج اللغوية الحديثة وأتمتة العمليات التجارية.',
-    technologies: ['NestJS', 'React', 'OpenAI', 'Qdrant', 'n8n', 'Docker'],
+    technologySlugs: ['nestjs', 'react', 'openai', 'qdrant', 'n8n', 'docker'],
     status: ProjectStatus.IN_PROGRESS,
-    category: 'Artificial Intelligence',
+    category: ProjectCategory.AI,
     featured: true,
     order: 2,
     role: 'Founder & AI Solutions Developer',
@@ -42,6 +44,7 @@ export const projectsData = [
     solution: 'تطوير مساعدين أذكياء مدعومين بالذكاء الاصطناعي وقواعد المعرفة.',
     results: 'منصة جاهزة لدعم الشركات والمتاجر عبر قنوات متعددة.',
     views: 0,
+    isPublished: true,
   },
   {
     title: 'نظام إدارة الصيانة',
@@ -50,9 +53,9 @@ export const projectsData = [
       'نظام متكامل لإدارة طلبات الصيانة والأصول والصيانة الوقائية.',
     detailedDescription:
       'نظام مؤسسي متكامل لإدارة عمليات الصيانة والبلاغات والأصول والصيانة الوقائية، مع لوحات معلومات وتقارير متقدمة وصلاحيات متعددة وسجل تدقيق كامل وإمكانية تصدير البيانات إلى PDF وExcel.',
-    technologies: ['NestJS', 'React', 'TypeScript', 'MongoDB', 'Docker'],
+    technologySlugs: ['nestjs', 'react', 'typescript', 'mongodb', 'docker'],
     status: ProjectStatus.COMPLETED,
-    category: 'Enterprise System',
+    category: ProjectCategory.WEB_APP,
     featured: true,
     order: 3,
     role: 'Full Stack Engineer',
@@ -60,6 +63,7 @@ export const projectsData = [
     solution: 'إنشاء نظام رقمي مركزي لإدارة جميع عمليات الصيانة.',
     results: 'تحسين كفاءة المتابعة وإدارة العمليات بشكل مؤسسي.',
     views: 0,
+    isPublished: true,
   },
   {
     title: 'منصة الجمعية اليمنية لجراحة الأوعية الدموية',
@@ -67,9 +71,9 @@ export const projectsData = [
     shortDescription: 'منصة رقمية متكاملة لإدارة أعضاء وأنشطة الجمعية الطبية.',
     detailedDescription:
       'منصة متكاملة تشمل الموقع العام، وإدارة الأعضاء، والمؤتمرات والفعاليات، والتسجيل الإلكتروني، وإصدار الشهادات والتحقق منها، وإدارة المحتوى والنشرات البريدية ولوحة تحكم إدارية متقدمة.',
-    technologies: ['NestJS', 'React', 'MongoDB', 'TypeScript'],
+    technologySlugs: ['nestjs', 'react', 'mongodb', 'typescript'],
     status: ProjectStatus.COMPLETED,
-    category: 'Digital Platform',
+    category: ProjectCategory.WEB_APP,
     featured: true,
     order: 4,
     role: 'Full Stack Engineer',
@@ -77,6 +81,7 @@ export const projectsData = [
     solution: 'بناء منصة موحدة لإدارة كافة العمليات والخدمات.',
     results: 'رقمنة عمليات الجمعية وتحسين تجربة الأعضاء.',
     views: 0,
+    isPublished: true,
   },
   {
     title: 'كتالوج المرحومي الرقمي',
@@ -84,9 +89,9 @@ export const projectsData = [
     shortDescription: 'منصة احترافية لإدارة وعرض المنتجات بطريقة رقمية حديثة.',
     detailedDescription:
       'منصة رقمية متخصصة في إدارة وعرض المنتجات، تتضمن لوحة تحكم متقدمة ومكتبة وسائط ومعالجة تلقائية للصور وتحسين محركات البحث وتكامل مباشر مع واتساب للأعمال.',
-    technologies: ['NestJS', 'React', 'MongoDB', 'TypeScript'],
+    technologySlugs: ['nestjs', 'react', 'mongodb', 'typescript'],
     status: ProjectStatus.COMPLETED,
-    category: 'Business Platform',
+    category: ProjectCategory.WEB_APP,
     featured: true,
     order: 5,
     role: 'Full Stack Engineer',
@@ -94,6 +99,7 @@ export const projectsData = [
     solution: 'إنشاء كتالوج رقمي متكامل لإدارة وعرض المنتجات.',
     results: 'تحسين الحضور الرقمي وسهولة الوصول للمنتجات.',
     views: 0,
+    isPublished: true,
   },
   {
     title: 'قطعتي',
@@ -101,9 +107,9 @@ export const projectsData = [
     shortDescription: 'منصة SaaS للبحث عن توافق قطع الغيار وإدارة الاشتراكات.',
     detailedDescription:
       'منصة متخصصة في قطاع قطع الغيار تتيح البحث عن توافق القطع وإدارة الاشتراكات واستيراد البيانات من ملفات Excel مع لوحة تحكم متكاملة وإدارة المستخدمين والباقات.',
-    technologies: ['NestJS', 'React', 'PostgreSQL', 'TypeScript'],
+    technologySlugs: ['nestjs', 'react', 'postgresql', 'typescript'],
     status: ProjectStatus.COMPLETED,
-    category: 'SaaS Platform',
+    category: ProjectCategory.SAAS,
     featured: true,
     order: 6,
     role: 'Founder & Full Stack Engineer',
@@ -112,6 +118,7 @@ export const projectsData = [
       'إنشاء قاعدة بيانات ومنصة بحث متخصصة لربط المركبات بقطع الغيار المناسبة.',
     results: 'تسريع عملية البحث وتقليل الأخطاء في اختيار القطع.',
     views: 0,
+    isPublished: true,
   },
   {
     title: 'TalentGate',
@@ -120,9 +127,9 @@ export const projectsData = [
       'منصة SaaS لإدارة الأكاديميات الرياضية واللاعبين والبطولات.',
     detailedDescription:
       'منصة متعددة العملاء لإدارة الأكاديميات الرياضية تشمل إدارة اللاعبين والمدربين والاشتراكات والمباريات والتقييمات والفعاليات والحضور والإعلانات من خلال بنية SaaS قابلة للتوسع.',
-    technologies: ['NestJS', 'React', 'PostgreSQL', 'TypeScript'],
+    technologySlugs: ['nestjs', 'react', 'postgresql', 'typescript'],
     status: ProjectStatus.COMPLETED,
-    category: 'SaaS Platform',
+    category: ProjectCategory.SAAS,
     featured: true,
     order: 7,
     role: 'Founder & Full Stack Engineer',
@@ -130,12 +137,14 @@ export const projectsData = [
     solution: 'تطوير منصة SaaS لإدارة جميع العمليات التشغيلية للأكاديميات.',
     results: 'رقمنة الإدارة التشغيلية للأكاديميات الرياضية.',
     views: 0,
+    isPublished: true,
   },
 ];
 
 export async function seedProjects(projectModel: Model<Project>) {
   for (const data of projectsData) {
     const existing = await projectModel.findOne({ slug: data.slug });
+
     if (existing) {
       console.log(
         `Project with slug "${data.slug}" already exists, updating...`,
@@ -143,11 +152,9 @@ export async function seedProjects(projectModel: Model<Project>) {
       await projectModel.updateOne({ slug: data.slug }, { $set: data });
     } else {
       console.log(`Creating project: ${data.title}`);
-      await projectModel.create({
-        ...data,
-        isPublished: true,
-      });
+      await projectModel.create(data);
     }
   }
+
   console.log('Projects seeding completed successfully!');
 }

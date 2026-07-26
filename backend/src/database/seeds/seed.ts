@@ -10,10 +10,7 @@ import {
   Technology,
   TechnologySchema,
 } from '../../modules/technologies/schemas/technology.schema';
-import {
-  Project,
-  ProjectSchema,
-} from '../../modules/projects/schemas/project.schema';
+
 import { Link, LinkSchema } from '../../modules/links/schemas/link.schema';
 import { Faq, FaqSchema } from '../../modules/faqs/schemas/faq.schema';
 import {
@@ -22,15 +19,20 @@ import {
 } from '../../modules/blog/categories/schemas/category.schema';
 import { Tag, TagSchema } from '../../modules/blog/tags/schemas/tag.schema';
 import { Post, PostSchema } from '../../modules/blog/posts/schemas/post.schema';
+import {
+  Certification,
+  CertificationSchema,
+} from '../../modules/certifications/schemas/certification.schema';
 import { seedAdminUser } from './user.seed';
 import { seedServices } from './service.seed';
 import { seedTechnologies } from './technology.seed';
-import { seedProjects } from './project.seed';
+
 import { seedLinks } from './link.seed';
 import { seedFaqs } from './faq.seed';
 import { seedBlogCategories } from './blog-category.seed';
 import { seedBlogTags } from './blog-tag.seed';
 import { seedPosts } from './post.seed';
+import { seedCertifications } from './certification.seed';
 
 async function bootstrap() {
   const mongoUri = process.env.MONGODB_URI;
@@ -41,37 +43,42 @@ async function bootstrap() {
   await mongoose.connect(mongoUri);
   try {
     const userModel = mongoose.model<User>(User.name, UserSchema);
-    await seedAdminUser(userModel);
+    // await seedAdminUser(userModel);
 
     const serviceModel = mongoose.model<Service>(Service.name, ServiceSchema);
-    await seedServices(serviceModel);
+    // await seedServices(serviceModel);
 
     const technologyModel = mongoose.model<Technology>(
       Technology.name,
       TechnologySchema,
     );
-    await seedTechnologies(technologyModel);
+    // await seedTechnologies(technologyModel);
 
-    const projectModel = mongoose.model<Project>(Project.name, ProjectSchema);
-    await seedProjects(projectModel);
+
 
     const linkModel = mongoose.model<Link>(Link.name, LinkSchema);
-    await seedLinks(linkModel);
+    // await seedLinks(linkModel);
 
     const faqModel = mongoose.model<Faq>(Faq.name, FaqSchema);
-    await seedFaqs(faqModel);
+    // await seedFaqs(faqModel);
 
     const blogCategoryModel = mongoose.model<Category>(
       Category.name,
       CategorySchema,
     );
-    await seedBlogCategories(blogCategoryModel);
+    // await seedBlogCategories(blogCategoryModel);
 
     const blogTagModel = mongoose.model<Tag>(Tag.name, TagSchema);
-    await seedBlogTags(blogTagModel);
+    // await seedBlogTags(blogTagModel);
 
     const postModel = mongoose.model<Post>(Post.name, PostSchema);
-    await seedPosts(postModel, userModel, blogCategoryModel, blogTagModel);
+    // await seedPosts(postModel, userModel, blogCategoryModel, blogTagModel);
+
+    const certificationModel = mongoose.model<Certification>(
+      Certification.name,
+      CertificationSchema,
+    );
+    await seedCertifications(certificationModel);
   } finally {
     await mongoose.disconnect();
   }
