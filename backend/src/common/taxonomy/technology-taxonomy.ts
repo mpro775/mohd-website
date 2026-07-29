@@ -1,4 +1,5 @@
 export enum TechnologyCategory {
+  LANGUAGES = 'languages',
   FRONTEND = 'frontend',
   BACKEND = 'backend',
   DATABASE = 'database',
@@ -8,37 +9,30 @@ export enum TechnologyCategory {
   DESIGN = 'design',
   TESTING = 'testing',
   AI = 'ai',
+  AUTOMATION = 'automation',
+  SECURITY = 'security',
+  ARCHITECTURE = 'architecture',
+  SAAS = 'saas',
   TOOLS = 'tools',
   OTHER = 'other',
 }
 
 export const TECHNOLOGY_CATEGORIES_METADATA = [
-  {
-    value: TechnologyCategory.FRONTEND,
-    labelAr: 'واجهة أمامية',
-    labelEn: 'Frontend',
-  },
-  {
-    value: TechnologyCategory.BACKEND,
-    labelAr: 'واجهة خلفية',
-    labelEn: 'Backend',
-  },
-  {
-    value: TechnologyCategory.DATABASE,
-    labelAr: 'قواعد بيانات',
-    labelEn: 'Database',
-  },
+  { value: TechnologyCategory.LANGUAGES, labelAr: 'لغات البرمجة', labelEn: 'Programming Languages' },
+  { value: TechnologyCategory.FRONTEND, labelAr: 'واجهة أمامية', labelEn: 'Frontend' },
+  { value: TechnologyCategory.BACKEND, labelAr: 'واجهة خلفية', labelEn: 'Backend' },
+  { value: TechnologyCategory.DATABASE, labelAr: 'قواعد بيانات', labelEn: 'Databases' },
   { value: TechnologyCategory.DEVOPS, labelAr: 'ديف أوبس', labelEn: 'DevOps' },
   { value: TechnologyCategory.CLOUD, labelAr: 'سحابي', labelEn: 'Cloud' },
-  { value: TechnologyCategory.MOBILE, labelAr: 'جوال', labelEn: 'Mobile' },
+  { value: TechnologyCategory.MOBILE, labelAr: 'تطبيقات الجوال', labelEn: 'Mobile' },
   { value: TechnologyCategory.DESIGN, labelAr: 'تصميم', labelEn: 'Design' },
-  {
-    value: TechnologyCategory.TESTING,
-    labelAr: 'اختبارات',
-    labelEn: 'Testing',
-  },
+  { value: TechnologyCategory.TESTING, labelAr: 'اختبارات', labelEn: 'Testing' },
   { value: TechnologyCategory.AI, labelAr: 'ذكاء اصطناعي', labelEn: 'AI' },
-  { value: TechnologyCategory.TOOLS, labelAr: 'أدوات', labelEn: 'Tools' },
+  { value: TechnologyCategory.AUTOMATION, labelAr: 'أتمتة', labelEn: 'Automation' },
+  { value: TechnologyCategory.SECURITY, labelAr: 'الأمن والهوية', labelEn: 'Security & Identity' },
+  { value: TechnologyCategory.ARCHITECTURE, labelAr: 'معمارية البرمجيات', labelEn: 'Software Architecture' },
+  { value: TechnologyCategory.SAAS, labelAr: 'هندسة SaaS', labelEn: 'SaaS Engineering' },
+  { value: TechnologyCategory.TOOLS, labelAr: 'أدوات التطوير', labelEn: 'Developer Tools' },
   { value: TechnologyCategory.OTHER, labelAr: 'أخرى', labelEn: 'Other' },
 ];
 
@@ -52,7 +46,15 @@ export enum TechnologyGroup {
   CMS = 'cms',
   CLOUD = 'cloud',
   STORAGE = 'storage',
+  CACHE = 'cache',
   QUEUE = 'queue',
+  SEARCH = 'search',
+  PROTOCOL = 'protocol',
+  AUTH = 'auth',
+  OBSERVABILITY = 'observability',
+  CI_CD = 'ci-cd',
+  PLATFORM = 'platform',
+  ARCHITECTURE = 'architecture',
   TESTING = 'testing',
   DESIGN_TOOL = 'design-tool',
   AUTOMATION = 'automation',
@@ -60,63 +62,27 @@ export enum TechnologyGroup {
 }
 
 export const TECHNOLOGY_GROUPS_METADATA = [
-  {
-    value: TechnologyGroup.LANGUAGE,
-    labelAr: 'لغة برمجة',
-    labelEn: 'Programming Language',
-  },
-  {
-    value: TechnologyGroup.FRAMEWORK,
-    labelAr: 'إطار عمل',
-    labelEn: 'Framework',
-  },
-  {
-    value: TechnologyGroup.LIBRARY,
-    labelAr: 'مكتبة برمجة',
-    labelEn: 'Library',
-  },
-  {
-    value: TechnologyGroup.RUNTIME,
-    labelAr: 'بيئة تشغيل',
-    labelEn: 'Runtime Environment',
-  },
-  {
-    value: TechnologyGroup.DATABASE,
-    labelAr: 'قاعدة بيانات',
-    labelEn: 'Database',
-  },
+  { value: TechnologyGroup.LANGUAGE, labelAr: 'لغة برمجة', labelEn: 'Programming Language' },
+  { value: TechnologyGroup.FRAMEWORK, labelAr: 'إطار عمل', labelEn: 'Framework' },
+  { value: TechnologyGroup.LIBRARY, labelAr: 'مكتبة برمجة', labelEn: 'Library' },
+  { value: TechnologyGroup.RUNTIME, labelAr: 'بيئة تشغيل', labelEn: 'Runtime Environment' },
+  { value: TechnologyGroup.DATABASE, labelAr: 'قاعدة بيانات', labelEn: 'Database' },
   { value: TechnologyGroup.ORM, labelAr: 'ORM / ODM', labelEn: 'ORM / ODM' },
   { value: TechnologyGroup.CMS, labelAr: 'نظام إدارة محتوى', labelEn: 'CMS' },
-  {
-    value: TechnologyGroup.CLOUD,
-    labelAr: 'خدمة سحابية',
-    labelEn: 'Cloud Service',
-  },
-  {
-    value: TechnologyGroup.STORAGE,
-    labelAr: 'تخزين ملفات',
-    labelEn: 'Storage',
-  },
-  {
-    value: TechnologyGroup.QUEUE,
-    labelAr: 'طابور مهام',
-    labelEn: 'Message Queue',
-  },
-  {
-    value: TechnologyGroup.TESTING,
-    labelAr: 'إطار اختبار',
-    labelEn: 'Testing Framework',
-  },
-  {
-    value: TechnologyGroup.DESIGN_TOOL,
-    labelAr: 'أداة تصميم',
-    labelEn: 'Design Tool',
-  },
-  {
-    value: TechnologyGroup.AUTOMATION,
-    labelAr: 'أداة أتمتة',
-    labelEn: 'Automation Tool',
-  },
+  { value: TechnologyGroup.CLOUD, labelAr: 'خدمة سحابية', labelEn: 'Cloud Service' },
+  { value: TechnologyGroup.STORAGE, labelAr: 'تخزين ملفات', labelEn: 'Storage' },
+  { value: TechnologyGroup.CACHE, labelAr: 'ذاكرة مؤقتة', labelEn: 'Cache' },
+  { value: TechnologyGroup.QUEUE, labelAr: 'طابور مهام', labelEn: 'Message Queue' },
+  { value: TechnologyGroup.SEARCH, labelAr: 'بحث وفهرسة', labelEn: 'Search & Indexing' },
+  { value: TechnologyGroup.PROTOCOL, labelAr: 'بروتوكول / معيار', labelEn: 'Protocol / Standard' },
+  { value: TechnologyGroup.AUTH, labelAr: 'مصادقة وتفويض', labelEn: 'Authentication & Authorization' },
+  { value: TechnologyGroup.OBSERVABILITY, labelAr: 'مراقبة ورصد', labelEn: 'Observability' },
+  { value: TechnologyGroup.CI_CD, labelAr: 'تكامل ونشر مستمر', labelEn: 'CI/CD' },
+  { value: TechnologyGroup.PLATFORM, labelAr: 'منصة', labelEn: 'Platform' },
+  { value: TechnologyGroup.ARCHITECTURE, labelAr: 'نمط معماري', labelEn: 'Architecture Pattern' },
+  { value: TechnologyGroup.TESTING, labelAr: 'إطار اختبار', labelEn: 'Testing Framework' },
+  { value: TechnologyGroup.DESIGN_TOOL, labelAr: 'أداة تصميم', labelEn: 'Design Tool' },
+  { value: TechnologyGroup.AUTOMATION, labelAr: 'أداة أتمتة', labelEn: 'Automation Tool' },
   { value: TechnologyGroup.OTHER, labelAr: 'أخرى', labelEn: 'Other' },
 ];
 
@@ -129,11 +95,7 @@ export enum ProficiencyLevel {
 
 export const PROFICIENCY_LEVELS_METADATA = [
   { value: ProficiencyLevel.BEGINNER, labelAr: 'مبتدئ', labelEn: 'Beginner' },
-  {
-    value: ProficiencyLevel.INTERMEDIATE,
-    labelAr: 'متوسط',
-    labelEn: 'Intermediate',
-  },
+  { value: ProficiencyLevel.INTERMEDIATE, labelAr: 'متوسط', labelEn: 'Intermediate' },
   { value: ProficiencyLevel.ADVANCED, labelAr: 'متقدم', labelEn: 'Advanced' },
   { value: ProficiencyLevel.EXPERT, labelAr: 'خبير', labelEn: 'Expert' },
 ];

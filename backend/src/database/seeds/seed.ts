@@ -52,7 +52,7 @@ async function bootstrap() {
       Technology.name,
       TechnologySchema,
     );
-    // await seedTechnologies(technologyModel);
+    await seedTechnologies(technologyModel);
 
 
 
@@ -78,7 +78,7 @@ async function bootstrap() {
       Certification.name,
       CertificationSchema,
     );
-    await seedCertifications(certificationModel);
+    // await seedCertifications(certificationModel);
   } finally {
     await mongoose.disconnect();
   }
