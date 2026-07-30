@@ -1,61 +1,149 @@
-import { ArrowUpLeft, Check, Package } from "lucide-react";
-import { LinkButton } from "@/components/common/Button";
-import type { Service } from "@/lib/api/types";
+"use client";
 
-function badgeFor(service: Service) {
+import { useRef, useState, MouseEvent } from "react";
+import { ArrowUpLeft, Check, Code2, Layers, Sparkles } from "lucide-react";
+import Link from "next/link";
+import type { Service } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
+
+function getServiceMeta(service: Service) {
   const text = `${service.name} ${service.shortDescription}`.toLowerCase();
-  if (text.includes("mvp")) return "MVP";
-  if (text.includes("dashboard") || text.includes("admin")) return "Dashboard";
-  if (text.includes("api") || text.includes("backend")) return "API";
-  if (text.includes("frontend") || text.includes("ui")) return "Frontend";
-  if (text.includes("deploy")) return "Deployment";
-  return "Package";
+  
+  if (text.includes("web") || text.includes("ويب") || text.includes("تطبيقات")) {
+    return {
+      title: "تطبيقات الويب المتكاملة",
+      description: "أحوّل الأفكار إلى تطبيقات ويب متكاملة، من الواجهة وتجربة المستخدم إلى الـ Backend والبنية التحتية.",
+      techChips: ["NEXT.JS", "NESTJS", "POSTGRESQL"],
+      Icon: Code2,
+    };
+  }
+  if (text.includes("saas") || text.includes("منصات") || text.includes("dashboard")) {
+    return {
+      title: "منصات SaaS",
+      description: "بناء منصات قابلة للنمو تشمل الاشتراكات، الصلاحيات، تعدد العملاء، والعمليات الخلفية.",
+      techChips: ["NEXT.JS", "NESTJS", "REDIS", "POSTGRESQL"],
+      Icon: Layers,
+    };
+  }
+  if (text.includes("ai") || text.includes("ذكاء")) {
+    return {
+      title: "حلول AI",
+      description: "دمج الذكاء الاصطناعي داخل منتجات حقيقية باستخدام المساعدات الذكية والأتمتة وربط بيانات الأعمال.",
+      techChips: ["AI", "RAG", "APIs"],
+      Icon: Sparkles,
+    };
+  }
+  
+  // Default fallback
+  return {
+    title: service.name,
+    description: service.shortDescription,
+    techChips: ["FULL-STACK", "UI/UX", "API"],
+    Icon: Code2,
+  };
 }
 
-export function ServiceCard({ service }: { service: Service }) {
-  const price = service.price ?? (service.startingPrice ? `${service.startingPrice} ${service.currency ?? "USD"}` : "حسب نطاق العمل");
+export function ServiceCard({ service, index = 0, isFeatured = false }: { service: Service; index?: number; isFeatured?: boolean }) {
+  const meta = getServiceMeta(service);
+  const Icon = meta.Icon;
+  const numString = (index + 1).toString().padStart(2, '0');
+  
+  const divRef = useRef<HTMLElement>(null);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
+    if (!divRef.current) return;
+    const rect = divRef.current.getBoundingClientRect();
+    setPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
 
   return (
-    <article className="premium-card group flex h-full flex-col justify-between p-6 transition-all duration-300 hover:-translate-y-1.5 hover:border-primary/40">
-      <div>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
-            <Package className="h-5 w-5" />
-          </span>
-          <span dir="ltr" className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1 font-mono text-[10px] text-primary">
-            {badgeFor(service)}
-          </span>
+    <article 
+      ref={divRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={cn(
+        "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border bg-card/40 p-6 transition-all duration-500",
+        isHovered ? "border-primary/30 -translate-y-[6px]" : "border-border/60",
+        isFeatured && !isHovered ? "-translate-y-4" : ""
+      )}
+    >
+      {/* Spotlight Effect */}
+      <div 
+        className="pointer-events-none absolute inset-0 z-0 transition-opacity duration-300"
+        style={{
+          opacity: isHovered ? 1 : 0,
+          background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(16,185,129,0.06), transparent 40%)`
+        }}
+      />
+
+      {/* Large Background Number */}
+      <div className="pointer-events-none absolute -bottom-10 -right-4 z-0 select-none text-[160px] font-bold leading-none text-foreground opacity-[0.025]">
+        {numString}
+      </div>
+
+      <div className="relative z-10 flex flex-col h-full">
+        {/* Top Header */}
+        <div className="mb-6 flex items-start justify-between">
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-primary/20 bg-radial-gradient from-primary/10 to-transparent shadow-[0_0_15px_rgba(16,185,129,0.05)] transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-3">
+            <Icon className="h-6 w-6 text-primary" />
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-border/50 bg-background/50 text-muted-foreground transition-colors group-hover:border-primary/30 group-hover:text-primary">
+              <ArrowUpLeft className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-[-2px] group-hover:translate-y-[-2px]" />
+            </div>
+            {isFeatured && (
+              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[9px] font-bold tracking-wider text-primary shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                MOST REQUESTED
+              </span>
+            )}
+          </div>
         </div>
 
-        <h3 className="text-xl font-bold text-foreground">{service.name}</h3>
-        <p className="mt-3 text-sm leading-7 text-muted-foreground">{service.shortDescription}</p>
+        {/* Content */}
+        <div className="flex-1">
+          <h3 className="text-xl font-bold text-foreground">{meta.title}</h3>
+          <p className="mt-3 text-[15px] leading-7 text-muted-foreground/90">{meta.description}</p>
+        </div>
 
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <span className="rounded-md border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-bold text-primary">
-            {price}
-          </span>
-          {service.duration ? (
-            <span dir="ltr" className="rounded-md border border-border bg-background/60 px-3 py-1.5 font-mono text-xs text-muted-foreground">
-              duration: {service.duration}
+        {/* Tech Chips */}
+        <div className="mt-6 flex flex-wrap gap-1.5">
+          {meta.techChips.map((chip) => (
+            <span key={chip} dir="ltr" className="rounded border border-primary/20 bg-primary/5 px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-wider text-primary/80">
+              {chip}
             </span>
-          ) : null}
+          ))}
         </div>
 
+        {/* Deliverables */}
         {service.deliverables?.length ? (
-          <ul className="mt-5 space-y-2 border-t border-border/40 pt-4 text-sm text-muted-foreground">
+          <ul className="mt-6 space-y-2.5 border-t border-border/40 pt-5 text-sm text-muted-foreground/80">
             {service.deliverables.slice(0, 4).map((item) => (
-              <li key={item} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                <span>{item}</span>
+              <li key={item} className="flex items-start gap-2.5">
+                <Check className="mt-[3px] h-3.5 w-3.5 shrink-0 text-primary/70" />
+                <span className="leading-relaxed">{item}</span>
               </li>
             ))}
           </ul>
         ) : null}
-      </div>
 
-      <LinkButton href={`/services/${service.slug}`} variant="terminal" size="sm" className="mt-6 w-full gap-1.5">
-        تفاصيل الخدمة <ArrowUpLeft className="h-4 w-4" />
-      </LinkButton>
+        {/* Footer: Duration & CTA */}
+        <div className="mt-8 flex items-center justify-between border-t border-border/40 pt-5">
+          <div dir="ltr" className="font-mono text-xs text-muted-foreground/60">
+            {service.duration ? `${service.duration}` : "TBD"}
+          </div>
+          
+          <Link href={`/services/${service.slug}`} className="group/cta flex items-center gap-1.5 text-sm font-bold text-primary">
+            <div className="relative">
+              <span>اكتشف الخدمة</span>
+              <span className="absolute -bottom-1 right-0 h-[2px] w-0 bg-primary transition-all duration-300 group-hover/cta:w-full" />
+            </div>
+            <ArrowUpLeft className="h-4 w-4 transition-transform duration-300 group-hover/cta:-translate-x-1 group-hover/cta:-translate-y-1" />
+          </Link>
+        </div>
+      </div>
     </article>
   );
 }

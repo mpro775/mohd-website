@@ -22,10 +22,10 @@ import {
 import { ScrollReveal } from "@/components/site/home/ScrollReveal";
 import { StatsGrid } from "@/components/site/home/StatsGrid";
 import { PostCard } from "@/features/blog/components/PostCard";
-import { FaqList } from "@/features/faqs/components/FaqList";
-import { ProjectCard } from "@/features/projects/components/ProjectCard";
+import { HomeFaqSection } from "@/components/site/home/HomeFaqSection";
+import { ProjectShowcaseSlider } from "@/features/projects/components/ProjectShowcaseSlider";
 import { ServiceCard } from "@/features/services/components/ServiceCard";
-import { TechnologyCard } from "@/features/technologies/components/TechnologyCard";
+import { StackExplorer } from "@/features/technologies/components/StackExplorer";
 import { FeaturedCertifications } from "@/features/certifications/components/FeaturedCertifications";
 import { publicApi } from "@/lib/api/public";
 import { personJsonLd } from "@/lib/seo/structured-data";
@@ -227,47 +227,66 @@ export default async function HomePage() {
         </Container>
       ) : null}
 
-      <Container className="py-14">
+      <Container className="py-14 overflow-hidden">
         <ScrollReveal>
-          <div className="mb-8 flex items-end justify-between gap-4">
+          <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <SectionHeader
-              eyebrow="Case Studies"
-              title="مشاريع تقنية مختارة"
-              description="مشاريع تعرض المشكلة والحل والتقنيات والنتيجة بدل الاكتفاء بصورة نهائية."
+              eyebrow="SELECTED WORK / 01"
+              title="أعمال مختارة"
+              description="منتجات وأنظمة حقيقية، من تحليل المشكلة إلى المعمارية والتنفيذ والتشغيل."
               className="mb-0"
             />
-            <Link href="/projects" className="shrink-0 text-xs font-semibold text-primary hover:underline">
-              عرض الكل
+            <Link href="/projects" className="shrink-0 text-xs font-semibold text-primary hover:underline flex items-center gap-1">
+              عرض جميع المشاريع <ArrowUpLeft className="h-3.5 w-3.5" />
             </Link>
           </div>
         </ScrollReveal>
         {visibleProjects.length ? (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {visibleProjects.map((project) => (
-              <ProjectCard key={project.slug} project={project} />
-            ))}
+          <div className="mt-8">
+            <ProjectShowcaseSlider projects={visibleProjects} />
           </div>
         ) : (
           <EmptyState title="لا توجد مشاريع بعد" description="ستظهر دراسات الحالة هنا عند نشر المشاريع العامة." />
         )}
       </Container>
 
-      <section className="border-y border-border/50 bg-muted/5 py-14">
-        <Container>
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <SectionHeader
-              eyebrow="Services"
-              title="خدمات عملية لبناء منتجات رقمية قابلة للنشر"
-              className="mb-0"
-            />
-            <Link href="/services" className="shrink-0 text-xs font-semibold text-primary hover:underline">
-              عرض الكل
-            </Link>
+      <section className="relative overflow-hidden border-y border-border/50 bg-[#070d12] py-20 tech-grid">
+        {/* Huge faint green glow in the center behind cards */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-[120px]" />
+        
+        <Container className="relative z-10">
+          {/* New Section Header Block */}
+          <div className="mb-16">
+            <div className="mb-6 flex items-center justify-between font-mono text-xs font-bold tracking-widest text-primary/80">
+              <span>{"// SERVICES"}</span>
+              <span>03 / SELECTED</span>
+            </div>
+            
+            <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-2xl">
+                <h2 className="text-3xl font-extrabold leading-tight text-foreground md:text-4xl lg:text-5xl">
+                  حلول تقنية من الفكرة
+                  <br />
+                  <span className="text-primary/90">إلى منتج يعمل فعليًا.</span>
+                </h2>
+                <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
+                  أبني منتجات رقمية متكاملة تجمع بين
+                  <br className="hidden md:block" />
+                  الهندسة، تجربة المستخدم، والأعمال.
+                </p>
+              </div>
+              
+              <Link href="/services" className="group flex items-center gap-2 text-sm font-bold text-primary transition-colors hover:text-primary/80">
+                <span>استكشف جميع الخدمات</span>
+                <ArrowUpLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1 group-hover:-translate-y-1" />
+              </Link>
+            </div>
           </div>
+
           {visibleServices.length ? (
-            <div className="grid gap-5 md:grid-cols-3">
-              {visibleServices.map((service) => (
-                <ServiceCard key={service.slug} service={service} />
+            <div className="grid gap-6 lg:grid-cols-3">
+              {visibleServices.map((service, index) => (
+                <ServiceCard key={service.slug} service={service} index={index} isFeatured={index === 1} />
               ))}
             </div>
           ) : (
@@ -277,16 +296,32 @@ export default async function HomePage() {
       </section>
 
       <Container className="py-14">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <SectionHeader eyebrow="Toolbox" title="Stack أستخدمه لبناء منتجات قابلة للصيانة" className="mb-0" />
-          <Link href="/technologies" className="shrink-0 text-xs font-semibold text-primary hover:underline">
-            عرض الكل
-          </Link>
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <SectionHeader 
+            eyebrow="Toolbox" 
+            title={
+              <>
+                Stack أستخدمه لبناء
+                <br className="hidden md:block" />
+                منتجات قابلة للصيانة والتوسع
+              </>
+            }
+            className="mb-0 max-w-2xl" 
+          />
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {visibleTech.map((technology) => (
-            <TechnologyCard key={technology.slug} technology={technology} />
-          ))}
+        
+        <StackExplorer technologies={technologies} />
+        
+        <div className="mt-16 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-border/40 pt-8">
+          <p className="text-sm text-muted-foreground font-mono">
+            30+ technologies across
+            <br />
+            <span className="text-foreground/80">Frontend · Backend · Data · DevOps · Cloud · AI</span>
+          </p>
+          <Link href="/technologies" className="group flex items-center gap-2 text-sm font-bold text-primary transition-colors hover:text-primary/80">
+            <span>استكشف كامل الـ Tech Stack</span>
+            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          </Link>
         </div>
       </Container>
 
@@ -311,10 +346,7 @@ export default async function HomePage() {
       </section>
 
       {faqs.items.length ? (
-        <Container className="py-14">
-          <SectionHeader eyebrow="FAQ" title="أسئلة شائعة" />
-          <FaqList faqs={faqs.items} />
-        </Container>
+        <HomeFaqSection faqs={faqs.items} />
       ) : null}
 
       <section className="relative overflow-hidden border-t border-border py-20 tech-grid">

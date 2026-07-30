@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 
+import type { ReactNode } from "react";
+
 export function SectionHeader({
   eyebrow,
   title,
@@ -7,7 +9,7 @@ export function SectionHeader({
   className,
 }: {
   eyebrow?: string;
-  title: string;
+  title: ReactNode;
   description?: string;
   className?: string;
 }) {
