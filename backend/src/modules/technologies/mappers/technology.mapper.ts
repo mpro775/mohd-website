@@ -6,12 +6,14 @@ export async function mapTechnologyToPublic(
   mediaService: MediaService,
 ) {
   const icon = await mediaService.resolveMediaUrl(tech.iconMediaId);
+  const iconMedia = await mediaService.resolveMediaObject(tech.iconMediaId);
   return {
     id: tech._id.toString(),
     name: tech.name,
     slug: tech.slug,
     description: tech.description,
     icon,
+    iconMedia,
     proficiencyLevel: tech.proficiencyLevel,
     category: tech.category,
     group: tech.group,

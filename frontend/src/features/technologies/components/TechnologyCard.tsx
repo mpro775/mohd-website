@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { StatusBadge } from "@/components/common/StatusBadge";
 import type { Technology } from "@/lib/api/types";
+import { TechnologyIcon } from "./TechnologyIcon";
 
 const meter = {
   beginner: "w-1/4",
@@ -26,8 +27,8 @@ export function TechnologyCard({ technology }: { technology: Technology }) {
     >
       <div>
         <div className="mb-4 flex items-center justify-between gap-3">
-          <span dir="ltr" className="flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 font-mono text-sm font-bold text-primary">
-            {technology.icon ?? initials}
+          <span dir="ltr" className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-primary/25 bg-primary/10 font-mono text-sm font-bold text-primary overflow-hidden">
+            <TechnologyIcon technology={technology} className="object-contain p-2" fallbackClassName="font-mono text-sm font-bold text-primary" />
           </span>
           {technology.highlighted ? (
             <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 font-mono text-[10px] text-primary">

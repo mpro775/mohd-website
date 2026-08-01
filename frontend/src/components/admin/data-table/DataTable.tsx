@@ -340,18 +340,21 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* 3. Pagination Controls */}
-      {table.getRowModel().rows.length > 0 && !isLoading && (
-        <DataTablePagination
-          table={table}
-          serverSide={serverSide}
-          page={page}
-          limit={limit}
-          total={total}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-          onLimitChange={onLimitChange}
-        />
-      )}
+      {!isLoading &&
+        (serverSide
+          ? (total ?? 0) > 0
+          : table.getRowModel().rows.length > 0) && (
+          <DataTablePagination
+            table={table}
+            serverSide={serverSide}
+            page={page}
+            limit={limit}
+            total={total}
+            totalPages={totalPages}
+            onPageChange={onPageChange}
+            onLimitChange={onLimitChange}
+          />
+        )}
     </div>
   );
 }

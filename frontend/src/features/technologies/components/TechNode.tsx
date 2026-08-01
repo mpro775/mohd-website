@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import type { Technology } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { TechnologyIcon } from "./TechnologyIcon";
 
 interface TechNodeProps {
   technology: Technology;
@@ -58,24 +58,11 @@ export function TechNode({
         )}
         style={technology.color && isActive ? { borderColor: technology.color, boxShadow: `0 4px 20px -2px ${technology.color}40` } : undefined}
       >
-        {technology.iconMedia ? (
-          <Image
-            src={technology.iconMedia.url}
-            alt={technology.name}
-            fill
-            className="object-contain p-2.5"
-          />
-        ) : technology.icon ? (
-          <div
-            dangerouslySetInnerHTML={{ __html: technology.icon }}
-            className="w-1/2 h-1/2 [&>svg]:w-full [&>svg]:h-full flex items-center justify-center transition-transform group-hover:scale-110"
-            style={technology.color ? { color: technology.color, fill: technology.color } : undefined}
-          />
-        ) : (
-          <span className="font-mono text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors">
-            {initials}
-          </span>
-        )}
+        <TechnologyIcon 
+          technology={technology} 
+          className="object-contain p-2.5 transition-transform group-hover:scale-110" 
+          fallbackClassName="font-mono text-sm font-bold text-muted-foreground group-hover:text-primary transition-colors" 
+        />
       </div>
       
       <span 

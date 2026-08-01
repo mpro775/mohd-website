@@ -5,6 +5,7 @@ import { ExternalLink, X } from "lucide-react";
 import type { Technology } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { TechNode } from "./TechNode";
+import { TechnologyIcon } from "./TechnologyIcon";
 
 interface StackExplorerProps {
   technologies: Technology[];
@@ -52,14 +53,8 @@ const SpotlightPanel = ({ tech, isMobileSheet = false, onClose }: { tech: Techno
           </p>
         </div>
         
-        <div dir="ltr" className="flex h-14 w-14 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 font-mono text-lg font-bold text-primary shrink-0">
-          {tech.iconMedia ? (
-            <img src={tech.iconMedia.url} alt={tech.name} className="w-8 h-8 object-contain" />
-          ) : tech.icon ? (
-            <div dangerouslySetInnerHTML={{ __html: tech.icon }} className="w-8 h-8 [&>svg]:w-full [&>svg]:h-full flex items-center justify-center" />
-          ) : (
-            tech.name.substring(0, 2).toUpperCase()
-          )}
+        <div dir="ltr" className="relative flex h-14 w-14 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 font-mono text-lg font-bold text-primary shrink-0 overflow-hidden">
+          <TechnologyIcon technology={tech} className="object-contain p-2" fallbackClassName="font-mono text-lg font-bold" />
         </div>
       </div>
 

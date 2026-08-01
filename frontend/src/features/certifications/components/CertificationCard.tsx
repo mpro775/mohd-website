@@ -16,7 +16,7 @@ export function CertificationCard({ certification }: { certification: Certificat
   return (
     <article className="premium-card flex h-full flex-col overflow-hidden">
       <div className="relative flex aspect-[16/10] items-center justify-center border-b border-border bg-muted/20 p-5">
-        {image && !imageFailed ? <Image src={image} alt={`صورة شهادة ${certification.title}`} fill sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-contain p-5" onError={() => setImageFailed(true)} /> : <BadgeCheck className="h-12 w-12 text-primary/50" aria-hidden="true" />}
+        {image && !imageFailed ? <Image src={image} alt={`صورة شهادة ${certification.title}`} fill unoptimized sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" className="object-contain p-5" onError={() => setImageFailed(true)} /> : <BadgeCheck className="h-12 w-12 text-primary/50" aria-hidden="true" />}
         {certification.isFeatured ? <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[11px] font-bold text-amber-500"><Star className="h-3 w-3 fill-current" />مميزة</span> : null}
       </div>
       <div className="flex flex-1 flex-col p-5">

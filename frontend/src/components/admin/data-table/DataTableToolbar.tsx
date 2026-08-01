@@ -77,16 +77,30 @@ export function DataTableToolbar<TData>({
 
   // Debounced search trigger (300ms)
   useEffect(() => {
+    // لا تنفذ البحث الخادمي ما لم تتغير قيمة البحث فعليًا.
+    // يمنع هذا إعادة page إلى 1 عند التنقل بين الصفحات.
+    if (serverSide && searchValue === propSearchValue) {
+      return;
+    }
+
     const timer = setTimeout(() => {
       if (serverSide) {
-        if (onSearchChange) onSearchChange(searchValue);
-      } else {
-        table.getColumn(searchKey)?.setFilterValue(searchValue);
+        onSearchChange?.(searchValue);
+        return;
       }
+
+      table.getColumn(searchKey)?.setFilterValue(searchValue);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchValue, searchKey, table, serverSide, onSearchChange]);
+  }, [
+    searchValue,
+    propSearchValue,
+    searchKey,
+    table,
+    serverSide,
+    onSearchChange,
+  ]);
 
   // Helper to export table data to UTF-8 CSV with Arabic BOM support
   const handleExportCSV = () => {

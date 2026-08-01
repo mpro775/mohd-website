@@ -27,6 +27,7 @@ import { ProjectShowcaseSlider } from "@/features/projects/components/ProjectSho
 import { ServiceCard } from "@/features/services/components/ServiceCard";
 import { StackExplorer } from "@/features/technologies/components/StackExplorer";
 import { FeaturedCertifications } from "@/features/certifications/components/FeaturedCertifications";
+import { TechnologyIcon } from "@/features/technologies/components/TechnologyIcon";
 import { publicApi } from "@/lib/api/public";
 import { personJsonLd } from "@/lib/seo/structured-data";
 
@@ -172,19 +173,13 @@ export default async function HomePage() {
               </h3>
               <div className="flex flex-wrap gap-2.5 justify-start">
                 {visibleTech.map((tech) => (
-                  <div
-                    key={tech.slug}
-                    className="w-11 h-11 rounded-lg border border-border bg-card/60 flex items-center justify-center hover:border-primary/50 transition-colors shadow-md hover:shadow-primary/5 group relative overflow-hidden"
-                    title={tech.name}
-                  >
-                    {tech.iconMedia ? (
-                      <Image src={tech.iconMedia.url} alt={tech.name} fill className="object-contain p-2" />
-                    ) : tech.icon ? (
-                      <div dangerouslySetInnerHTML={{ __html: tech.icon }} className="w-6 h-6 [&>svg]:w-full [&>svg]:h-full flex items-center justify-center" />
-                    ) : (
-                      <span className="text-[10px] font-mono text-muted-foreground">{tech.name.substring(0, 3)}</span>
-                    )}
-                  </div>
+                    <div
+                      key={tech.slug}
+                      className="w-11 h-11 rounded-lg border border-border bg-card/60 flex items-center justify-center hover:border-primary/50 transition-colors shadow-md hover:shadow-primary/5 group relative overflow-hidden"
+                      title={tech.name}
+                    >
+                      <TechnologyIcon technology={tech} className="object-contain p-2" fallbackClassName="text-[10px] font-mono text-muted-foreground" />
+                    </div>
                 ))}
               </div>
             </div>
